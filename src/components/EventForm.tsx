@@ -171,8 +171,15 @@ export default function EventForm() {
         throw new Error(data.error || 'Failed to create event');
       }
 
-      const { slug, organizerToken } = await res.json();
+      const { slug, organizerToken, organizerParticipantId, organizerName: returnedName } = await res.json();
       localStorage.setItem(`organizer_${slug}`, organizerToken);
+      // Auto-save the organizer as a participant so they skip the name entry screen
+      if (organizerParticipantId && returnedName) {
+        localStorage.setItem(
+          `participant_${slug}`,
+          JSON.stringify({ id: organizerParticipantId, name: returnedName })
+        );
+      }
       router.push(`/e/${slug}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong');

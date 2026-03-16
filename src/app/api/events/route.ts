@@ -40,5 +40,23 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json({ slug: data.slug, organizerToken }, { status: 201 });
+  // Auto-add the organizer as a participant if they provided their name
+  let organizerParticipantId: string | null = null;
+  if (organizerName?.trim()) {
+    const { data: participant } = await supabase
+      .from('participants')
+      .insert({ event_id: data.id, name: organizerName.trim() })
+      .select('id')
+      .single();
+    if (participant) {
+      organizerParticipantId = participant.id;
+    }
+  }
+
+  return NextResponse.json({
+    slug: data.slug,
+    organizerToken,
+    organizerParticipantId,
+    organizerName: organizerName?.trim() || null,
+  }, { status: 201 });
 }

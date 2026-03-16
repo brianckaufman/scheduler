@@ -158,7 +158,12 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
     [mySlots, allSlots, participantId, event.id]
   );
 
-  // Drag handlers
+  // Simple toggle for mobile taps (onClick)
+  const handleToggle = useCallback((slotKey: string) => {
+    toggleSlot(slotKey);
+  }, [toggleSlot]);
+
+  // Drag handlers (desktop mouse only)
   const handleDragStart = useCallback((slotKey: string) => {
     const mode = mySlots.has(slotKey) ? 'remove' : 'add';
     setIsDragging(true);
@@ -178,15 +183,7 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
     draggedSlots.current = new Set();
   }, []);
 
-  // Touch drag support
   const gridRef = useRef<HTMLDivElement>(null);
-  const handleTouchMove = useCallback((e: React.TouchEvent) => {
-    if (!isDragging) return;
-    const touch = e.touches[0];
-    const el = document.elementFromPoint(touch.clientX, touch.clientY);
-    const slotKey = el?.getAttribute('data-slot');
-    if (slotKey) handleDragEnter(slotKey);
-  }, [isDragging, handleDragEnter]);
 
   // Select all / clear day
   const handleDayToggle = useCallback((date: string) => {
@@ -312,8 +309,6 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
       <div
         className="time-grid overflow-x-auto -mx-4 px-4"
         ref={gridRef}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleDragEnd}
       >
         <div
           className="grid gap-1 pb-1"
@@ -394,6 +389,7 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
                     totalParticipants={totalParticipants}
                     isAllMatch={isAllMatch}
                     participantColors={slotParticipantColors}
+                    onToggle={handleToggle}
                     onDragStart={handleDragStart}
                     onDragEnter={handleDragEnter}
                     onHold={handleSlotHold}

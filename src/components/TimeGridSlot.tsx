@@ -17,8 +17,6 @@ export const PARTICIPANT_COLORS = [
   '#a855f7', // purple-500
 ];
 
-const SCROLL_THRESHOLD = 30; // pixels of movement before we consider it a scroll (needs to be generous for iPhone tap jitter)
-
 interface TimeGridSlotProps {
   slotKey: string;
   isMine: boolean;
@@ -26,6 +24,7 @@ interface TimeGridSlotProps {
   totalParticipants: number;
   isAllMatch: boolean;
   participantColors: string[];
+  onToggle: (slotKey: string) => void;
   onDragStart: (slotKey: string) => void;
   onDragEnter: (slotKey: string) => void;
   onHold?: (slotKey: string) => void;
@@ -39,13 +38,14 @@ function TimeGridSlotInner({
   totalParticipants,
   isAllMatch,
   participantColors,
+  onToggle,
   onDragStart,
   onDragEnter,
   onHold,
   onRelease,
 }: TimeGridSlotProps) {
-  const touchStart = useRef<{ x: number; y: number } | null>(null);
-  const didScroll = useRef(false);
+  // Tracks whether mouseDown started a drag (desktop only)
+  const mouseDidDrag = useRef(false);
 
   let bgClass = 'bg-gray-100';
   let extra = '';
@@ -61,40 +61,33 @@ function TimeGridSlotInner({
     bgClass = 'bg-gray-200';
   }
 
-  const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    const touch = e.touches[0];
-    touchStart.current = { x: touch.clientX, y: touch.clientY };
-    didScroll.current = false;
-  }, []);
+  // Desktop: mouseDown starts drag mode (toggle + drag)
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    mouseDidDrag.current = true;
+    onDragStart(slotKey);
+  }, [slotKey, onDragStart]);
 
-  const handleTouchMoveLocal = useCallback((e: React.TouchEvent) => {
-    if (!touchStart.current || didScroll.current) return;
-    const touch = e.touches[0];
-    const dx = Math.abs(touch.clientX - touchStart.current.x);
-    const dy = Math.abs(touch.clientY - touchStart.current.y);
-    if (dx > SCROLL_THRESHOLD || dy > SCROLL_THRESHOLD) {
-      didScroll.current = true;
+  // onClick fires on BOTH desktop and mobile.
+  // On desktop: mouseDown already handled it, so skip.
+  // On mobile: this is the primary interaction — the browser's native
+  // click event already filters out scrolls, so no custom threshold needed.
+  const handleClick = useCallback(() => {
+    if (mouseDidDrag.current) {
+      mouseDidDrag.current = false;
+      return; // Desktop mouseDown already toggled
     }
-  }, []);
-
-  const handleTouchEnd = useCallback(() => {
-    if (!didScroll.current && touchStart.current) {
-      onDragStart(slotKey);
-    }
-    touchStart.current = null;
-    didScroll.current = false;
-    onRelease?.();
-  }, [slotKey, onDragStart, onRelease]);
+    // Mobile tap — simple, reliable
+    onToggle(slotKey);
+  }, [slotKey, onToggle]);
 
   return (
     <button
       type="button"
       data-slot={slotKey}
-      onMouseDown={(e) => { e.preventDefault(); onDragStart(slotKey); }}
+      onMouseDown={handleMouseDown}
       onMouseEnter={() => onDragEnter(slotKey)}
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMoveLocal}
-      onTouchEnd={handleTouchEnd}
+      onClick={handleClick}
       onContextMenu={(e) => { e.preventDefault(); onHold?.(slotKey); }}
       className={`
         slot-cell w-full min-h-[44px] rounded-lg text-xs font-medium select-none
