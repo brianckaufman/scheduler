@@ -2,14 +2,21 @@
  * Image optimization utilities for Supabase Storage.
  *
  * Supabase supports on-the-fly image transforms via the
- * /render/image/public/ endpoint. This utility rewrites
- * standard /object/public/ URLs to use the transform endpoint
- * with the specified dimensions, quality, and format.
+ * /render/image/public/ endpoint, BUT this requires the paid
+ * Image Transformations add-on to be enabled on the project.
  *
- * If the URL is not a Supabase storage URL, it is returned unchanged.
- * If transforms are not enabled on the Supabase project, the browser
- * will simply load the original image (graceful degradation).
+ * These functions gracefully return the original URL if transforms
+ * are not available, so images always load correctly.
+ *
+ * To enable optimized images:
+ *   1. Enable Image Transformations in your Supabase dashboard
+ *      (Settings > Add-ons > Image Transformations)
+ *   2. Set NEXT_PUBLIC_SUPABASE_IMAGE_TRANSFORMS=true in .env.local
  */
+
+const TRANSFORMS_ENABLED =
+  typeof process !== 'undefined' &&
+  process.env.NEXT_PUBLIC_SUPABASE_IMAGE_TRANSFORMS === 'true';
 
 interface ImageTransformOptions {
   width?: number;
@@ -21,12 +28,16 @@ interface ImageTransformOptions {
 /**
  * Rewrite a Supabase storage URL to use image transforms.
  * Non-Supabase URLs and SVGs are returned as-is.
+ * If transforms are not enabled, returns the original URL unchanged.
  */
 export function optimizedImageUrl(
   url: string,
   options: ImageTransformOptions
 ): string {
   if (!url) return '';
+
+  // If transforms are not enabled, return original URL — don't break images
+  if (!TRANSFORMS_ENABLED) return url;
 
   // Don't transform SVGs — they're already resolution-independent
   const cleanUrl = url.split('?')[0];
@@ -60,7 +71,7 @@ export function optimizedImageUrl(
 
 // ── Presets ──────────────────────────────────────────────────────
 
-/** Optimized logo: 2x resolution for retina, WebP, high quality */
+/** Optimized logo: 2x resolution for retina, high quality */
 export function optimizedLogoUrl(url: string, displayHeight: number): string {
   return optimizedImageUrl(url, {
     height: displayHeight * 2,
