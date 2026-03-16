@@ -98,7 +98,7 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
   }, [serverMySlots, pendingAdds, pendingRemoves]);
 
   // Clean up pending state when server catches up
-  useMemo(() => {
+  useEffect(() => {
     setPendingAdds((prev) => {
       const next = new Set(prev);
       for (const key of prev) {

@@ -16,7 +16,7 @@ interface EventViewProps {
 export default function EventView({ event: initialEvent }: EventViewProps) {
   const [event, setEvent] = useState(initialEvent);
   const [isOrganizer, setIsOrganizer] = useState(false);
-  const { participantId, hasSession, saveSession, loaded } = useParticipantSession(event.slug);
+  const { participantId, hasSession, saveSession, loaded } = useParticipantSession(event.slug, event.id);
 
   useEffect(() => {
     const token = localStorage.getItem(`organizer_${event.slug}`);

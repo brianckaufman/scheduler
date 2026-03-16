@@ -54,11 +54,11 @@ function TimeGridSlotInner({
     bgClass = 'bg-green-100';
     extra = 'ring-2 ring-green-300';
   } else if (isMine && othersCount > 1) {
-    bgClass = 'bg-green-50';
+    bgClass = 'bg-teal-100';
   } else if (isMine) {
-    bgClass = 'bg-gray-50';
+    bgClass = 'bg-teal-50';
   } else if (othersCount > 0) {
-    bgClass = 'bg-gray-50';
+    bgClass = 'bg-gray-200';
   }
 
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
@@ -106,8 +106,8 @@ function TimeGridSlotInner({
       {participantColors.map((color, i) => (
         <span
           key={i}
-          className="dot-pop inline-block w-[10px] h-[10px] rounded-full shrink-0"
-          style={{ backgroundColor: color, animationDelay: `${i * 40}ms` }}
+          className="inline-block w-[10px] h-[10px] rounded-full shrink-0"
+          style={{ backgroundColor: color }}
         />
       ))}
     </button>
