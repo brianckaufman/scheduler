@@ -310,6 +310,40 @@ export default function AdminDashboard() {
     }
   };
 
+  // Auto-save a specific section+field after image upload
+  // This persists immediately so the user doesn't need to click "Save Changes"
+  const autoSaveImageField = useCallback(async (
+    section: keyof SiteSettings,
+    field: string,
+    url: string
+  ) => {
+    try {
+      const sectionUpdate = {
+        [section]: {
+          ...settings[section],
+          [field]: url,
+        },
+      };
+      const res = await fetch('/api/admin/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ settings: sectionUpdate }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        const s = data.settings ?? data;
+        setOriginalSettings(s);
+        setSettings(s);
+        setHasChanges(false);
+        setSaveMessage('Image saved');
+        setTimeout(() => setSaveMessage(''), 3000);
+      }
+    } catch {
+      setSaveMessage('Image uploaded but failed to save settings');
+    }
+  }, [settings]);
+
   const handleDiscard = () => {
     setSettings({ ...originalSettings });
     setHasChanges(false);
@@ -362,6 +396,7 @@ export default function AdminDashboard() {
       <ImageUpload
         value={settings.seo.og_image}
         onChange={(url) => updateSection('seo', 'og_image', url)}
+        onUploadComplete={(url) => autoSaveImageField('seo', 'og_image', url)}
         folder="og"
         label="OG Image"
         help="Used as the preview image when sharing links on social media"
@@ -370,9 +405,10 @@ export default function AdminDashboard() {
       <ImageUpload
         value={settings.seo.favicon}
         onChange={(url) => updateSection('seo', 'favicon', url)}
+        onUploadComplete={(url) => autoSaveImageField('seo', 'favicon', url)}
         folder="favicon"
         label="Favicon"
-        help="The small icon shown in browser tabs"
+        help="The small icon shown in browser tabs. Refresh the page after uploading to see changes."
         accept="image/png,image/x-icon,image/vnd.microsoft.icon,image/svg+xml"
         aspectHint="32 x 32px or 64 x 64px (ICO, PNG, or SVG)"
       />
@@ -384,6 +420,7 @@ export default function AdminDashboard() {
       <ImageUpload
         value={settings.branding.logo_url}
         onChange={(url) => updateSection('branding', 'logo_url', url)}
+        onUploadComplete={(url) => autoSaveImageField('branding', 'logo_url', url)}
         folder="logo"
         label="Logo"
         help="Displayed in the app header and shared links"
@@ -679,7 +716,12 @@ export default function AdminDashboard() {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
             </div>
-            <h1 className="text-lg font-bold text-gray-900">Admin Panel</h1>
+            <h1 className="text-lg font-bold text-gray-900">
+              Admin Panel
+              {settings.seo.site_name && settings.seo.site_name !== 'Scheduler' && (
+                <span className="text-gray-400 font-normal text-sm ml-2">| {settings.seo.site_name}</span>
+              )}
+            </h1>
           </div>
           <button
             onClick={handleLogout}

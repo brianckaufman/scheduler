@@ -5,6 +5,7 @@ import { useState, useRef, useCallback } from 'react';
 interface ImageUploadProps {
   value: string;
   onChange: (url: string) => void;
+  onUploadComplete?: (url: string) => void;
   folder: string;
   label: string;
   help?: string;
@@ -15,6 +16,7 @@ interface ImageUploadProps {
 export default function ImageUpload({
   value,
   onChange,
+  onUploadComplete,
   folder,
   label,
   help,
@@ -48,6 +50,8 @@ export default function ImageUpload({
 
         const { url } = await res.json();
         onChange(url);
+        // Notify parent to auto-save settings (so user doesn't have to click Save)
+        onUploadComplete?.(url);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Upload failed');
       } finally {
@@ -82,6 +86,7 @@ export default function ImageUpload({
 
   const handleRemove = () => {
     onChange('');
+    onUploadComplete?.('');
   };
 
   return (

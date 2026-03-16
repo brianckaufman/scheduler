@@ -1,9 +1,15 @@
 import type { Metadata } from 'next';
+import { getSettings } from '@/lib/settings';
 
-export const metadata: Metadata = {
-  title: 'Admin Panel | Scheduler',
-  robots: { index: false, follow: false },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const settings = await getSettings();
+  const siteName = settings.seo.site_name || 'Scheduler';
+
+  return {
+    title: `Admin Panel | ${siteName}`,
+    robots: { index: false, follow: false },
+  };
+}
 
 /**
  * Admin layout. Authentication is handled at the API level and by

@@ -66,15 +66,21 @@ export async function POST(request: Request) {
     const supabase = createAdminClient();
     const storagePath = `${path}.${ext}`;
 
-    // Delete any existing files at this path before uploading
-    const { data: existingFiles } = await supabase.storage
+    // Delete ALL existing files that match this path prefix (any extension)
+    // This ensures replacing e.g. og.png with og.jpg doesn't leave the old .png behind
+    const { data: allFiles } = await supabase.storage
       .from(BUCKET)
-      .list('', { search: path });
+      .list('');
 
-    if (existingFiles && existingFiles.length > 0) {
-      const filesToDelete = existingFiles
-        .filter((f) => f.name.startsWith(path))
+    if (allFiles && allFiles.length > 0) {
+      const filesToDelete = allFiles
+        .filter((f) => {
+          // Match files where the name (minus extension) equals the path
+          const nameWithoutExt = f.name.replace(/\.[^.]+$/, '');
+          return nameWithoutExt === path;
+        })
         .map((f) => f.name);
+
       if (filesToDelete.length > 0) {
         await supabase.storage.from(BUCKET).remove(filesToDelete);
       }
@@ -87,6 +93,7 @@ export async function POST(request: Request) {
       .upload(storagePath, buffer, {
         contentType: file.type,
         upsert: true,
+        cacheControl: '300', // 5 min cache instead of default 1 hour
       });
 
     if (uploadError) {
@@ -97,14 +104,16 @@ export async function POST(request: Request) {
       );
     }
 
-    // Get public URL
+    // Get public URL with cache-busting param
     const { data: urlData } = supabase.storage
       .from(BUCKET)
       .getPublicUrl(storagePath);
 
+    const cacheBustedUrl = `${urlData.publicUrl}?v=${Date.now()}`;
+
     return NextResponse.json({
       success: true,
-      url: urlData.publicUrl,
+      url: cacheBustedUrl,
       path: storagePath,
     });
   } catch {

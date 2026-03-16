@@ -16,7 +16,6 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: settings.seo.site_name || 'Scheduler',
     description: settings.seo.og_description || 'Find a time that works for everyone. No accounts needed.',
-    manifest: '/manifest.json',
     icons: settings.seo.favicon ? { icon: settings.seo.favicon } : undefined,
     openGraph: {
       title: settings.seo.og_title || settings.seo.site_name || 'Scheduler',
