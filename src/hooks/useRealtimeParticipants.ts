@@ -27,16 +27,24 @@ export function useRealtimeParticipants(eventId: string) {
       .on(
         'postgres_changes',
         {
-          event: 'INSERT',
+          event: '*',
           schema: 'public',
           table: 'participants',
           filter: `event_id=eq.${eventId}`,
         },
         (payload) => {
-          setParticipants((prev) => {
-            if (prev.some((p) => p.id === (payload.new as Participant).id)) return prev;
-            return [...prev, payload.new as Participant];
-          });
+          if (payload.eventType === 'INSERT') {
+            setParticipants((prev) => {
+              if (prev.some((p) => p.id === (payload.new as Participant).id)) return prev;
+              return [...prev, payload.new as Participant];
+            });
+          } else if (payload.eventType === 'DELETE') {
+            setParticipants((prev) => prev.filter((p) => p.id !== payload.old.id));
+          } else if (payload.eventType === 'UPDATE') {
+            setParticipants((prev) =>
+              prev.map((p) => p.id === (payload.new as Participant).id ? (payload.new as Participant) : p)
+            );
+          }
         }
       )
       .subscribe();
@@ -46,5 +54,9 @@ export function useRealtimeParticipants(eventId: string) {
     };
   }, [eventId]);
 
-  return { participants, loaded };
+  const removeParticipant = (pid: string) => {
+    setParticipants((prev) => prev.filter((p) => p.id !== pid));
+  };
+
+  return { participants, loaded, removeParticipant };
 }

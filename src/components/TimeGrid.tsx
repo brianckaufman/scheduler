@@ -22,8 +22,8 @@ interface TimeGridProps {
 }
 
 export default function TimeGrid({ event, participantId, isOrganizer, organizerToken, onFinalize }: TimeGridProps) {
-  const { slots: allSlots } = useRealtimeSlots(event.id);
-  const { participants } = useRealtimeParticipants(event.id);
+  const { slots: allSlots, removeByParticipant: removeSlotsForParticipant } = useRealtimeSlots(event.id);
+  const { participants, removeParticipant } = useRealtimeParticipants(event.id);
 
   // Optimistic local toggles
   const [pendingAdds, setPendingAdds] = useState<Set<string>>(new Set());
@@ -218,6 +218,10 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
   // Delete participant handler (organizer only)
   const handleDeleteParticipant = useCallback(async (pid: string) => {
     if (!organizerToken) return;
+    // Optimistic removal — update UI instantly
+    removeParticipant(pid);
+    removeSlotsForParticipant(pid);
+
     const res = await fetch(
       `/api/events/${event.id}?organizer_token=${encodeURIComponent(organizerToken)}&participant_id=${encodeURIComponent(pid)}`,
       { method: 'DELETE' }
@@ -225,7 +229,7 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
     if (!res.ok) {
       console.error('Failed to delete participant');
     }
-  }, [event.id, organizerToken]);
+  }, [event.id, organizerToken, removeParticipant, removeSlotsForParticipant]);
 
   // Finalize handler
   const handleFinalize = useCallback(async (time: string) => {

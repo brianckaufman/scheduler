@@ -49,5 +49,9 @@ export function useRealtimeSlots(eventId: string) {
     };
   }, [eventId]);
 
-  return { slots, loaded };
+  const removeByParticipant = (participantId: string) => {
+    setSlots((prev) => prev.filter((s) => s.participant_id !== participantId));
+  };
+
+  return { slots, loaded, removeByParticipant };
 }
