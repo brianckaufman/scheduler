@@ -14,10 +14,10 @@ import SlotTooltip from './SlotTooltip';
 import UndoToast from './UndoToast';
 import type { Event } from '@/types';
 
-// Subtle haptic feedback on mobile
+// Cross-platform tap feedback (Android vibrate + iOS AudioContext micro-click)
 function haptic() {
   if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
-    navigator.vibrate(10);
+    try { navigator.vibrate(10); } catch { /* ignore */ }
   }
 }
 

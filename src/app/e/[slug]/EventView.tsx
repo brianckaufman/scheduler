@@ -1,10 +1,9 @@
 'use client';
 
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { format, formatDistanceToNow, isPast } from 'date-fns';
 import { useParticipantSession } from '@/hooks/useParticipantSession';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
-import { useRealtimeSlots } from '@/hooks/useRealtimeSlots';
 import ParticipantEntry from '@/components/ParticipantEntry';
 import TimeGrid from '@/components/TimeGrid';
 import ShareLink from '@/components/ShareLink';
@@ -29,16 +28,16 @@ export default function EventView({ event: initialEvent }: EventViewProps) {
   const gridRef = useRef<HTMLDivElement>(null);
   const [justJoined, setJustJoined] = useState(false);
 
-  // Track user's slot count for "all set" feedback
-  const { slots: allSlots } = useRealtimeSlots(event.id);
-  const mySlotCount = useMemo(() => {
-    if (!participantId) return 0;
-    return allSlots.filter((s) => s.participant_id === participantId).length;
-  }, [allSlots, participantId]);
+  // Slot count from TimeGrid (via callback, avoids duplicate real-time subscription)
+  const [mySlotCount, setMySlotCount] = useState(0);
 
   // Show "all set" confirmation after first selection, with a brief delay
   const [showAllSet, setShowAllSet] = useState(false);
   const [prevSlotCount, setPrevSlotCount] = useState(0);
+
+  const handleSlotCountChange = useCallback((count: number) => {
+    setMySlotCount(count);
+  }, []);
 
   useEffect(() => {
     if (mySlotCount > 0 && prevSlotCount === 0) {
@@ -63,7 +62,6 @@ export default function EventView({ event: initialEvent }: EventViewProps) {
   // Auto-scroll to grid after joining
   useEffect(() => {
     if (justJoined && gridRef.current) {
-      // Small delay to let the grid render
       const timer = setTimeout(() => {
         gridRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         setJustJoined(false);
@@ -213,6 +211,7 @@ export default function EventView({ event: initialEvent }: EventViewProps) {
             isOrganizer={isOrganizer}
             organizerToken={localStorage.getItem(`organizer_${event.slug}`)}
             onFinalize={(time) => setEvent({ ...event, finalized_time: time })}
+            onMySlotCountChange={handleSlotCountChange}
           />
         </div>
 

@@ -20,10 +20,37 @@ export const PARTICIPANT_COLORS = [
 // Max dots to show before switching to count mode
 const MAX_DOTS = 6;
 
-// Subtle haptic feedback on mobile
+// Cross-platform tap feedback:
+// - Android/Chrome: use Vibration API
+// - iOS/Safari: use a tiny AudioContext click (iOS blocks vibrate entirely)
+let audioCtx: AudioContext | null = null;
+
 function haptic() {
+  // Try vibration first (works on Android)
   if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
-    navigator.vibrate(10);
+    try { navigator.vibrate(10); } catch { /* ignore */ }
+  }
+
+  // AudioContext micro-click for iOS and all platforms
+  try {
+    if (!audioCtx && typeof AudioContext !== 'undefined') {
+      audioCtx = new AudioContext();
+    }
+    if (audioCtx) {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      gain.gain.value = 0.01; // barely audible
+      osc.frequency.value = 1800;
+      osc.type = 'sine';
+      const now = audioCtx.currentTime;
+      osc.start(now);
+      osc.stop(now + 0.008); // 8ms micro-click
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.008);
+    }
+  } catch {
+    // AudioContext not available, degrade silently
   }
 }
 
