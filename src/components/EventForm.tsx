@@ -56,12 +56,8 @@ export default function EventForm() {
   const { addEvent } = useCreatedEvents();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [organizerFirstName, setOrganizerFirstName] = useState('');
-  const [organizerLastName, setOrganizerLastName] = useState('');
+  const [organizerName, setOrganizerName] = useState('');
   const [location, setLocation] = useState('');
-
-  // Combine into full name for API
-  const organizerName = `${organizerFirstName.trim()} ${organizerLastName.trim()}`.trim();
   const [durationMinutes, setDurationMinutes] = useState(60);
   const [responseDeadline, setResponseDeadline] = useState('');
   const [selectedDates, setSelectedDates] = useState<Date[]>([]);
@@ -174,7 +170,7 @@ export default function EventForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim() || !organizerFirstName.trim() || !organizerLastName.trim() || selectedDates.length === 0) return;
+    if (!name.trim() || !organizerName.trim() || selectedDates.length === 0) return;
     if (timeStart >= timeEnd) {
       setError(copy.form.error_time);
       return;
@@ -263,37 +259,20 @@ export default function EventForm() {
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label htmlFor="organizerFirstName" className="block text-sm font-medium text-gray-700 mb-1">
-            First name
-          </label>
-          <input
-            id="organizerFirstName"
-            type="text"
-            value={organizerFirstName}
-            onChange={(e) => setOrganizerFirstName(e.target.value)}
-            placeholder="First name"
-            className={inputClass}
-            required
-            maxLength={25}
-          />
-        </div>
-        <div>
-          <label htmlFor="organizerLastName" className="block text-sm font-medium text-gray-700 mb-1">
-            Last name
-          </label>
-          <input
-            id="organizerLastName"
-            type="text"
-            value={organizerLastName}
-            onChange={(e) => setOrganizerLastName(e.target.value)}
-            placeholder="Last name"
-            className={inputClass}
-            required
-            maxLength={25}
-          />
-        </div>
+      <div>
+        <label htmlFor="organizerName" className="block text-sm font-medium text-gray-700 mb-1">
+          {copy.form.name_label}
+        </label>
+        <input
+          id="organizerName"
+          type="text"
+          value={organizerName}
+          onChange={(e) => setOrganizerName(e.target.value)}
+          placeholder={copy.form.name_placeholder}
+          className={inputClass}
+          required
+          maxLength={50}
+        />
       </div>
 
       <div className="grid grid-cols-2 gap-4">
@@ -406,7 +385,7 @@ export default function EventForm() {
 
       <button
         type="submit"
-        disabled={loading || !name.trim() || !organizerFirstName.trim() || !organizerLastName.trim() || selectedDates.length === 0}
+        disabled={loading || !name.trim() || !organizerName.trim() || selectedDates.length === 0}
         className="w-full py-3 px-4 bg-teal-500 text-white font-semibold rounded-xl hover:bg-teal-600 hover:shadow-md hover:shadow-teal-200 transition-all duration-200 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {loading ? copy.form.submitting : copy.form.submit}

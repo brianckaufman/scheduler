@@ -18,24 +18,20 @@ export default function ParticipantEntry({ event, onJoin }: ParticipantEntryProp
   const copy = useCopy();
   const branding = useBranding();
   const [step, setStep] = useState<1 | 2>(1);
-  const [firstName_, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
+  const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-
-  // Combine first + last into full name for storage
-  const fullName = `${firstName_.trim()} ${lastName.trim()}`.trim();
 
   const deadlinePassed = event.response_deadline && isPast(new Date(event.response_deadline));
 
   const handleJoin = async () => {
-    if (!fullName) return;
+    if (!name.trim()) return;
 
     setLoading(true);
     setError('');
 
     // Sanitize: strip any HTML tags, limit length
-    const safeName = fullName.replace(/<[^>]*>/g, '').slice(0, 50);
+    const safeName = name.trim().replace(/<[^>]*>/g, '').slice(0, 50);
     if (!safeName) {
       setError(copy.onboarding.error_name);
       setLoading(false);
@@ -75,7 +71,7 @@ export default function ParticipantEntry({ event, onJoin }: ParticipantEntryProp
 
   const handleNextStep = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!firstName_.trim()) return;
+    if (!name.trim()) return;
     setStep(2);
   };
 
@@ -153,37 +149,23 @@ export default function ParticipantEntry({ event, onJoin }: ParticipantEntryProp
 
               {/* Name entry */}
               <form onSubmit={handleNextStep} className="px-6 py-5 space-y-4">
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-500 mb-1.5">First name</label>
-                    <input
-                      type="text"
-                      value={firstName_}
-                      onChange={(e) => setFirstName(e.target.value)}
-                      placeholder="First name"
-                      autoFocus
-                      maxLength={25}
-                      className="w-full px-4 py-3.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-transparent text-base text-gray-900 placeholder-gray-400"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-500 mb-1.5">Last name</label>
-                    <input
-                      type="text"
-                      value={lastName}
-                      onChange={(e) => setLastName(e.target.value)}
-                      placeholder="Last name"
-                      maxLength={25}
-                      className="w-full px-4 py-3.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-transparent text-base text-gray-900 placeholder-gray-400"
-                      required
-                    />
-                  </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-500 mb-1.5">{copy.onboarding.name_label}</label>
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder={copy.onboarding.name_placeholder}
+                    autoFocus
+                    maxLength={50}
+                    className="w-full px-4 py-3.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-transparent text-base text-gray-900 placeholder-gray-400"
+                    required
+                  />
                 </div>
                 {error && <p className="text-red-500 text-sm">{error}</p>}
                 <button
                   type="submit"
-                  disabled={!firstName_.trim() || !lastName.trim()}
+                  disabled={!name.trim()}
                   className="w-full py-3.5 px-4 bg-teal-500 text-white text-base font-semibold rounded-xl hover:bg-teal-600 transition-all duration-200 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                 >
                   {copy.onboarding.next}
@@ -207,7 +189,7 @@ export default function ParticipantEntry({ event, onJoin }: ParticipantEntryProp
                   </svg>
                 </div>
                 <h2 className="text-xl font-bold text-gray-900">
-                  {interpolate(copy.onboarding.greeting, { name: firstName_.trim() })}
+                  {interpolate(copy.onboarding.greeting, { name: firstName(name.trim()) })}
                 </h2>
                 <p className="text-base text-gray-500 mt-1">{copy.onboarding.greeting_subtitle}</p>
               </div>
