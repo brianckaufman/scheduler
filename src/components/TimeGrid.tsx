@@ -41,7 +41,7 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
 
   // Tooltip
   const [tooltipSlot, setTooltipSlot] = useState<string | null>(null);
-  const tooltipTimeout = useRef<ReturnType<typeof setTimeout>>();
+  const tooltipTimeout = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 640);
