@@ -48,6 +48,21 @@
   100% { background-position: 200% 0; }
 }
 
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(16px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes toast-out {
+  from { opacity: 1; transform: translateY(0) scale(1); }
+  to { opacity: 0; transform: translateY(16px) scale(0.95); }
+}
+
+@keyframes checkmark-draw {
+  from { stroke-dashoffset: 24; }
+  to { stroke-dashoffset: 0; }
+}
+
 .animate-fade-in {
   animation: fade-in 0.3s ease-out both;
 }
@@ -73,6 +88,14 @@
   animation: pulse-soft 1.5s ease-in-out infinite;
 }
 
+.animate-toast-in {
+  animation: toast-in 0.25s ease-out both;
+}
+
+.animate-toast-out {
+  animation: toast-out 0.2s ease-in both;
+}
+
 /* Staggered children fade-in */
 .stagger-children > * {
   animation: fade-in 0.3s ease-out both;
@@ -88,7 +111,21 @@
   animation: fade-in-scale 0.2s ease-out both;
 }
 
-/* Slot cell hover (desktop only) — darker gray bg + border, no shadow */
+/* Skeleton shimmer loading effect */
+.skeleton-shimmer {
+  background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+/* Checkmark animation for copy success */
+.checkmark-draw {
+  stroke-dasharray: 24;
+  stroke-dashoffset: 0;
+  animation: checkmark-draw 0.3s ease-out both;
+}
+
+/* Slot cell hover (desktop only): darker gray bg + border, no shadow */
 @media (hover: hover) {
   .slot-cell:hover {
     background-color: #d1d5db !important; /* gray-300 */

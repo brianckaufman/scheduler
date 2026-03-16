@@ -70,8 +70,33 @@ export default function EventForm() {
     if (isBefore(date, today)) return;
     setSelectedDates((prev) => {
       const exists = prev.find((d) => isSameDay(d, date));
-      if (exists) return prev.filter((d) => !isSameDay(d, date));
-      return [...prev, date].sort((a, b) => a.getTime() - b.getTime());
+      if (exists) {
+        const updated = prev.filter((d) => !isSameDay(d, date));
+        // Reset times when all dates are cleared
+        if (updated.length === 0) {
+          setTimeStart('09:00');
+          setTimeEnd('17:00');
+        }
+        return updated;
+      }
+      const updated = [...prev, date].sort((a, b) => a.getTime() - b.getTime());
+
+      // Smart time suggestion: when first date is selected, check if all selected
+      // dates are weekends and adjust times accordingly
+      if (prev.length === 0) {
+        const day = date.getDay();
+        if (day === 0 || day === 6) {
+          // Weekend: suggest broader times (10 AM - 8 PM)
+          setTimeStart('10:00');
+          setTimeEnd('20:00');
+        } else {
+          // Weekday: standard business hours
+          setTimeStart('09:00');
+          setTimeEnd('17:00');
+        }
+      }
+
+      return updated;
     });
   };
 

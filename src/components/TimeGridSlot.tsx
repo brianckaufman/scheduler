@@ -20,6 +20,13 @@ export const PARTICIPANT_COLORS = [
 // Max dots to show before switching to count mode
 const MAX_DOTS = 6;
 
+// Subtle haptic feedback on mobile
+function haptic() {
+  if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+    navigator.vibrate(10);
+  }
+}
+
 interface TimeGridSlotProps {
   slotKey: string;
   isMine: boolean;
@@ -48,7 +55,6 @@ function TimeGridSlotInner({
   onRelease,
 }: TimeGridSlotProps) {
   const mouseDidDrag = useRef(false);
-  // Suppress unused var warning — onRelease kept for API compatibility
   void onRelease;
 
   const totalAvailable = participantColors.length;
@@ -63,11 +69,10 @@ function TimeGridSlotInner({
     bgClass = 'bg-green-100';
     extra = 'ring-2 ring-green-300';
   } else if (totalAvailable > 0 && useCountMode) {
-    // Heat-map: more people = deeper teal
     const fraction = totalAvailable / totalParticipants;
-    const alpha = 0.12 + fraction * 0.45; // 12% to 57% opacity
+    const alpha = 0.12 + fraction * 0.45;
     bgClass = '';
-    heatStyle = { backgroundColor: `rgba(20, 184, 166, ${alpha})` }; // teal
+    heatStyle = { backgroundColor: `rgba(20, 184, 166, ${alpha})` };
     if (isMine) {
       extra = 'ring-2 ring-teal-300';
     }
@@ -91,6 +96,7 @@ function TimeGridSlotInner({
       mouseDidDrag.current = false;
       return;
     }
+    haptic();
     onToggle(slotKey);
   }, [slotKey, onToggle]);
 
@@ -112,7 +118,6 @@ function TimeGridSlotInner({
       style={heatStyle}
     >
       {useCountMode ? (
-        // Count mode: show number instead of dots for large groups
         totalAvailable > 0 && (
           <span className={`text-[11px] font-bold ${
             isAllMatch ? 'text-green-700' : isMine ? 'text-teal-700' : 'text-teal-600'
@@ -121,7 +126,6 @@ function TimeGridSlotInner({
           </span>
         )
       ) : (
-        // Dot mode: show individual colored dots for small groups
         participantColors.map((color, i) => (
           <span
             key={i}

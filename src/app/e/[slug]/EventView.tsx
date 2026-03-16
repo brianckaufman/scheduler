@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { format, formatDistanceToNow, isPast } from 'date-fns';
 import { useParticipantSession } from '@/hooks/useParticipantSession';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
@@ -10,6 +10,7 @@ import TimeGrid from '@/components/TimeGrid';
 import ShareLink from '@/components/ShareLink';
 import FinalizedBanner from '@/components/FinalizedBanner';
 import EditEventModal from '@/components/EditEventModal';
+import SkeletonLoader from '@/components/SkeletonLoader';
 import type { Event } from '@/types';
 
 interface EventViewProps {
@@ -24,6 +25,10 @@ export default function EventView({ event: initialEvent }: EventViewProps) {
   const { supported: pushSupported, isSubscribed, subscribe } = usePushNotifications(event.id, participantId);
   const [pushDismissed, setPushDismissed] = useState(false);
 
+  // Ref for auto-scrolling to the grid after onboarding
+  const gridRef = useRef<HTMLDivElement>(null);
+  const [justJoined, setJustJoined] = useState(false);
+
   // Track user's slot count for "all set" feedback
   const { slots: allSlots } = useRealtimeSlots(event.id);
   const mySlotCount = useMemo(() => {
@@ -36,12 +41,10 @@ export default function EventView({ event: initialEvent }: EventViewProps) {
   const [prevSlotCount, setPrevSlotCount] = useState(0);
 
   useEffect(() => {
-    // Went from 0 → 1+ slots: user just started selecting
     if (mySlotCount > 0 && prevSlotCount === 0) {
       const timer = setTimeout(() => setShowAllSet(true), 800);
       return () => clearTimeout(timer);
     }
-    // Went back to 0: hide the message
     if (mySlotCount === 0) {
       setShowAllSet(false);
     }
@@ -57,6 +60,23 @@ export default function EventView({ event: initialEvent }: EventViewProps) {
     setPushDismissed(localStorage.getItem(`push_dismissed_${event.id}`) === 'true');
   }, [event.id]);
 
+  // Auto-scroll to grid after joining
+  useEffect(() => {
+    if (justJoined && gridRef.current) {
+      // Small delay to let the grid render
+      const timer = setTimeout(() => {
+        gridRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        setJustJoined(false);
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [justJoined]);
+
+  const handleJoin = (id: string, name: string) => {
+    saveSession(id, name);
+    setJustJoined(true);
+  };
+
   const handleEnableNotifications = async () => {
     const success = await subscribe();
     if (!success) {
@@ -71,18 +91,14 @@ export default function EventView({ event: initialEvent }: EventViewProps) {
   };
 
   if (!loaded) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-gray-400 text-sm">Loading...</div>
-      </div>
-    );
+    return <SkeletonLoader />;
   }
 
   if (!hasSession || !participantId) {
     return (
       <ParticipantEntry
         event={event}
-        onJoin={(id, name) => saveSession(id, name)}
+        onJoin={handleJoin}
       />
     );
   }
@@ -186,10 +202,11 @@ export default function EventView({ event: initialEvent }: EventViewProps) {
         )}
 
         <div className="mb-4">
-          <ShareLink eventName={event.name} />
+          <ShareLink eventName={event.name} isOrganizer={isOrganizer} />
         </div>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+        {/* Grid section with scroll target ref */}
+        <div ref={gridRef} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
           <TimeGrid
             event={event}
             participantId={participantId}
@@ -225,7 +242,7 @@ export default function EventView({ event: initialEvent }: EventViewProps) {
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
               </svg>
-              Create your own — it&apos;s free
+              Create your own for free
             </a>
             <p className="text-[10px] text-gray-300 mt-2">No account needed</p>
           </div>

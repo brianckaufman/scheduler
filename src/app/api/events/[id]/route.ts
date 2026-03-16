@@ -122,7 +122,7 @@ export async function PATCH(
       + ' at ' + finalDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
 
     sendPushNotifications(supabase, id, {
-      title: `${data.name} — Time Picked!`,
+      title: `${data.name}: Time Picked!`,
       body: `${data.organizer_name || 'The organizer'} picked ${timeStr}`,
       url: `/e/${data.slug}`,
     }).catch((err) => console.error('Push notification error:', err));

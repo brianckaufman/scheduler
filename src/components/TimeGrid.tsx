@@ -11,7 +11,48 @@ import TimeGridSlot, { PARTICIPANT_COLORS } from './TimeGridSlot';
 import OverlapSummary from './OverlapSummary';
 import BestTimes from './BestTimes';
 import SlotTooltip from './SlotTooltip';
+import UndoToast from './UndoToast';
 import type { Event } from '@/types';
+
+// Subtle haptic feedback on mobile
+function haptic() {
+  if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+    navigator.vibrate(10);
+  }
+}
+
+// Friendly timezone name (e.g., "Eastern Time", "Pacific Time")
+function getTimezoneLabel(tz: string): string {
+  try {
+    // Use Intl to get a readable abbreviation
+    const now = new Date();
+    const short = now.toLocaleTimeString('en-US', { timeZone: tz, timeZoneName: 'short' });
+    const abbr = short.split(' ').pop() || '';
+    // Map common abbreviations to friendly names
+    const friendlyMap: Record<string, string> = {
+      EST: 'Eastern Time',
+      EDT: 'Eastern Time',
+      CST: 'Central Time',
+      CDT: 'Central Time',
+      MST: 'Mountain Time',
+      MDT: 'Mountain Time',
+      PST: 'Pacific Time',
+      PDT: 'Pacific Time',
+      GMT: 'GMT',
+      UTC: 'UTC',
+      BST: 'British Summer Time',
+      CET: 'Central European Time',
+      CEST: 'Central European Time',
+      IST: 'India Standard Time',
+      JST: 'Japan Standard Time',
+      AEST: 'Australian Eastern Time',
+      AEDT: 'Australian Eastern Time',
+    };
+    return friendlyMap[abbr] || abbr || tz.replace(/_/g, ' ').split('/').pop() || tz;
+  } catch {
+    return tz.replace(/_/g, ' ').split('/').pop() || tz;
+  }
+}
 
 interface TimeGridProps {
   event: Event;
@@ -33,6 +74,13 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
   const [isDragging, setIsDragging] = useState(false);
   const [dragMode, setDragMode] = useState<'add' | 'remove'>('add');
   const draggedSlots = useRef<Set<string>>(new Set());
+
+  // Undo toast for drag operations
+  const [undoToast, setUndoToast] = useState<{
+    message: string;
+    slots: string[];
+    mode: 'add' | 'remove';
+  } | null>(null);
 
   // Mobile day tabs
   const [activeDay, setActiveDay] = useState<number>(0);
@@ -175,19 +223,42 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
     setIsDragging(true);
     setDragMode(mode);
     draggedSlots.current = new Set([slotKey]);
+    haptic();
     toggleSlot(slotKey, mode);
   }, [mySlots, toggleSlot]);
 
   const handleDragEnter = useCallback((slotKey: string) => {
     if (!isDragging || draggedSlots.current.has(slotKey)) return;
     draggedSlots.current.add(slotKey);
+    haptic();
     toggleSlot(slotKey, dragMode);
   }, [isDragging, dragMode, toggleSlot]);
 
   const handleDragEnd = useCallback(() => {
+    // Show undo toast if multiple slots were dragged
+    if (isDragging && draggedSlots.current.size > 1) {
+      const count = draggedSlots.current.size;
+      const slotsArray = Array.from(draggedSlots.current);
+      const mode = dragMode;
+      setUndoToast({
+        message: `${count} time${count !== 1 ? 's' : ''} ${mode === 'add' ? 'selected' : 'deselected'}`,
+        slots: slotsArray,
+        mode,
+      });
+    }
     setIsDragging(false);
     draggedSlots.current = new Set();
-  }, []);
+  }, [isDragging, dragMode]);
+
+  // Undo handler
+  const handleUndo = useCallback(() => {
+    if (!undoToast) return;
+    const reverseMode = undoToast.mode === 'add' ? 'remove' : 'add';
+    for (const slotKey of undoToast.slots) {
+      toggleSlot(slotKey, reverseMode);
+    }
+    setUndoToast(null);
+  }, [undoToast, toggleSlot]);
 
   const gridRef = useRef<HTMLDivElement>(null);
 
@@ -214,7 +285,7 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
     if (tooltipTimeout.current) clearTimeout(tooltipTimeout.current);
   }, []);
 
-  // Overlap status (always visible, not behind toggle)
+  // Overlap status
   const overlapStatus = useMemo(() => {
     if (totalParticipants < 2) return 'waiting' as const;
     const full = getFullOverlapSlots(overlapMap, totalParticipants);
@@ -224,7 +295,6 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
   // Delete participant handler (organizer only)
   const handleDeleteParticipant = useCallback(async (pid: string) => {
     if (!organizerToken) return;
-    // Optimistic removal — update UI instantly
     removeParticipant(pid);
     removeSlotsForParticipant(pid);
 
@@ -250,6 +320,9 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
   // Visible dates (all on desktop, single on mobile)
   const visibleDates = isMobile && dates.length > 1 ? [dates[activeDay]] : dates;
 
+  // Timezone label
+  const timezoneLabel = useMemo(() => getTimezoneLabel(event.timezone), [event.timezone]);
+
   return (
     <div className="space-y-6" onMouseUp={handleDragEnd} onMouseLeave={handleDragEnd}>
       {/* Always-visible status notice */}
@@ -272,7 +345,7 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
             <button
               type="button"
               onClick={() => setShowTimePicker(true)}
-              className="mt-2 px-5 py-2 bg-green-600 text-white text-sm font-semibold rounded-full hover:bg-green-700 shadow-sm hover:shadow-md transition-all duration-200 active:scale-95"
+              className="mt-2 px-5 py-2 bg-green-600 text-white text-sm font-semibold rounded-full hover:bg-green-700 shadow-sm hover:shadow-md transition-all duration-200 active:scale-95 cursor-pointer"
             >
               Pick a Time
             </button>
@@ -288,7 +361,7 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
       <button
         type="button"
         onClick={() => setShowResults((v) => !v)}
-        className="w-full flex items-center justify-between px-4 py-2.5 bg-gray-50 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors"
+        className="w-full flex items-center justify-between px-4 py-2.5 bg-gray-50 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors cursor-pointer"
       >
         <span>Best Times &amp; Overlap</span>
         <svg
@@ -319,7 +392,7 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
               key={date}
               type="button"
               onClick={() => setActiveDay(i)}
-              className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 ${
+              className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 cursor-pointer ${
                 i === activeDay
                   ? 'bg-teal-500 text-white'
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -330,6 +403,14 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
           ))}
         </div>
       )}
+
+      {/* Timezone indicator */}
+      <div className="flex items-center gap-1.5 text-xs text-gray-400">
+        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <span>Times shown in {timezoneLabel}</span>
+      </div>
 
       <div
         className="time-grid overflow-x-auto -mx-4 px-4"
@@ -356,7 +437,7 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
                 <button
                   type="button"
                   onClick={() => handleDayToggle(date)}
-                  className="mt-1 text-[10px] text-teal-500 hover:text-teal-700 font-medium"
+                  className="mt-1 text-[10px] text-teal-500 hover:text-teal-700 font-medium cursor-pointer"
                 >
                   {allSelected ? 'Clear' : 'All'}
                 </button>
@@ -437,6 +518,15 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
         />
       )}
 
+      {/* Undo toast */}
+      {undoToast && (
+        <UndoToast
+          message={undoToast.message}
+          onUndo={handleUndo}
+          onDismiss={() => setUndoToast(null)}
+        />
+      )}
+
       {/* Time Picker Modal (organizer only) */}
       {showTimePicker && (
         <div
@@ -449,7 +539,7 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
               <button
                 type="button"
                 onClick={() => setShowTimePicker(false)}
-                className="p-1.5 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-colors"
+                className="p-1.5 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-colors cursor-pointer"
               >
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
