@@ -7,7 +7,7 @@ import { generateSlots } from '@/lib/slots';
 import { computeOverlap } from '@/lib/overlap';
 import { useRealtimeSlots } from '@/hooks/useRealtimeSlots';
 import { useRealtimeParticipants } from '@/hooks/useRealtimeParticipants';
-import TimeGridSlot from './TimeGridSlot';
+import TimeGridSlot, { PARTICIPANT_COLORS } from './TimeGridSlot';
 import ParticipantList from './ParticipantList';
 import OverlapSummary from './OverlapSummary';
 import BestTimes from './BestTimes';
@@ -114,6 +114,14 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
   }, [serverMySlots]);
 
   const totalParticipants = participants.length;
+
+  const participantColorMap = useMemo(() => {
+    const map = new Map<string, string>();
+    participants.forEach((p, i) => {
+      map.set(p.id, PARTICIPANT_COLORS[i % PARTICIPANT_COLORS.length]);
+    });
+    return map;
+  }, [participants]);
 
   const toggleSlot = useCallback(
     async (slotKey: string, forceMode?: 'add' | 'remove') => {
@@ -309,6 +317,19 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
                 }
                 const isAllMatch = totalParticipants > 1 && othersCount === totalParticipants;
 
+                // Build color dots for this slot
+                const slotParticipantColors: string[] = [];
+                if (isMine) {
+                  slotParticipantColors.push(participantColorMap.get(participantId) || PARTICIPANT_COLORS[0]);
+                }
+                if (participantSet) {
+                  for (const pid of participantSet) {
+                    if (pid !== participantId) {
+                      slotParticipantColors.push(participantColorMap.get(pid) || PARTICIPANT_COLORS[0]);
+                    }
+                  }
+                }
+
                 return (
                   <TimeGridSlot
                     key={slotKey}
@@ -317,6 +338,7 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
                     othersCount={othersCount}
                     totalParticipants={totalParticipants}
                     isAllMatch={isAllMatch}
+                    participantColors={slotParticipantColors}
                     onDragStart={handleDragStart}
                     onDragEnter={handleDragEnter}
                     onHold={handleSlotHold}
@@ -339,18 +361,23 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
         />
       )}
 
-      <div className="grid grid-cols-2 gap-3 text-xs">
+      <div className="space-y-2 text-xs">
         <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded bg-teal-400" />
-          <span className="text-gray-600">Your availability</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded bg-green-200" />
-          <span className="text-gray-600">Others available</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded bg-green-400 ring-2 ring-green-300" />
+          <div className="w-4 h-4 rounded bg-green-100 ring-2 ring-green-300" />
           <span className="text-gray-600">Everyone can meet</span>
+        </div>
+        <div className="flex flex-wrap gap-3">
+          {participants.map((p) => (
+            <div key={p.id} className="flex items-center gap-1.5">
+              <span
+                className="inline-block w-3 h-3 rounded-full"
+                style={{ backgroundColor: participantColorMap.get(p.id) }}
+              />
+              <span className="text-gray-600">
+                {p.id === participantId ? `${p.name} (you)` : p.name}
+              </span>
+            </div>
+          ))}
         </div>
       </div>
 
