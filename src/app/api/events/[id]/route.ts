@@ -99,6 +99,14 @@ export async function PATCH(
   if ('response_deadline' in updates) {
     safeUpdate.response_deadline = updates.response_deadline || null;
   }
+  if ('max_participants' in updates) {
+    const val = updates.max_participants;
+    if (val === null || val === '' || val === 0) {
+      safeUpdate.max_participants = null;
+    } else if (typeof val === 'number' && val >= 2 && val <= 1000) {
+      safeUpdate.max_participants = val;
+    }
+  }
 
   if (Object.keys(safeUpdate).length === 0) {
     return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 });
@@ -144,13 +152,10 @@ export async function DELETE(
   const { searchParams } = new URL(request.url);
   const organizer_token = searchParams.get('organizer_token');
   const participant_id = searchParams.get('participant_id');
+  const delete_event = searchParams.get('delete_event');
 
-  if (!organizer_token || !participant_id) {
+  if (!organizer_token) {
     return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 });
-  }
-
-  if (!isValidUUID(participant_id)) {
-    return NextResponse.json({ error: 'Invalid participant ID' }, { status: 400 });
   }
 
   // Rate limit: 30 deletes per IP per hour
@@ -164,6 +169,29 @@ export async function DELETE(
 
   if (!(await verifyOrganizer(supabase, id, organizer_token))) {
     return NextResponse.json({ error: 'Only the organizer can do this' }, { status: 403 });
+  }
+
+  // Delete entire event
+  if (delete_event === 'true') {
+    // Delete availability_slots, then participants, then event
+    await supabase.from('availability_slots').delete().eq('event_id', id);
+    await supabase.from('participants').delete().eq('event_id', id);
+    const { error } = await supabase.from('events').delete().eq('id', id);
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true, deleted: 'event' });
+  }
+
+  // Delete a single participant
+  if (!participant_id) {
+    return NextResponse.json({ error: 'Missing participant_id parameter' }, { status: 400 });
+  }
+
+  if (!isValidUUID(participant_id)) {
+    return NextResponse.json({ error: 'Invalid participant ID' }, { status: 400 });
   }
 
   // Delete participant's availability slots first

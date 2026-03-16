@@ -35,6 +35,21 @@ export default function ParticipantEntry({ event, onJoin }: ParticipantEntryProp
     }
 
     const supabase = createClient();
+
+    // Check participant limit before joining
+    if (event.max_participants) {
+      const { count } = await supabase
+        .from('participants')
+        .select('*', { count: 'exact', head: true })
+        .eq('event_id', event.id);
+
+      if (count !== null && count >= event.max_participants) {
+        setError(`This event is full (max ${event.max_participants} participants).`);
+        setLoading(false);
+        return;
+      }
+    }
+
     const { data, error: err } = await supabase
       .from('participants')
       .insert({ event_id: event.id, name: safeName })

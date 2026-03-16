@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
   }
 
-  const { name, description, organizerName, location, durationMinutes, responseDeadline, dates, timeStart, timeEnd, timezone } = body;
+  const { name, description, organizerName, location, durationMinutes, responseDeadline, maxParticipants, dates, timeStart, timeEnd, timezone } = body;
 
   // --- Input validation ---
   if (!name || typeof name !== 'string' || !name.trim()) {
@@ -69,6 +69,15 @@ export async function POST(request: NextRequest) {
   const validDurations = [10, 15, 30, 45, 60, 90, 120, 180, 240];
   const safeDuration = validDurations.includes(durationMinutes) ? durationMinutes : 30;
 
+  // Validate max participants (optional)
+  let safeMaxParticipants: number | null = null;
+  if (maxParticipants !== undefined && maxParticipants !== null && maxParticipants !== '' && maxParticipants !== 0) {
+    const num = Number(maxParticipants);
+    if (Number.isInteger(num) && num >= 2 && num <= 1000) {
+      safeMaxParticipants = num;
+    }
+  }
+
   // --- Sanitize text inputs ---
   const safeName = sanitizeText(name, 100);
   const safeDescription = description ? sanitizeText(description, 500) : null;
@@ -93,6 +102,7 @@ export async function POST(request: NextRequest) {
       location: safeLocation,
       duration_minutes: safeDuration,
       response_deadline: responseDeadline || null,
+      max_participants: safeMaxParticipants,
       organizer_token: organizerToken,
       dates,
       time_start: timeStart,

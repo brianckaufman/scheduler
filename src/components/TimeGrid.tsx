@@ -643,6 +643,46 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
             </div>
           )}
         </div>
+
+        {/* Export CSV (organizer only) */}
+        {isOrganizer && participants.length > 0 && (
+          <button
+            type="button"
+            onClick={() => {
+              const header = 'Name,Available Times\n';
+              const rows = participants.map((p) => {
+                const pSlots = allSlots
+                  .filter((s) => s.participant_id === p.id)
+                  .map((s) => {
+                    const d = new Date(s.slot_start);
+                    return format(d, 'EEE MMM d, h:mm a');
+                  })
+                  .sort()
+                  .join('; ');
+                const safeName = p.name.includes(',') ? `"${p.name}"` : p.name;
+                const safeSlots = pSlots.includes(',') ? `"${pSlots}"` : pSlots;
+                return `${safeName},${safeSlots}`;
+              }).join('\n');
+
+              const csv = header + rows;
+              const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = `${event.name.replace(/[^a-zA-Z0-9 ]/g, '').replace(/\s+/g, '-')}-participants.csv`;
+              document.body.appendChild(a);
+              a.click();
+              document.body.removeChild(a);
+              URL.revokeObjectURL(url);
+            }}
+            className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-teal-600 hover:bg-gray-50 rounded-xl transition-colors cursor-pointer"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            Export Participants (CSV)
+          </button>
+        )}
       </div>
     </div>
   );

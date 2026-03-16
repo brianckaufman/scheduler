@@ -59,6 +59,7 @@ export default function EventForm() {
   const [durationMinutes, setDurationMinutes] = useState(60);
   const [responseDeadline, setResponseDeadline] = useState('');
   const [selectedDates, setSelectedDates] = useState<Date[]>([]);
+  const [maxParticipants, setMaxParticipants] = useState('');
   const [timeStart, setTimeStart] = useState('09:00');
   const [timeEnd, setTimeEnd] = useState('17:00');
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -186,6 +187,7 @@ export default function EventForm() {
           organizerName: organizerName.trim() || null,
           location: location.trim() || null,
           durationMinutes,
+          maxParticipants: maxParticipants ? parseInt(maxParticipants, 10) : null,
           responseDeadline: responseDeadline
             ? new Date(responseDeadline + 'T23:59:59').toISOString()
             : null,
@@ -349,6 +351,27 @@ export default function EventForm() {
             className={selectClass}
           />
         </div>
+      </div>
+
+      <div>
+        <label htmlFor="maxParticipants" className="block text-sm font-medium text-gray-700 mb-1">
+          Max participants <span className="text-gray-400 font-normal">(optional)</span>
+        </label>
+        <input
+          id="maxParticipants"
+          type="number"
+          value={maxParticipants}
+          onChange={(e) => setMaxParticipants(e.target.value)}
+          placeholder="No limit"
+          min={2}
+          max={1000}
+          className={inputClass}
+        />
+        {maxParticipants && parseInt(maxParticipants, 10) > 0 && (
+          <p className="text-xs text-gray-400 mt-1">
+            New participants will be blocked after {maxParticipants} have joined
+          </p>
+        )}
       </div>
 
       {error && (

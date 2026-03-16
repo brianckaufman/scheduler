@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { format, formatDistanceToNow, isPast } from 'date-fns';
 import { useCopy, interpolate } from '@/contexts/CopyContext';
 import { useParticipantSession } from '@/hooks/useParticipantSession';
@@ -19,6 +20,7 @@ interface EventViewProps {
 
 export default function EventView({ event: initialEvent }: EventViewProps) {
   const copy = useCopy();
+  const router = useRouter();
   const [event, setEvent] = useState(initialEvent);
   const [isOrganizer, setIsOrganizer] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -75,6 +77,15 @@ export default function EventView({ event: initialEvent }: EventViewProps) {
   const handleJoin = (id: string, name: string) => {
     saveSession(id, name);
     setJustJoined(true);
+  };
+
+  const handleDeleteEvent = () => {
+    // Clean up local storage
+    localStorage.removeItem(`organizer_${event.slug}`);
+    localStorage.removeItem(`participant_${event.slug}`);
+    localStorage.removeItem(`push_dismissed_${event.id}`);
+    // Redirect to home
+    router.push('/');
   };
 
   const handleEnableNotifications = async () => {
@@ -256,6 +267,7 @@ export default function EventView({ event: initialEvent }: EventViewProps) {
           organizerToken={localStorage.getItem(`organizer_${event.slug}`) || ''}
           onClose={() => setShowEditModal(false)}
           onSave={(updated) => setEvent(updated)}
+          onDelete={handleDeleteEvent}
         />
       )}
     </div>

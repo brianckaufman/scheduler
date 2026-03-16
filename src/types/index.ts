@@ -8,6 +8,7 @@ export interface Event {
   duration_minutes: number;
   response_deadline: string | null;
   finalized_time: string | null;
+  max_participants: number | null;
   dates: string[];
   time_start: string;
   time_end: string;
