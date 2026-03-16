@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { sendPushNotifications } from '@/lib/push';
+import { sanitizeText, sanitizeName } from '@/lib/sanitize';
 
 function getClientIp(request: NextRequest): string {
   return (
@@ -55,7 +56,7 @@ export async function PATCH(
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
   }
 
-  const { finalized_time, organizer_token } = body;
+  const { organizer_token, ...updates } = body;
 
   if (!organizer_token || typeof organizer_token !== 'string') {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -67,10 +68,45 @@ export async function PATCH(
     return NextResponse.json({ error: 'Only the organizer can do this' }, { status: 403 });
   }
 
-  // Only allow finalized_time to be set (not arbitrary fields)
+  // Build safe update object — only allow specific fields
+  const safeUpdate: Record<string, unknown> = {};
+
+  if ('finalized_time' in updates) {
+    safeUpdate.finalized_time = updates.finalized_time || null;
+  }
+  if ('name' in updates && typeof updates.name === 'string') {
+    const safeName = sanitizeText(updates.name, 100);
+    if (!safeName) return NextResponse.json({ error: 'Event name cannot be empty' }, { status: 400 });
+    safeUpdate.name = safeName;
+  }
+  if ('description' in updates) {
+    safeUpdate.description = updates.description ? sanitizeText(updates.description, 500) : null;
+  }
+  if ('organizer_name' in updates && typeof updates.organizer_name === 'string') {
+    const safeName = sanitizeName(updates.organizer_name);
+    if (!safeName) return NextResponse.json({ error: 'Organizer name cannot be empty' }, { status: 400 });
+    safeUpdate.organizer_name = safeName;
+  }
+  if ('location' in updates) {
+    safeUpdate.location = updates.location ? sanitizeText(updates.location, 100) : null;
+  }
+  if ('duration_minutes' in updates) {
+    const valid = [10, 15, 30, 45, 60, 90, 120, 180, 240];
+    if (valid.includes(updates.duration_minutes)) {
+      safeUpdate.duration_minutes = updates.duration_minutes;
+    }
+  }
+  if ('response_deadline' in updates) {
+    safeUpdate.response_deadline = updates.response_deadline || null;
+  }
+
+  if (Object.keys(safeUpdate).length === 0) {
+    return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 });
+  }
+
   const { data, error } = await supabase
     .from('events')
-    .update({ finalized_time: finalized_time || null })
+    .update(safeUpdate)
     .eq('id', id)
     .select()
     .single();
@@ -80,8 +116,8 @@ export async function PATCH(
   }
 
   // Send push notifications when a time is finalized (not when un-finalizing)
-  if (finalized_time && data) {
-    const finalDate = new Date(finalized_time);
+  if (updates.finalized_time && data) {
+    const finalDate = new Date(updates.finalized_time);
     const timeStr = finalDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
       + ' at ' + finalDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
 
