@@ -17,7 +17,7 @@ export const PARTICIPANT_COLORS = [
   '#a855f7', // purple-500
 ];
 
-const SCROLL_THRESHOLD = 10; // pixels of movement before we consider it a scroll
+const SCROLL_THRESHOLD = 30; // pixels of movement before we consider it a scroll (needs to be generous for iPhone tap jitter)
 
 interface TimeGridSlotProps {
   slotKey: string;
