@@ -1,0 +1,360 @@
+'use client';
+
+import { useMemo, useCallback, useState, useRef, useEffect } from 'react';
+import { format, parseISO } from 'date-fns';
+import { createClient } from '@/lib/supabase/client';
+import { generateSlots } from '@/lib/slots';
+import { computeOverlap } from '@/lib/overlap';
+import { useRealtimeSlots } from '@/hooks/useRealtimeSlots';
+import { useRealtimeParticipants } from '@/hooks/useRealtimeParticipants';
+import TimeGridSlot from './TimeGridSlot';
+import ParticipantList from './ParticipantList';
+import OverlapSummary from './OverlapSummary';
+import BestTimes from './BestTimes';
+import SlotTooltip from './SlotTooltip';
+import type { Event } from '@/types';
+
+interface TimeGridProps {
+  event: Event;
+  participantId: string;
+  isOrganizer?: boolean;
+  organizerToken?: string | null;
+  onFinalize?: (time: string) => void;
+}
+
+export default function TimeGrid({ event, participantId, isOrganizer, organizerToken, onFinalize }: TimeGridProps) {
+  const { slots: allSlots } = useRealtimeSlots(event.id);
+  const { participants } = useRealtimeParticipants(event.id);
+
+  // Optimistic local toggles
+  const [pendingAdds, setPendingAdds] = useState<Set<string>>(new Set());
+  const [pendingRemoves, setPendingRemoves] = useState<Set<string>>(new Set());
+
+  // Drag state
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragMode, setDragMode] = useState<'add' | 'remove'>('add');
+  const draggedSlots = useRef<Set<string>>(new Set());
+
+  // Mobile day tabs
+  const [activeDay, setActiveDay] = useState<number>(0);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Tooltip
+  const [tooltipSlot, setTooltipSlot] = useState<string | null>(null);
+  const tooltipTimeout = useRef<ReturnType<typeof setTimeout>>();
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 640);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
+
+  const gridSlots = useMemo(
+    () => generateSlots(event.dates, event.time_start, event.time_end, event.timezone),
+    [event.dates, event.time_start, event.time_end, event.timezone]
+  );
+
+  const { dates, timeLabels, slotGrid } = useMemo(() => {
+    const dateSet = new Set<string>();
+    const timeSet = new Set<string>();
+    const grid = new Map<string, string>();
+
+    for (const slot of gridSlots) {
+      const d = new Date(slot);
+      const dateKey = format(d, 'yyyy-MM-dd');
+      const timeKey = format(d, 'HH:mm');
+      dateSet.add(dateKey);
+      timeSet.add(timeKey);
+      grid.set(`${dateKey}|${timeKey}`, slot);
+    }
+
+    return {
+      dates: Array.from(dateSet).sort(),
+      timeLabels: Array.from(timeSet).sort(),
+      slotGrid: grid,
+    };
+  }, [gridSlots]);
+
+  const overlapMap = useMemo(() => computeOverlap(allSlots), [allSlots]);
+
+  const serverMySlots = useMemo(() => {
+    const set = new Set<string>();
+    for (const slot of allSlots) {
+      if (slot.participant_id === participantId) {
+        set.add(new Date(slot.slot_start).toISOString());
+      }
+    }
+    return set;
+  }, [allSlots, participantId]);
+
+  const mySlots = useMemo(() => {
+    const set = new Set(serverMySlots);
+    for (const key of pendingAdds) set.add(key);
+    for (const key of pendingRemoves) set.delete(key);
+    return set;
+  }, [serverMySlots, pendingAdds, pendingRemoves]);
+
+  // Clean up pending state when server catches up
+  useMemo(() => {
+    setPendingAdds((prev) => {
+      const next = new Set(prev);
+      for (const key of prev) {
+        if (serverMySlots.has(key)) next.delete(key);
+      }
+      return next.size === prev.size ? prev : next;
+    });
+    setPendingRemoves((prev) => {
+      const next = new Set(prev);
+      for (const key of prev) {
+        if (!serverMySlots.has(key)) next.delete(key);
+      }
+      return next.size === prev.size ? prev : next;
+    });
+  }, [serverMySlots]);
+
+  const totalParticipants = participants.length;
+
+  const toggleSlot = useCallback(
+    async (slotKey: string, forceMode?: 'add' | 'remove') => {
+      const supabase = createClient();
+      const shouldRemove = forceMode === 'remove' || (!forceMode && mySlots.has(slotKey));
+
+      if (shouldRemove) {
+        setPendingRemoves((prev) => new Set(prev).add(slotKey));
+        setPendingAdds((prev) => { const n = new Set(prev); n.delete(slotKey); return n; });
+
+        const matching = allSlots.find(
+          (s) => s.participant_id === participantId && new Date(s.slot_start).toISOString() === slotKey
+        );
+        if (matching) {
+          const { error } = await supabase.from('availability_slots').delete().eq('id', matching.id);
+          if (error) setPendingRemoves((prev) => { const n = new Set(prev); n.delete(slotKey); return n; });
+        } else {
+          const { error } = await supabase.from('availability_slots').delete()
+            .eq('participant_id', participantId).eq('slot_start', slotKey);
+          if (error) setPendingRemoves((prev) => { const n = new Set(prev); n.delete(slotKey); return n; });
+        }
+      } else {
+        setPendingAdds((prev) => new Set(prev).add(slotKey));
+        setPendingRemoves((prev) => { const n = new Set(prev); n.delete(slotKey); return n; });
+
+        const { error } = await supabase.from('availability_slots').insert({
+          event_id: event.id, participant_id: participantId, slot_start: slotKey,
+        });
+        if (error) setPendingAdds((prev) => { const n = new Set(prev); n.delete(slotKey); return n; });
+      }
+    },
+    [mySlots, allSlots, participantId, event.id]
+  );
+
+  // Drag handlers
+  const handleDragStart = useCallback((slotKey: string) => {
+    const mode = mySlots.has(slotKey) ? 'remove' : 'add';
+    setIsDragging(true);
+    setDragMode(mode);
+    draggedSlots.current = new Set([slotKey]);
+    toggleSlot(slotKey, mode);
+  }, [mySlots, toggleSlot]);
+
+  const handleDragEnter = useCallback((slotKey: string) => {
+    if (!isDragging || draggedSlots.current.has(slotKey)) return;
+    draggedSlots.current.add(slotKey);
+    toggleSlot(slotKey, dragMode);
+  }, [isDragging, dragMode, toggleSlot]);
+
+  const handleDragEnd = useCallback(() => {
+    setIsDragging(false);
+    draggedSlots.current = new Set();
+  }, []);
+
+  // Touch drag support
+  const gridRef = useRef<HTMLDivElement>(null);
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    if (!isDragging) return;
+    const touch = e.touches[0];
+    const el = document.elementFromPoint(touch.clientX, touch.clientY);
+    const slotKey = el?.getAttribute('data-slot');
+    if (slotKey) handleDragEnter(slotKey);
+  }, [isDragging, handleDragEnter]);
+
+  // Select all / clear day
+  const handleDayToggle = useCallback((date: string) => {
+    const daySlots = timeLabels
+      .map((time) => slotGrid.get(`${date}|${time}`))
+      .filter(Boolean) as string[];
+
+    const allSelected = daySlots.every((s) => mySlots.has(s));
+    const mode = allSelected ? 'remove' : 'add';
+
+    for (const slotKey of daySlots) {
+      const shouldToggle = mode === 'add' ? !mySlots.has(slotKey) : mySlots.has(slotKey);
+      if (shouldToggle) toggleSlot(slotKey, mode);
+    }
+  }, [timeLabels, slotGrid, mySlots, toggleSlot]);
+
+  // Tooltip handlers
+  const handleSlotHold = useCallback((slotKey: string) => {
+    tooltipTimeout.current = setTimeout(() => setTooltipSlot(slotKey), 400);
+  }, []);
+  const handleSlotRelease = useCallback(() => {
+    if (tooltipTimeout.current) clearTimeout(tooltipTimeout.current);
+  }, []);
+
+  // Finalize handler
+  const handleFinalize = useCallback(async (time: string) => {
+    await fetch(`/api/events/${event.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ finalized_time: time, organizer_token: organizerToken }),
+    });
+    onFinalize?.(time);
+  }, [event.id, organizerToken, onFinalize]);
+
+  // Visible dates (all on desktop, single on mobile)
+  const visibleDates = isMobile && dates.length > 1 ? [dates[activeDay]] : dates;
+
+  return (
+    <div className="space-y-6" onMouseUp={handleDragEnd} onMouseLeave={handleDragEnd}>
+      <OverlapSummary overlapMap={overlapMap} totalParticipants={totalParticipants} />
+
+      <BestTimes
+        overlapMap={overlapMap}
+        totalParticipants={totalParticipants}
+        durationMinutes={event.duration_minutes || 30}
+        participants={participants}
+        onFinalize={isOrganizer ? handleFinalize : undefined}
+      />
+
+      {/* Mobile day tabs */}
+      {isMobile && dates.length > 1 && (
+        <div className="flex gap-1 overflow-x-auto pb-1 -mx-1 px-1">
+          {dates.map((date, i) => (
+            <button
+              key={date}
+              type="button"
+              onClick={() => setActiveDay(i)}
+              className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                i === activeDay
+                  ? 'bg-teal-500 text-white'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+            >
+              {format(parseISO(date), 'EEE M/d')}
+            </button>
+          ))}
+        </div>
+      )}
+
+      <div
+        className="time-grid overflow-x-auto -mx-4 px-4"
+        ref={gridRef}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleDragEnd}
+      >
+        <div
+          className="grid gap-1"
+          style={{
+            gridTemplateColumns: `auto repeat(${visibleDates.length}, minmax(60px, 1fr))`,
+          }}
+        >
+          {/* Sticky header row */}
+          <div className="sticky top-0 bg-white z-20" />
+          {visibleDates.map((date) => {
+            const daySlots = timeLabels.map((t) => slotGrid.get(`${date}|${t}`)).filter(Boolean) as string[];
+            const allSelected = daySlots.length > 0 && daySlots.every((s) => mySlots.has(s));
+            return (
+              <div
+                key={date}
+                className="text-center text-xs font-medium text-gray-600 pb-1 sticky top-0 bg-white z-20"
+              >
+                <div>{format(parseISO(date), 'EEE')}</div>
+                <div>{format(parseISO(date), 'M/d')}</div>
+                <button
+                  type="button"
+                  onClick={() => handleDayToggle(date)}
+                  className="mt-1 text-[10px] text-teal-500 hover:text-teal-700 font-medium"
+                >
+                  {allSelected ? 'Clear' : 'All'}
+                </button>
+              </div>
+            );
+          })}
+
+          {/* Time rows */}
+          {timeLabels.map((time) => {
+            const [h, m] = time.split(':').map(Number);
+            const ampm = h >= 12 ? 'PM' : 'AM';
+            const hour = h === 0 ? 12 : h > 12 ? h - 12 : h;
+            const label = `${hour}:${m.toString().padStart(2, '0')} ${ampm}`;
+
+            return [
+              <div
+                key={`label-${time}`}
+                className="text-xs text-gray-500 flex items-center justify-end pr-2 sticky left-0 bg-white z-10 whitespace-nowrap"
+              >
+                {label}
+              </div>,
+              ...visibleDates.map((date) => {
+                const slotKey = slotGrid.get(`${date}|${time}`);
+                if (!slotKey) return <div key={`${date}-${time}`} />;
+
+                const isMine = mySlots.has(slotKey);
+                const participantSet = overlapMap.get(slotKey);
+                let othersCount = participantSet ? participantSet.size : 0;
+                if (isMine && participantSet && !participantSet.has(participantId)) {
+                  othersCount += 1;
+                } else if (!isMine && participantSet?.has(participantId)) {
+                  othersCount -= 1;
+                }
+                const isAllMatch = totalParticipants > 1 && othersCount === totalParticipants;
+
+                return (
+                  <TimeGridSlot
+                    key={slotKey}
+                    slotKey={slotKey}
+                    isMine={isMine}
+                    othersCount={othersCount}
+                    totalParticipants={totalParticipants}
+                    isAllMatch={isAllMatch}
+                    onDragStart={handleDragStart}
+                    onDragEnter={handleDragEnter}
+                    onHold={handleSlotHold}
+                    onRelease={handleSlotRelease}
+                  />
+                );
+              }),
+            ];
+          })}
+        </div>
+      </div>
+
+      {/* Slot tooltip */}
+      {tooltipSlot && (
+        <SlotTooltip
+          slotKey={tooltipSlot}
+          overlapMap={overlapMap}
+          participants={participants}
+          onClose={() => setTooltipSlot(null)}
+        />
+      )}
+
+      <div className="grid grid-cols-2 gap-3 text-xs">
+        <div className="flex items-center gap-2">
+          <div className="w-4 h-4 rounded bg-teal-400" />
+          <span className="text-gray-600">Your availability</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-4 h-4 rounded bg-green-200" />
+          <span className="text-gray-600">Others available</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-4 h-4 rounded bg-green-400 ring-2 ring-green-300" />
+          <span className="text-gray-600">Everyone can meet</span>
+        </div>
+      </div>
+
+      <ParticipantList participants={participants} currentParticipantId={participantId} />
+    </div>
+  );
+}
