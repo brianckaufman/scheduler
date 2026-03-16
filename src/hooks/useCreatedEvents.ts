@@ -2,10 +2,11 @@
 
 import { useState, useEffect, useCallback } from 'react';
 
-interface CreatedEvent {
+export interface CreatedEvent {
   slug: string;
   name: string;
   createdAt: string;
+  finalizedTime?: string | null;
 }
 
 const STORAGE_KEY = 'created_events';
@@ -32,6 +33,14 @@ export function useCreatedEvents() {
     setLoaded(true);
   }, []);
 
+  const persist = (updated: CreatedEvent[]) => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+    } catch {
+      // Storage full, ignore
+    }
+  };
+
   const addEvent = useCallback((slug: string, name: string) => {
     setEvents((prev) => {
       // Don't add duplicates
@@ -40,14 +49,28 @@ export function useCreatedEvents() {
         { slug, name, createdAt: new Date().toISOString() },
         ...prev,
       ].slice(0, MAX_EVENTS);
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-      } catch {
-        // Storage full, ignore
-      }
+      persist(updated);
       return updated;
     });
   }, []);
 
-  return { events, loaded, addEvent };
+  const removeEvent = useCallback((slug: string) => {
+    setEvents((prev) => {
+      const updated = prev.filter((e) => e.slug !== slug);
+      persist(updated);
+      return updated;
+    });
+  }, []);
+
+  const updateEvent = useCallback((slug: string, changes: Partial<Omit<CreatedEvent, 'slug'>>) => {
+    setEvents((prev) => {
+      const updated = prev.map((e) =>
+        e.slug === slug ? { ...e, ...changes } : e
+      );
+      persist(updated);
+      return updated;
+    });
+  }, []);
+
+  return { events, loaded, addEvent, removeEvent, updateEvent };
 }

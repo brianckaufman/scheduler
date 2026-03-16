@@ -16,6 +16,7 @@ import EditEventModal from '@/components/EditEventModal';
 import SkeletonLoader from '@/components/SkeletonLoader';
 import SupportBanner from '@/components/SupportBanner';
 import BookmarkPrompt from '@/components/BookmarkPrompt';
+import { useCreatedEvents } from '@/hooks/useCreatedEvents';
 import { optimizedLogoUrl } from '@/lib/image';
 import { formatDisplayName, firstName } from '@/lib/names';
 import type { Event } from '@/types';
@@ -33,6 +34,7 @@ export default function EventView({ event: initialEvent }: EventViewProps) {
   const [isOrganizer, setIsOrganizer] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const { participantId, hasSession, saveSession, loaded } = useParticipantSession(event.slug, event.id);
+  const { removeEvent, updateEvent } = useCreatedEvents();
   const { supported: pushSupported, isSubscribed, subscribe } = usePushNotifications(event.id, participantId);
   const [pushDismissed, setPushDismissed] = useState(false);
 
@@ -77,6 +79,8 @@ export default function EventView({ event: initialEvent }: EventViewProps) {
     localStorage.removeItem(`organizer_${event.slug}`);
     localStorage.removeItem(`participant_${event.slug}`);
     localStorage.removeItem(`push_dismissed_${event.id}`);
+    // Remove from created events list so it doesn't show on homepage
+    removeEvent(event.slug);
     // Redirect to home
     router.push('/');
   };
@@ -231,7 +235,10 @@ export default function EventView({ event: initialEvent }: EventViewProps) {
             participantId={participantId}
             isOrganizer={isOrganizer}
             organizerToken={localStorage.getItem(`organizer_${event.slug}`)}
-            onFinalize={(time) => setEvent({ ...event, finalized_time: time })}
+            onFinalize={(time) => {
+              setEvent({ ...event, finalized_time: time });
+              updateEvent(event.slug, { finalizedTime: time });
+            }}
             onMySlotCountChange={handleSlotCountChange}
           />
         </div>
