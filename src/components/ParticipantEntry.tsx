@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { format, formatDistanceToNow, isPast } from 'date-fns';
 import { createClient } from '@/lib/supabase/client';
 import { useCopy, interpolate } from '@/contexts/CopyContext';
+import { useBranding } from '@/contexts/BrandingContext';
 import type { Event } from '@/types';
 
 interface ParticipantEntryProps {
@@ -13,6 +14,7 @@ interface ParticipantEntryProps {
 
 export default function ParticipantEntry({ event, onJoin }: ParticipantEntryProps) {
   const copy = useCopy();
+  const branding = useBranding();
   const [step, setStep] = useState<1 | 2>(1);
   const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
@@ -85,6 +87,16 @@ export default function ParticipantEntry({ event, onJoin }: ParticipantEntryProp
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
               {/* Event header */}
               <div className="bg-gradient-to-br from-teal-500 to-teal-600 px-6 py-6 text-white">
+                {branding.logo_url && (
+                  <div className="mb-3">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={branding.logo_url}
+                      alt={branding.site_name}
+                      className="h-7 w-auto object-contain brightness-0 invert"
+                    />
+                  </div>
+                )}
                 <h1 className="text-2xl font-bold leading-tight">{event.name}</h1>
                 {event.description && (
                   <p className="text-teal-100 text-base mt-2 leading-relaxed">{event.description}</p>

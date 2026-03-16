@@ -1,7 +1,36 @@
 @import "tailwindcss";
 
+/* ── Dynamic accent color palette ──
+   The root layout sets --accent-base from admin settings.
+   We generate a full shade scale using color-mix() so every
+   Tailwind `teal-*` class automatically uses the custom color. */
+
+:root {
+  --accent-base: #0d9488; /* default teal-500, overridden by admin branding */
+  --accent-50:  color-mix(in oklch, var(--accent-base)  5%, white);
+  --accent-100: color-mix(in oklch, var(--accent-base) 12%, white);
+  --accent-200: color-mix(in oklch, var(--accent-base) 25%, white);
+  --accent-300: color-mix(in oklch, var(--accent-base) 45%, white);
+  --accent-400: color-mix(in oklch, var(--accent-base) 70%, white);
+  --accent-500: var(--accent-base);
+  --accent-600: color-mix(in oklch, var(--accent-base) 85%, black);
+  --accent-700: color-mix(in oklch, var(--accent-base) 70%, black);
+  --accent-800: color-mix(in oklch, var(--accent-base) 55%, black);
+  --accent-900: color-mix(in oklch, var(--accent-base) 40%, black);
+}
+
 @theme inline {
   --font-sans: var(--font-geist);
+  --color-teal-50:  var(--accent-50);
+  --color-teal-100: var(--accent-100);
+  --color-teal-200: var(--accent-200);
+  --color-teal-300: var(--accent-300);
+  --color-teal-400: var(--accent-400);
+  --color-teal-500: var(--accent-500);
+  --color-teal-600: var(--accent-600);
+  --color-teal-700: var(--accent-700);
+  --color-teal-800: var(--accent-800);
+  --color-teal-900: var(--accent-900);
 }
 
 .time-grid {

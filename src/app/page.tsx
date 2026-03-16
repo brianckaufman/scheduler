@@ -9,6 +9,16 @@ export default async function Home() {
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-md mx-auto px-4 py-12">
         <div className="text-center mb-6">
+          {settings.branding.logo_url && (
+            <div className="mb-4 flex justify-center">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={settings.branding.logo_url}
+                alt={settings.seo.site_name || 'Logo'}
+                className="h-10 w-auto object-contain"
+              />
+            </div>
+          )}
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
             {home.title}
           </h1>

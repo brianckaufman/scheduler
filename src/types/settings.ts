@@ -231,7 +231,7 @@ export const DEFAULT_SETTINGS: SiteSettings = {
     og_title: 'Scheduler',
     og_description: 'Find a time that works for everyone. No accounts needed.',
     og_image: '',
-    favicon: '/favicon.ico',
+    favicon: '',
     site_name: 'Scheduler',
   },
   branding: {

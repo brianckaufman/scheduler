@@ -4,6 +4,7 @@ import './globals.css';
 import { getSettings } from '@/lib/settings';
 import { AnalyticsScripts } from '@/components/AnalyticsScripts';
 import { CopyProvider } from '@/contexts/CopyContext';
+import { BrandingProvider } from '@/contexts/BrandingContext';
 
 const geist = Geist({
   variable: '--font-geist',
@@ -50,9 +51,13 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const settings = await getSettings();
+  const accentColor = settings.branding.accent_color || '#0d9488';
 
   return (
-    <html lang="en">
+    <html
+      lang="en"
+      style={{ '--accent-base': accentColor } as React.CSSProperties}
+    >
       <head>
         <AnalyticsScripts
           gaId={settings.analytics.ga_id}
@@ -71,9 +76,18 @@ export default async function RootLayout({
             />
           </noscript>
         )}
-        <CopyProvider copy={settings.copy}>
-          {children}
-        </CopyProvider>
+        <BrandingProvider
+          branding={{
+            logo_url: settings.branding.logo_url,
+            accent_color: accentColor,
+            footer_text: settings.branding.footer_text,
+            site_name: settings.seo.site_name || 'Scheduler',
+          }}
+        >
+          <CopyProvider copy={settings.copy}>
+            {children}
+          </CopyProvider>
+        </BrandingProvider>
       </body>
     </html>
   );

@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { format, formatDistanceToNow, isPast } from 'date-fns';
 import { useCopy, interpolate } from '@/contexts/CopyContext';
+import { useBranding } from '@/contexts/BrandingContext';
 import { useParticipantSession } from '@/hooks/useParticipantSession';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import ParticipantEntry from '@/components/ParticipantEntry';
@@ -20,6 +21,7 @@ interface EventViewProps {
 
 export default function EventView({ event: initialEvent }: EventViewProps) {
   const copy = useCopy();
+  const branding = useBranding();
   const router = useRouter();
   const [event, setEvent] = useState(initialEvent);
   const [isOrganizer, setIsOrganizer] = useState(false);
@@ -120,6 +122,18 @@ export default function EventView({ event: initialEvent }: EventViewProps) {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-lg mx-auto px-4 py-6">
+        {/* Logo */}
+        {branding.logo_url && (
+          <div className="mb-3">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={branding.logo_url}
+              alt={branding.site_name}
+              className="h-7 w-auto object-contain"
+            />
+          </div>
+        )}
+
         {/* Event header */}
         <div className="mb-4">
           <div className="flex items-start justify-between gap-2">
