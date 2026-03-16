@@ -21,10 +21,18 @@ export default function ParticipantEntry({ eventId, eventName, onJoin }: Partici
     setLoading(true);
     setError('');
 
+    // Sanitize: strip any HTML tags, limit length
+    const safeName = name.trim().replace(/<[^>]*>/g, '').slice(0, 50);
+    if (!safeName) {
+      setError('Please enter a valid name.');
+      setLoading(false);
+      return;
+    }
+
     const supabase = createClient();
     const { data, error: err } = await supabase
       .from('participants')
-      .insert({ event_id: eventId, name: name.trim() })
+      .insert({ event_id: eventId, name: safeName })
       .select()
       .single();
 
@@ -51,6 +59,7 @@ export default function ParticipantEntry({ eventId, eventName, onJoin }: Partici
             onChange={(e) => setName(e.target.value)}
             placeholder="Your name"
             autoFocus
+            maxLength={50}
             className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-transparent text-gray-900 placeholder-gray-400"
             required
           />

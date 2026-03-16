@@ -203,6 +203,7 @@ export default function EventForm() {
           onChange={(e) => setName(e.target.value)}
           placeholder="Team dinner, study group, game night..."
           className={inputClass}
+          maxLength={100}
           required
         />
       </div>
@@ -218,6 +219,7 @@ export default function EventForm() {
           onChange={(e) => setDescription(e.target.value)}
           placeholder="Quick meeting to discuss Q2 goals..."
           className={inputClass}
+          maxLength={500}
         />
       </div>
 
@@ -233,6 +235,7 @@ export default function EventForm() {
             onChange={(e) => setOrganizerName(e.target.value)}
             placeholder="Who's organizing?"
             className={inputClass}
+            maxLength={50}
           />
         </div>
         <div>
@@ -246,6 +249,7 @@ export default function EventForm() {
             onChange={(e) => setLocation(e.target.value)}
             placeholder="Zoom, office, cafe..."
             className={inputClass}
+            maxLength={100}
           />
         </div>
       </div>
