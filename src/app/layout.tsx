@@ -3,6 +3,7 @@ import { Geist } from 'next/font/google';
 import './globals.css';
 import { getSettings } from '@/lib/settings';
 import { AnalyticsScripts } from '@/components/AnalyticsScripts';
+import { CopyProvider } from '@/contexts/CopyContext';
 
 const geist = Geist({
   variable: '--font-geist',
@@ -71,7 +72,9 @@ export default async function RootLayout({
             />
           </noscript>
         )}
-        {children}
+        <CopyProvider copy={settings.copy}>
+          {children}
+        </CopyProvider>
       </body>
     </html>
   );

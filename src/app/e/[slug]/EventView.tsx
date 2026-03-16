@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { format, formatDistanceToNow, isPast } from 'date-fns';
+import { useCopy, interpolate } from '@/contexts/CopyContext';
 import { useParticipantSession } from '@/hooks/useParticipantSession';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import ParticipantEntry from '@/components/ParticipantEntry';
@@ -17,6 +18,7 @@ interface EventViewProps {
 }
 
 export default function EventView({ event: initialEvent }: EventViewProps) {
+  const copy = useCopy();
   const [event, setEvent] = useState(initialEvent);
   const [isOrganizer, setIsOrganizer] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -129,30 +131,29 @@ export default function EventView({ event: initialEvent }: EventViewProps) {
           )}
           <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2">
             {event.organizer_name && (
-              <span className="text-xs text-gray-400">Organized by {event.organizer_name}</span>
+              <span className="text-xs text-gray-400">{interpolate(copy.event.organized_by, { name: event.organizer_name })}</span>
             )}
             {event.location && (
               <span className="text-xs text-gray-400">{event.location}</span>
             )}
             {event.duration_minutes && (
               <span className="text-xs text-gray-400">
-                {event.duration_minutes >= 60
+                {interpolate(copy.event.duration_needed, { duration: event.duration_minutes >= 60
                   ? `${event.duration_minutes / 60}h`
-                  : `${event.duration_minutes}min`}
-                {' '}needed
+                  : `${event.duration_minutes}min` })}
               </span>
             )}
           </div>
           {event.response_deadline && (
             <p className={`text-xs mt-1 ${deadlinePassed ? 'text-red-400' : 'text-amber-500'}`}>
               {deadlinePassed
-                ? 'Response deadline has passed'
-                : `Respond by ${format(new Date(event.response_deadline), 'MMM d')} (${formatDistanceToNow(new Date(event.response_deadline), { addSuffix: true })})`}
+                ? copy.event.deadline_passed
+                : interpolate(copy.event.respond_by, { date: format(new Date(event.response_deadline), 'MMM d'), relative: formatDistanceToNow(new Date(event.response_deadline), { addSuffix: true }) })}
             </p>
           )}
           {!event.finalized_time && (
             <p className="text-sm text-gray-500 mt-2">
-              Tap the times you&apos;re available
+              {copy.event.tap_instruction}
             </p>
           )}
         </div>
@@ -175,9 +176,9 @@ export default function EventView({ event: initialEvent }: EventViewProps) {
               </svg>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-blue-900">Get notified when a time is picked</p>
+              <p className="text-sm font-medium text-blue-900">{copy.notifications.title}</p>
               <p className="text-xs text-blue-600 mt-0.5">
-                We&apos;ll send you a notification when {event.organizer_name?.split(' ')[0] || 'the organizer'} finalizes the time.
+                {interpolate(copy.notifications.description, { name: event.organizer_name?.split(' ')[0] || 'the organizer' })}
               </p>
               <div className="flex gap-2 mt-2">
                 <button
@@ -185,14 +186,14 @@ export default function EventView({ event: initialEvent }: EventViewProps) {
                   onClick={handleEnableNotifications}
                   className="px-3 py-1.5 bg-blue-600 text-white text-xs font-semibold rounded-full hover:bg-blue-700 transition-all duration-200 active:scale-95 cursor-pointer"
                 >
-                  Enable
+                  {copy.notifications.enable}
                 </button>
                 <button
                   type="button"
                   onClick={handleDismissNotifications}
                   className="px-3 py-1.5 text-blue-600 text-xs font-medium hover:text-blue-800 transition-colors cursor-pointer"
                 >
-                  No thanks
+                  {copy.notifications.dismiss}
                 </button>
               </div>
             </div>
@@ -222,10 +223,10 @@ export default function EventView({ event: initialEvent }: EventViewProps) {
               <svg className="w-5 h-5 text-teal-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              <p className="text-sm font-semibold text-teal-800">You&apos;re all set!</p>
+              <p className="text-sm font-semibold text-teal-800">{copy.event.all_set_title}</p>
             </div>
             <p className="text-xs text-teal-600">
-              {mySlotCount} time{mySlotCount !== 1 ? 's' : ''} selected. You can change your availability anytime by tapping the grid above.
+              {interpolate(copy.event.all_set_desc, { count: mySlotCount })}
             </p>
           </div>
         )}
@@ -233,7 +234,7 @@ export default function EventView({ event: initialEvent }: EventViewProps) {
         {/* Viral CTA footer */}
         <div className="mt-8 mb-4 text-center">
           <div className="border-t border-gray-100 pt-6">
-            <p className="text-xs text-gray-400 mb-2">Need to schedule your own event?</p>
+            <p className="text-xs text-gray-400 mb-2">{copy.event.cta_prompt}</p>
             <a
               href="/"
               className="inline-flex items-center gap-1.5 px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-full hover:bg-gray-800 transition-all duration-200 active:scale-95 cursor-pointer"
@@ -241,9 +242,9 @@ export default function EventView({ event: initialEvent }: EventViewProps) {
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
               </svg>
-              Create your own for free
+              {copy.event.cta_button}
             </a>
-            <p className="text-[10px] text-gray-300 mt-2">No account needed</p>
+            <p className="text-[10px] text-gray-300 mt-2">{copy.event.cta_footer}</p>
           </div>
         </div>
       </div>

@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { isAdminAuthenticated } from '@/lib/admin-auth';
 import { createAdminClient } from '@/lib/supabase/admin';
 
@@ -12,11 +12,11 @@ const ALLOWED_TYPES = [
   'image/gif',
 ];
 
+const ALLOWED_EXTENSIONS = ['png', 'jpg', 'jpeg', 'webp', 'svg', 'ico', 'gif'];
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
-
 const BUCKET = 'assets';
 
-export async function POST(request: NextRequest) {
+export async function POST(request: Request) {
   try {
     const authed = await isAdminAuthenticated();
     if (!authed) {
@@ -25,50 +25,74 @@ export async function POST(request: NextRequest) {
 
     const formData = await request.formData();
     const file = formData.get('file') as File | null;
-    const folder = (formData.get('folder') as string) || 'uploads';
+    const path = formData.get('path') as string | null;
 
     if (!file) {
-      return NextResponse.json({ error: 'No file provided' }, { status: 400 });
+      return NextResponse.json({ error: 'File is required' }, { status: 400 });
     }
 
-    if (!ALLOWED_TYPES.includes(file.type)) {
+    if (!path || typeof path !== 'string') {
       return NextResponse.json(
-        { error: 'Invalid file type. Allowed: PNG, JPG, WebP, SVG, ICO, GIF' },
+        { error: 'Path is required (e.g., "og-image", "favicon", "logo")' },
         { status: 400 }
       );
     }
 
+    // Validate file size
     if (file.size > MAX_FILE_SIZE) {
       return NextResponse.json(
-        { error: 'File too large. Max size: 5 MB' },
+        { error: 'File too large. Maximum size is 5MB' },
+        { status: 400 }
+      );
+    }
+
+    // Validate MIME type
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      return NextResponse.json(
+        { error: `Invalid file type: ${file.type}. Allowed: ${ALLOWED_EXTENSIONS.join(', ')}` },
+        { status: 400 }
+      );
+    }
+
+    // Validate file extension
+    const ext = file.name.split('.').pop()?.toLowerCase();
+    if (!ext || !ALLOWED_EXTENSIONS.includes(ext)) {
+      return NextResponse.json(
+        { error: `Invalid file extension. Allowed: ${ALLOWED_EXTENSIONS.join(', ')}` },
         { status: 400 }
       );
     }
 
     const supabase = createAdminClient();
+    const storagePath = `${path}.${ext}`;
 
-    // Generate a clean filename: folder/timestamp-originalname
-    const ext = file.name.split('.').pop()?.toLowerCase() || 'png';
-    const safeName = file.name
-      .replace(/\.[^.]+$/, '')
-      .replace(/[^a-zA-Z0-9-_]/g, '-')
-      .slice(0, 50);
-    const fileName = `${folder}/${Date.now()}-${safeName}.${ext}`;
+    // Delete any existing files at this path before uploading
+    const { data: existingFiles } = await supabase.storage
+      .from(BUCKET)
+      .list('', { search: path });
 
-    const arrayBuffer = await file.arrayBuffer();
-    const buffer = new Uint8Array(arrayBuffer);
+    if (existingFiles && existingFiles.length > 0) {
+      const filesToDelete = existingFiles
+        .filter((f) => f.name.startsWith(path))
+        .map((f) => f.name);
+      if (filesToDelete.length > 0) {
+        await supabase.storage.from(BUCKET).remove(filesToDelete);
+      }
+    }
 
+    // Upload the new file
+    const buffer = new Uint8Array(await file.arrayBuffer());
     const { error: uploadError } = await supabase.storage
       .from(BUCKET)
-      .upload(fileName, buffer, {
+      .upload(storagePath, buffer, {
         contentType: file.type,
-        upsert: false,
+        upsert: true,
       });
 
     if (uploadError) {
-      console.error('Upload error:', uploadError);
+      console.error('Upload failed:', uploadError);
       return NextResponse.json(
-        { error: 'Upload failed: ' + uploadError.message },
+        { error: 'Failed to upload file' },
         { status: 500 }
       );
     }
@@ -76,41 +100,14 @@ export async function POST(request: NextRequest) {
     // Get public URL
     const { data: urlData } = supabase.storage
       .from(BUCKET)
-      .getPublicUrl(fileName);
+      .getPublicUrl(storagePath);
 
     return NextResponse.json({
+      success: true,
       url: urlData.publicUrl,
-      path: fileName,
+      path: storagePath,
     });
-  } catch (err) {
-    console.error('Upload error:', err);
-    return NextResponse.json({ error: 'Server error' }, { status: 500 });
-  }
-}
-
-// DELETE: remove an uploaded file
-export async function DELETE(request: NextRequest) {
-  try {
-    const authed = await isAdminAuthenticated();
-    if (!authed) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const { path } = await request.json();
-    if (!path || typeof path !== 'string') {
-      return NextResponse.json({ error: 'File path required' }, { status: 400 });
-    }
-
-    const supabase = createAdminClient();
-    const { error } = await supabase.storage.from(BUCKET).remove([path]);
-
-    if (error) {
-      console.error('Delete error:', error);
-      return NextResponse.json({ error: 'Delete failed' }, { status: 500 });
-    }
-
-    return NextResponse.json({ success: true });
   } catch {
-    return NextResponse.json({ error: 'Server error' }, { status: 500 });
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

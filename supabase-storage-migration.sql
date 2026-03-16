@@ -1,5 +1,6 @@
 -- Run this in the Supabase SQL Editor to add the "assets" storage bucket
 -- (Only needed if you already ran supabase-admin-migration.sql before the storage section was added)
+-- Safe to re-run: all statements are idempotent.
 
 -- Create a public bucket for admin-uploaded images (OG, favicon, logo)
 INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
@@ -13,12 +14,21 @@ VALUES (
 ON CONFLICT (id) DO NOTHING;
 
 -- Allow public reads on the assets bucket
-CREATE POLICY "assets_public_read" ON storage.objects
-  FOR SELECT USING (bucket_id = 'assets');
+DO $$ BEGIN
+  CREATE POLICY "assets_public_read" ON storage.objects
+    FOR SELECT USING (bucket_id = 'assets');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- Allow uploads and deletes (service role bypasses RLS, but explicit policies for safety)
-CREATE POLICY "assets_admin_insert" ON storage.objects
-  FOR INSERT WITH CHECK (bucket_id = 'assets');
+DO $$ BEGIN
+  CREATE POLICY "assets_admin_insert" ON storage.objects
+    FOR INSERT WITH CHECK (bucket_id = 'assets');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
-CREATE POLICY "assets_admin_delete" ON storage.objects
-  FOR DELETE USING (bucket_id = 'assets');
+DO $$ BEGIN
+  CREATE POLICY "assets_admin_delete" ON storage.objects
+    FOR DELETE USING (bucket_id = 'assets');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;

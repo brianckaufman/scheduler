@@ -1,10 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { isAdminAuthenticated } from '@/lib/admin-auth';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { getSettings } from '@/lib/settings';
+import { getSettings, deepMerge } from '@/lib/settings';
 import type { SiteSettings } from '@/types/settings';
 
-// GET: fetch current settings
+// GET: fetch current settings (merged with defaults)
 export async function GET() {
   try {
     const authed = await isAdminAuthenticated();
@@ -13,58 +13,61 @@ export async function GET() {
     }
 
     const settings = await getSettings();
-    return NextResponse.json(settings);
+    return NextResponse.json({ settings });
   } catch {
-    return NextResponse.json({ error: 'Server error' }, { status: 500 });
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 
-// PUT: update settings (partial update, deep merged)
-export async function PUT(request: NextRequest) {
+// PUT: update settings
+export async function PUT(request: Request) {
   try {
     const authed = await isAdminAuthenticated();
     if (!authed) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const updates: Partial<SiteSettings> = await request.json();
+    const body = await request.json();
+    const updates = body.settings as Partial<SiteSettings>;
 
-    // Get current settings from DB
+    if (!updates || typeof updates !== 'object') {
+      return NextResponse.json(
+        { error: 'Settings object is required' },
+        { status: 400 }
+      );
+    }
+
     const supabase = createAdminClient();
+
+    // Fetch existing settings from DB and deep-merge updates into them
     const { data: existing } = await supabase
       .from('site_settings')
       .select('settings')
       .eq('id', 1)
       .single();
 
-    // Merge updates into existing settings
     const currentSettings = (existing?.settings || {}) as Record<string, unknown>;
-    const mergedSettings = { ...currentSettings };
-
-    for (const [section, values] of Object.entries(updates)) {
-      if (typeof values === 'object' && values !== null) {
-        mergedSettings[section] = {
-          ...((currentSettings[section] as Record<string, unknown>) || {}),
-          ...values,
-        };
-      }
-    }
+    const mergedSettings = deepMerge(currentSettings, updates);
 
     const { error } = await supabase
       .from('site_settings')
-      .upsert({
-        id: 1,
-        settings: mergedSettings,
-        updated_at: new Date().toISOString(),
-      });
+      .upsert(
+        { id: 1, settings: mergedSettings, updated_at: new Date().toISOString() },
+        { onConflict: 'id' }
+      );
 
     if (error) {
-      console.error('Failed to save settings:', error);
-      return NextResponse.json({ error: 'Failed to save settings' }, { status: 500 });
+      console.error('Failed to update settings:', error);
+      return NextResponse.json(
+        { error: 'Failed to update settings' },
+        { status: 500 }
+      );
     }
 
-    return NextResponse.json({ success: true, settings: mergedSettings });
+    // Return the fully merged settings (with defaults filled in)
+    const finalSettings = await getSettings();
+    return NextResponse.json({ settings: finalSettings });
   } catch {
-    return NextResponse.json({ error: 'Server error' }, { status: 500 });
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

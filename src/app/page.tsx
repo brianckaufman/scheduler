@@ -1,15 +1,19 @@
 import EventForm from '@/components/EventForm';
+import { getSettings } from '@/lib/settings';
 
-export default function Home() {
+export default async function Home() {
+  const settings = await getSettings();
+  const { copy: { home } } = settings;
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-md mx-auto px-4 py-12">
         <div className="text-center mb-6">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Scheduler
+            {home.title}
           </h1>
           <p className="text-gray-500">
-            Find a time that works for everyone. No accounts needed.
+            {home.subtitle}
           </p>
         </div>
 
@@ -18,18 +22,18 @@ export default function Home() {
           <div className="grid grid-cols-3 gap-3 text-center">
             <div className="space-y-1.5">
               <div className="mx-auto w-9 h-9 rounded-full bg-teal-50 text-teal-600 flex items-center justify-center text-base font-bold">1</div>
-              <p className="text-xs text-gray-700 font-medium">Create an event</p>
-              <p className="text-[10px] text-gray-400">Pick dates &amp; times</p>
+              <p className="text-xs text-gray-700 font-medium">{home.step1_title}</p>
+              <p className="text-[10px] text-gray-400">{home.step1_desc}</p>
             </div>
             <div className="space-y-1.5">
               <div className="mx-auto w-9 h-9 rounded-full bg-teal-50 text-teal-600 flex items-center justify-center text-base font-bold">2</div>
-              <p className="text-xs text-gray-700 font-medium">Share the link</p>
-              <p className="text-[10px] text-gray-400">Everyone taps availability</p>
+              <p className="text-xs text-gray-700 font-medium">{home.step2_title}</p>
+              <p className="text-[10px] text-gray-400">{home.step2_desc}</p>
             </div>
             <div className="space-y-1.5">
               <div className="mx-auto w-9 h-9 rounded-full bg-teal-50 text-teal-600 flex items-center justify-center text-base font-bold">3</div>
-              <p className="text-xs text-gray-700 font-medium">Pick the best time</p>
-              <p className="text-[10px] text-gray-400">See overlap instantly</p>
+              <p className="text-xs text-gray-700 font-medium">{home.step3_title}</p>
+              <p className="text-[10px] text-gray-400">{home.step3_desc}</p>
             </div>
           </div>
         </div>
@@ -40,7 +44,7 @@ export default function Home() {
 
         {/* Footer */}
         <div className="mt-10 text-center text-[10px] text-gray-300">
-          <p>Free forever. No sign-up. No spam.</p>
+          <p>{home.footer}</p>
         </div>
       </div>
     </div>

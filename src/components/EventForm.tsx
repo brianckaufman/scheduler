@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useCopy } from '@/contexts/CopyContext';
 import {
   format,
   addMonths,
@@ -50,6 +51,7 @@ const DURATION_OPTIONS = [
 
 export default function EventForm() {
   const router = useRouter();
+  const copy = useCopy();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [organizerName, setOrganizerName] = useState('');
@@ -167,7 +169,7 @@ export default function EventForm() {
     e.preventDefault();
     if (!name.trim() || !organizerName.trim() || selectedDates.length === 0) return;
     if (timeStart >= timeEnd) {
-      setError('End time must be after start time');
+      setError(copy.form.error_time);
       return;
     }
 
@@ -222,14 +224,14 @@ export default function EventForm() {
     <form onSubmit={handleSubmit} className="space-y-6">
       <div>
         <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-          What&apos;s the event?
+          {copy.form.event_label}
         </label>
         <input
           id="name"
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="Team dinner, study group, game night..."
+          placeholder={copy.form.event_placeholder}
           className={inputClass}
           maxLength={100}
           required
@@ -238,14 +240,14 @@ export default function EventForm() {
 
       <div>
         <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
-          Description (optional)
+          {copy.form.description_label}
         </label>
         <input
           id="description"
           type="text"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          placeholder="Quick meeting to discuss Q2 goals..."
+          placeholder={copy.form.description_placeholder}
           className={inputClass}
           maxLength={500}
         />
@@ -254,14 +256,14 @@ export default function EventForm() {
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label htmlFor="organizerName" className="block text-sm font-medium text-gray-700 mb-1">
-            Your name
+            {copy.form.name_label}
           </label>
           <input
             id="organizerName"
             type="text"
             value={organizerName}
             onChange={(e) => setOrganizerName(e.target.value)}
-            placeholder="Your name"
+            placeholder={copy.form.name_placeholder}
             className={inputClass}
             required
             maxLength={50}
@@ -269,14 +271,14 @@ export default function EventForm() {
         </div>
         <div>
           <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-1">
-            Location (optional)
+            {copy.form.location_label}
           </label>
           <input
             id="location"
             type="text"
             value={location}
             onChange={(e) => setLocation(e.target.value)}
-            placeholder="Zoom, office, cafe..."
+            placeholder={copy.form.location_placeholder}
             className={inputClass}
             maxLength={100}
           />
@@ -285,7 +287,7 @@ export default function EventForm() {
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
-          Which days could work?
+          {copy.form.dates_label}
         </label>
         {renderCalendar()}
         {selectedDates.length > 0 && (
@@ -298,7 +300,7 @@ export default function EventForm() {
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label htmlFor="timeStart" className="block text-sm font-medium text-gray-700 mb-1">
-            Earliest time
+            {copy.form.earliest_label}
           </label>
           <select id="timeStart" value={timeStart} onChange={(e) => setTimeStart(e.target.value)} className={selectClass}>
             {TIME_OPTIONS.map((t) => (
@@ -308,7 +310,7 @@ export default function EventForm() {
         </div>
         <div>
           <label htmlFor="timeEnd" className="block text-sm font-medium text-gray-700 mb-1">
-            Latest time
+            {copy.form.latest_label}
           </label>
           <select id="timeEnd" value={timeEnd} onChange={(e) => setTimeEnd(e.target.value)} className={selectClass}>
             {TIME_OPTIONS.map((t) => (
@@ -321,7 +323,7 @@ export default function EventForm() {
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label htmlFor="duration" className="block text-sm font-medium text-gray-700 mb-1">
-            How long do you need?
+            {copy.form.duration_label}
           </label>
           <select
             id="duration"
@@ -336,7 +338,7 @@ export default function EventForm() {
         </div>
         <div>
           <label htmlFor="deadline" className="block text-sm font-medium text-gray-700 mb-1">
-            Respond by (optional)
+            {copy.form.deadline_label}
           </label>
           <input
             id="deadline"
@@ -358,7 +360,7 @@ export default function EventForm() {
         disabled={loading || !name.trim() || !organizerName.trim() || selectedDates.length === 0}
         className="w-full py-3 px-4 bg-teal-500 text-white font-semibold rounded-xl hover:bg-teal-600 hover:shadow-md hover:shadow-teal-200 transition-all duration-200 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        {loading ? 'Creating...' : 'Create Event'}
+        {loading ? copy.form.submitting : copy.form.submit}
       </button>
     </form>
   );

@@ -3,6 +3,7 @@
 import { useMemo, useCallback, useState, useRef, useEffect } from 'react';
 import { format, parseISO } from 'date-fns';
 import { createClient } from '@/lib/supabase/client';
+import { useCopy, interpolate } from '@/contexts/CopyContext';
 import { generateSlots } from '@/lib/slots';
 import { computeOverlap, getFullOverlapSlots } from '@/lib/overlap';
 import { useRealtimeSlots } from '@/hooks/useRealtimeSlots';
@@ -64,6 +65,7 @@ interface TimeGridProps {
 }
 
 export default function TimeGrid({ event, participantId, isOrganizer, organizerToken, onFinalize, onMySlotCountChange }: TimeGridProps) {
+  const copy = useCopy();
   const { slots: allSlots, removeByParticipant: removeSlotsForParticipant } = useRealtimeSlots(event.id);
   const { participants, removeParticipant } = useRealtimeParticipants(event.id);
 
@@ -335,18 +337,18 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
       {/* Always-visible status notice */}
       {overlapStatus === 'waiting' && !event.finalized_time && (
         <div className="animate-fade-in bg-gray-50 rounded-xl p-4 text-center text-sm text-gray-500">
-          Waiting for more participants to join...
+          {copy.grid.waiting}
         </div>
       )}
       {overlapStatus === 'none' && !event.finalized_time && (
         <div className="animate-fade-in bg-amber-50 rounded-xl p-4 text-center text-sm text-amber-700">
-          No times work for everyone yet. Keep adding your availability!
+          {copy.grid.no_overlap}
         </div>
       )}
       {overlapStatus === 'found' && !event.finalized_time && (
         <div className="animate-fade-in-scale bg-green-50 rounded-xl p-4 text-center">
           <p className="text-sm text-green-700 font-medium">
-            Times found where everyone can meet!
+            {copy.grid.overlap_found}
           </p>
           {isOrganizer ? (
             <button
@@ -354,11 +356,11 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
               onClick={() => setShowTimePicker(true)}
               className="mt-2 px-5 py-2 bg-green-600 text-white text-sm font-semibold rounded-full hover:bg-green-700 shadow-sm hover:shadow-md transition-all duration-200 active:scale-95 cursor-pointer"
             >
-              Pick a Time
+              {copy.grid.pick_time}
             </button>
           ) : (
             <p className="text-xs text-green-600 mt-1">
-              Waiting for {event.organizer_name?.split(' ')[0] || 'the organizer'} to pick a time
+              {interpolate(copy.grid.waiting_organizer, { name: event.organizer_name?.split(' ')[0] || 'the organizer' })}
             </p>
           )}
         </div>
@@ -370,7 +372,7 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
         onClick={() => setShowResults((v) => !v)}
         className="w-full flex items-center justify-between px-4 py-2.5 bg-gray-50 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors cursor-pointer"
       >
-        <span>Best Times &amp; Overlap</span>
+        <span>{copy.grid.best_times}</span>
         <svg
           className={`w-4 h-4 transition-transform ${showResults ? 'rotate-180' : ''}`}
           fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
@@ -416,7 +418,7 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
         <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
-        <span>Times shown in {timezoneLabel}</span>
+        <span>{interpolate(copy.grid.timezone_label, { timezone: timezoneLabel })}</span>
       </div>
 
       <div
@@ -446,7 +448,7 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
                   onClick={() => handleDayToggle(date)}
                   className="mt-1 text-[10px] text-teal-500 hover:text-teal-700 font-medium cursor-pointer"
                 >
-                  {allSelected ? 'Clear' : 'All'}
+                  {allSelected ? copy.grid.clear : copy.grid.all}
                 </button>
               </div>
             );
@@ -542,7 +544,7 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
         >
           <div className="bg-white w-full max-w-md rounded-t-2xl sm:rounded-2xl shadow-xl animate-slide-up max-h-[85vh] overflow-y-auto">
             <div className="sticky top-0 bg-white border-b border-gray-100 px-5 py-4 flex items-center justify-between rounded-t-2xl">
-              <h2 className="text-lg font-bold text-gray-900">Pick a Time</h2>
+              <h2 className="text-lg font-bold text-gray-900">{copy.grid.pick_time}</h2>
               <button
                 type="button"
                 onClick={() => setShowTimePicker(false)}
@@ -575,7 +577,7 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-medium text-gray-700">
-            Participants ({participants.length})
+            {interpolate(copy.grid.participants_label, { count: participants.length })}
           </h3>
           {participants.length > 8 && (
             <button
@@ -583,7 +585,7 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
               onClick={() => setShowAllParticipants((v) => !v)}
               className="text-xs text-teal-500 hover:text-teal-700 font-medium cursor-pointer"
             >
-              {showAllParticipants ? 'Show less' : 'Show all'}
+              {showAllParticipants ? copy.grid.show_less : copy.grid.show_all}
             </button>
           )}
         </div>
@@ -602,7 +604,7 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
                 style={{ backgroundColor: participantColorMap.get(p.id) }}
               />
               <span className="text-gray-700">
-                {p.name}{p.id === participantId && ' (you)'}
+                {p.name}{p.id === participantId && ` ${copy.grid.you_suffix}`}
               </span>
               {isOrganizer && p.id !== participantId && (
                 <button
@@ -632,12 +634,12 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
         <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500">
           <div className="flex items-center gap-1.5">
             <div className="w-4 h-4 rounded bg-green-100 ring-2 ring-green-300" />
-            <span>Everyone can meet</span>
+            <span>{copy.grid.legend_all}</span>
           </div>
           {totalParticipants > 6 && (
             <div className="flex items-center gap-1.5">
               <div className="w-4 h-4 rounded" style={{ backgroundColor: 'rgba(20, 184, 166, 0.35)' }} />
-              <span>More = darker</span>
+              <span>{copy.grid.legend_heat}</span>
             </div>
           )}
         </div>

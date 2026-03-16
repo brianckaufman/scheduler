@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { format, formatDistanceToNow, isPast } from 'date-fns';
 import { createClient } from '@/lib/supabase/client';
+import { useCopy, interpolate } from '@/contexts/CopyContext';
 import type { Event } from '@/types';
 
 interface ParticipantEntryProps {
@@ -11,6 +12,7 @@ interface ParticipantEntryProps {
 }
 
 export default function ParticipantEntry({ event, onJoin }: ParticipantEntryProps) {
+  const copy = useCopy();
   const [step, setStep] = useState<1 | 2>(1);
   const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
@@ -27,7 +29,7 @@ export default function ParticipantEntry({ event, onJoin }: ParticipantEntryProp
     // Sanitize: strip any HTML tags, limit length
     const safeName = name.trim().replace(/<[^>]*>/g, '').slice(0, 50);
     if (!safeName) {
-      setError('Please enter a valid name.');
+      setError(copy.onboarding.error_name);
       setLoading(false);
       return;
     }
@@ -81,7 +83,7 @@ export default function ParticipantEntry({ event, onJoin }: ParticipantEntryProp
                     <svg className="w-5 h-5 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                     </svg>
-                    <span className="text-base text-gray-700">Organized by <span className="font-medium">{event.organizer_name}</span></span>
+                    <span className="text-base text-gray-700">{interpolate(copy.event.organized_by, { name: event.organizer_name })}</span>
                   </div>
                 )}
                 {event.location && (
@@ -98,7 +100,7 @@ export default function ParticipantEntry({ event, onJoin }: ParticipantEntryProp
                     <svg className="w-5 h-5 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    <span className="text-base text-gray-700">{durationLabel} needed</span>
+                    <span className="text-base text-gray-700">{interpolate(copy.event.duration_needed, { duration: durationLabel })}</span>
                   </div>
                 )}
                 {event.response_deadline && (
@@ -108,8 +110,8 @@ export default function ParticipantEntry({ event, onJoin }: ParticipantEntryProp
                     </svg>
                     <span className={`text-base ${deadlinePassed ? 'text-red-500' : 'text-gray-700'}`}>
                       {deadlinePassed
-                        ? 'Response deadline has passed'
-                        : `Respond by ${format(new Date(event.response_deadline), 'MMM d')} (${formatDistanceToNow(new Date(event.response_deadline), { addSuffix: true })})`}
+                        ? copy.event.deadline_passed
+                        : interpolate(copy.event.respond_by, { date: format(new Date(event.response_deadline), 'MMM d'), relative: formatDistanceToNow(new Date(event.response_deadline), { addSuffix: true }) })}
                     </span>
                   </div>
                 )}
@@ -118,12 +120,12 @@ export default function ParticipantEntry({ event, onJoin }: ParticipantEntryProp
               {/* Name entry */}
               <form onSubmit={handleNextStep} className="px-6 py-5 space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-500 mb-1.5">Your name</label>
+                  <label className="block text-sm font-medium text-gray-500 mb-1.5">{copy.onboarding.name_label}</label>
                   <input
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="Enter your name"
+                    placeholder={copy.onboarding.name_placeholder}
                     autoFocus
                     maxLength={50}
                     className="w-full px-4 py-3.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-transparent text-base text-gray-900 placeholder-gray-400"
@@ -136,14 +138,14 @@ export default function ParticipantEntry({ event, onJoin }: ParticipantEntryProp
                   disabled={!name.trim()}
                   className="w-full py-3.5 px-4 bg-teal-500 text-white text-base font-semibold rounded-xl hover:bg-teal-600 transition-all duration-200 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                 >
-                  Next
+                  {copy.onboarding.next}
                 </button>
               </form>
             </div>
 
             {/* Footer */}
             <div className="mt-6 text-center text-[11px] text-gray-300">
-              <p>Powered by Scheduler. Free, no account needed.</p>
+              <p>{copy.onboarding.footer}</p>
             </div>
           </div>
         ) : (
@@ -157,31 +159,31 @@ export default function ParticipantEntry({ event, onJoin }: ParticipantEntryProp
                   </svg>
                 </div>
                 <h2 className="text-xl font-bold text-gray-900">
-                  Hi {name.trim().split(' ')[0]}, here&apos;s how it works
+                  {interpolate(copy.onboarding.greeting, { name: name.trim().split(' ')[0] })}
                 </h2>
-                <p className="text-base text-gray-500 mt-1">It only takes a moment</p>
+                <p className="text-base text-gray-500 mt-1">{copy.onboarding.greeting_subtitle}</p>
               </div>
 
               <div className="space-y-5 mb-7">
                 <div className="flex items-start gap-3.5">
                   <div className="shrink-0 w-8 h-8 rounded-full bg-teal-50 text-teal-600 flex items-center justify-center text-sm font-bold mt-0.5">1</div>
                   <div>
-                    <p className="text-base font-medium text-gray-800">Tap the times you&apos;re free</p>
-                    <p className="text-sm text-gray-500 mt-0.5 leading-relaxed">Each cell is a 30-minute slot. Tap to select, tap again to deselect.</p>
+                    <p className="text-base font-medium text-gray-800">{copy.onboarding.step1_title}</p>
+                    <p className="text-sm text-gray-500 mt-0.5 leading-relaxed">{copy.onboarding.step1_desc}</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3.5">
                   <div className="shrink-0 w-8 h-8 rounded-full bg-teal-50 text-teal-600 flex items-center justify-center text-sm font-bold mt-0.5">2</div>
                   <div>
-                    <p className="text-base font-medium text-gray-800">Your picks save automatically</p>
-                    <p className="text-sm text-gray-500 mt-0.5 leading-relaxed">No submit button needed. Just tap and you&apos;re done.</p>
+                    <p className="text-base font-medium text-gray-800">{copy.onboarding.step2_title}</p>
+                    <p className="text-sm text-gray-500 mt-0.5 leading-relaxed">{copy.onboarding.step2_desc}</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3.5">
                   <div className="shrink-0 w-8 h-8 rounded-full bg-teal-50 text-teal-600 flex items-center justify-center text-sm font-bold mt-0.5">3</div>
                   <div>
-                    <p className="text-base font-medium text-gray-800">{event.organizer_name?.split(' ')[0] || 'The organizer'} picks the final time</p>
-                    <p className="text-sm text-gray-500 mt-0.5 leading-relaxed">Once everyone responds, the best time will be chosen.</p>
+                    <p className="text-base font-medium text-gray-800">{interpolate(copy.onboarding.step3_title, { organizer: event.organizer_name?.split(' ')[0] || 'The organizer' })}</p>
+                    <p className="text-sm text-gray-500 mt-0.5 leading-relaxed">{copy.onboarding.step3_desc}</p>
                   </div>
                 </div>
               </div>
@@ -194,7 +196,7 @@ export default function ParticipantEntry({ event, onJoin }: ParticipantEntryProp
                 disabled={loading}
                 className="w-full py-3.5 px-4 bg-teal-500 text-white text-base font-semibold rounded-xl hover:bg-teal-600 transition-all duration-200 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               >
-                {loading ? 'Getting ready...' : 'Pick Your Times'}
+                {loading ? copy.onboarding.submitting : copy.onboarding.submit}
               </button>
 
               <button
@@ -202,7 +204,7 @@ export default function ParticipantEntry({ event, onJoin }: ParticipantEntryProp
                 onClick={() => setStep(1)}
                 className="w-full mt-3 py-2 text-sm text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
               >
-                &larr; Back
+                &larr; {copy.onboarding.back}
               </button>
             </div>
           </div>

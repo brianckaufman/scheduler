@@ -2,13 +2,13 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import type { SiteSettings } from '@/types/settings';
-import { DEFAULT_SETTINGS } from '@/types/settings';
+import type { SiteSettings, CopySettings } from '@/types/settings';
+import { DEFAULT_SETTINGS, DEFAULT_COPY } from '@/types/settings';
 import ImageUpload from '@/components/ImageUpload';
 
 import type { ReactNode } from 'react';
 
-type TabKey = 'seo' | 'branding' | 'monetization' | 'analytics' | 'social' | 'app';
+type TabKey = 'seo' | 'branding' | 'copy' | 'monetization' | 'analytics' | 'social' | 'app';
 
 const iconClass = 'w-4 h-4 flex-shrink-0';
 
@@ -21,6 +21,11 @@ const TAB_ICONS: Record<TabKey, ReactNode> = {
   branding: (
     <svg className={iconClass} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
       <path strokeLinecap="round" strokeLinejoin="round" d="M4.098 19.902a3.75 3.75 0 005.304 0l6.401-6.402M6.75 21A3.75 3.75 0 013 17.25V4.125C3 3.504 3.504 3 4.125 3h5.25c.621 0 1.125.504 1.125 1.125v4.072M6.75 21a3.75 3.75 0 003.75-3.75V8.197M6.75 21h13.125c.621 0 1.125-.504 1.125-1.125v-5.25c0-.621-.504-1.125-1.125-1.125h-4.072M10.5 8.197l2.88-2.88c.438-.439 1.15-.439 1.59 0l3.712 3.713c.44.44.44 1.152 0 1.59l-2.879 2.88M6.75 17.25h.008v.008H6.75v-.008z" />
+    </svg>
+  ),
+  copy: (
+    <svg className={iconClass} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 21l5.25-11.25L21 21m-9-3h7.5M3 5.621a48.474 48.474 0 016-.371m0 0c1.12 0 2.233.038 3.334.114M9 5.25V3m3.334 2.364C11.176 10.658 7.69 15.08 3 17.502m9.334-12.138c.896.061 1.785.147 2.666.257m-4.589 8.495a18.023 18.023 0 01-3.827-5.802" />
     </svg>
   ),
   monetization: (
@@ -48,10 +53,145 @@ const TAB_ICONS: Record<TabKey, ReactNode> = {
 const TABS: { key: TabKey; label: string }[] = [
   { key: 'seo', label: 'SEO' },
   { key: 'branding', label: 'Branding' },
+  { key: 'copy', label: 'Copy & Language' },
   { key: 'monetization', label: 'Monetization' },
   { key: 'analytics', label: 'Analytics' },
   { key: 'social', label: 'Social' },
   { key: 'app', label: 'App Settings' },
+];
+
+/* ── Copy group definitions for the Copy & Language tab ── */
+
+interface CopyField {
+  key: string;
+  label: string;
+  multiline?: boolean;
+}
+
+interface CopyGroup {
+  key: keyof CopySettings;
+  label: string;
+  fields: CopyField[];
+}
+
+const COPY_GROUPS: CopyGroup[] = [
+  {
+    key: 'home',
+    label: 'Home Page',
+    fields: [
+      { key: 'title', label: 'Title' },
+      { key: 'subtitle', label: 'Subtitle', multiline: true },
+      { key: 'step1_title', label: 'Step 1 Title' },
+      { key: 'step1_desc', label: 'Step 1 Description' },
+      { key: 'step2_title', label: 'Step 2 Title' },
+      { key: 'step2_desc', label: 'Step 2 Description' },
+      { key: 'step3_title', label: 'Step 3 Title' },
+      { key: 'step3_desc', label: 'Step 3 Description' },
+      { key: 'footer', label: 'Footer' },
+    ],
+  },
+  {
+    key: 'form',
+    label: 'Event Form',
+    fields: [
+      { key: 'event_label', label: 'Event Label' },
+      { key: 'event_placeholder', label: 'Event Placeholder' },
+      { key: 'description_label', label: 'Description Label' },
+      { key: 'description_placeholder', label: 'Description Placeholder' },
+      { key: 'name_label', label: 'Name Label' },
+      { key: 'name_placeholder', label: 'Name Placeholder' },
+      { key: 'location_label', label: 'Location Label' },
+      { key: 'location_placeholder', label: 'Location Placeholder' },
+      { key: 'dates_label', label: 'Dates Label' },
+      { key: 'earliest_label', label: 'Earliest Time Label' },
+      { key: 'latest_label', label: 'Latest Time Label' },
+      { key: 'duration_label', label: 'Duration Label' },
+      { key: 'deadline_label', label: 'Deadline Label' },
+      { key: 'submit', label: 'Submit Button' },
+      { key: 'submitting', label: 'Submitting Text' },
+      { key: 'error_time', label: 'Time Error' },
+    ],
+  },
+  {
+    key: 'onboarding',
+    label: 'Onboarding',
+    fields: [
+      { key: 'name_label', label: 'Name Label' },
+      { key: 'name_placeholder', label: 'Name Placeholder' },
+      { key: 'next', label: 'Next Button' },
+      { key: 'back', label: 'Back Button' },
+      { key: 'greeting', label: 'Greeting' },
+      { key: 'greeting_subtitle', label: 'Greeting Subtitle' },
+      { key: 'step1_title', label: 'Step 1 Title' },
+      { key: 'step1_desc', label: 'Step 1 Description', multiline: true },
+      { key: 'step2_title', label: 'Step 2 Title' },
+      { key: 'step2_desc', label: 'Step 2 Description', multiline: true },
+      { key: 'step3_title', label: 'Step 3 Title' },
+      { key: 'step3_desc', label: 'Step 3 Description', multiline: true },
+      { key: 'submit', label: 'Submit Button' },
+      { key: 'submitting', label: 'Submitting Text' },
+      { key: 'footer', label: 'Footer' },
+      { key: 'error_name', label: 'Name Error' },
+    ],
+  },
+  {
+    key: 'event',
+    label: 'Event Page',
+    fields: [
+      { key: 'organized_by', label: 'Organized By' },
+      { key: 'duration_needed', label: 'Duration Needed' },
+      { key: 'deadline_passed', label: 'Deadline Passed' },
+      { key: 'respond_by', label: 'Respond By' },
+      { key: 'tap_instruction', label: 'Tap Instruction' },
+      { key: 'all_set_title', label: 'All Set Title' },
+      { key: 'all_set_desc', label: 'All Set Description', multiline: true },
+      { key: 'cta_prompt', label: 'CTA Prompt' },
+      { key: 'cta_button', label: 'CTA Button' },
+      { key: 'cta_footer', label: 'CTA Footer' },
+    ],
+  },
+  {
+    key: 'grid',
+    label: 'Time Grid',
+    fields: [
+      { key: 'waiting', label: 'Waiting Message', multiline: true },
+      { key: 'no_overlap', label: 'No Overlap Message', multiline: true },
+      { key: 'overlap_found', label: 'Overlap Found Message' },
+      { key: 'pick_time', label: 'Pick Time Button' },
+      { key: 'waiting_organizer', label: 'Waiting for Organizer' },
+      { key: 'best_times', label: 'Best Times Header' },
+      { key: 'timezone_label', label: 'Timezone Label' },
+      { key: 'participants_label', label: 'Participants Label' },
+      { key: 'show_less', label: 'Show Less' },
+      { key: 'show_all', label: 'Show All' },
+      { key: 'you_suffix', label: 'You Suffix' },
+      { key: 'legend_all', label: 'Legend All' },
+      { key: 'legend_heat', label: 'Legend Heat' },
+      { key: 'clear', label: 'Clear Button' },
+      { key: 'all', label: 'All Button' },
+    ],
+  },
+  {
+    key: 'share',
+    label: 'Share',
+    fields: [
+      { key: 'copy_link', label: 'Copy Link Button' },
+      { key: 'copied', label: 'Copied Text' },
+      { key: 'share', label: 'Share Button' },
+      { key: 'share_prompt', label: 'Share Prompt', multiline: true },
+      { key: 'share_text', label: 'Share Text', multiline: true },
+    ],
+  },
+  {
+    key: 'notifications',
+    label: 'Notifications',
+    fields: [
+      { key: 'title', label: 'Title' },
+      { key: 'description', label: 'Description', multiline: true },
+      { key: 'enable', label: 'Enable Button' },
+      { key: 'dismiss', label: 'Dismiss Button' },
+    ],
+  },
 ];
 
 export default function AdminDashboard() {
@@ -63,6 +203,7 @@ export default function AdminDashboard() {
   const [saveMessage, setSaveMessage] = useState('');
   const [hasChanges, setHasChanges] = useState(false);
   const [originalSettings, setOriginalSettings] = useState<SiteSettings>(DEFAULT_SETTINGS);
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set(['home']));
 
   const fetchSettings = useCallback(async () => {
     try {
@@ -103,13 +244,46 @@ export default function AdminDashboard() {
     setSaveMessage('');
   };
 
+  const updateCopy = (
+    group: keyof CopySettings,
+    field: string,
+    value: string
+  ) => {
+    setSettings((prev) => ({
+      ...prev,
+      copy: {
+        ...prev.copy,
+        [group]: {
+          ...prev.copy[group],
+          [field]: value,
+        },
+      },
+    }));
+    setHasChanges(true);
+    setSaveMessage('');
+  };
+
+  const toggleGroup = (groupKey: string) => {
+    setExpandedGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(groupKey)) {
+        next.delete(groupKey);
+      } else {
+        next.add(groupKey);
+      }
+      return next;
+    });
+  };
+
   const handleSave = async () => {
     setSaving(true);
     setSaveMessage('');
 
     try {
       // Only send the active tab's section to avoid overwriting other sections
-      const sectionUpdate = { [activeTab]: settings[activeTab] };
+      const sectionUpdate = activeTab === 'copy'
+        ? { copy: settings.copy }
+        : { [activeTab]: settings[activeTab] };
 
       const res = await fetch('/api/admin/settings', {
         method: 'PUT',
@@ -244,6 +418,80 @@ export default function AdminDashboard() {
     </div>
   );
 
+  const renderCopy = () => {
+    const defaultCopy = DEFAULT_COPY;
+
+    return (
+      <div className="space-y-3">
+        <div className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 mb-4">
+          <div className="flex items-start gap-2">
+            <svg className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
+            </svg>
+            <p className="text-xs text-gray-500">
+              Use <code className="bg-white px-1.5 py-0.5 rounded border border-gray-200 font-mono text-[11px]">{'{{placeholder}}'}</code> syntax for dynamic values.
+              For example, <code className="bg-white px-1.5 py-0.5 rounded border border-gray-200 font-mono text-[11px]">{'{{name}}'}</code> will be
+              replaced with the actual participant or organizer name at render time.
+            </p>
+          </div>
+        </div>
+
+        {COPY_GROUPS.map((group) => {
+          const isExpanded = expandedGroups.has(group.key);
+          const groupDefaults = defaultCopy[group.key] as Record<string, string>;
+          const groupValues = (settings.copy[group.key] || {}) as Record<string, string>;
+
+          return (
+            <div key={group.key} className="border border-gray-200 rounded-lg overflow-hidden">
+              <button
+                type="button"
+                onClick={() => toggleGroup(group.key)}
+                className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 hover:bg-gray-100 transition-colors text-left"
+              >
+                <span className="text-sm font-medium text-gray-700">{group.label}</span>
+                <svg
+                  className={`w-4 h-4 text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth={1.5}
+                  stroke="currentColor"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                </svg>
+              </button>
+
+              {isExpanded && (
+                <div className="p-4 space-y-4">
+                  {group.fields.map((field) => (
+                    <div key={field.key}>
+                      <label className={labelClass}>{field.label}</label>
+                      {field.multiline ? (
+                        <textarea
+                          className={inputClass + ' resize-none'}
+                          rows={2}
+                          value={groupValues[field.key] ?? ''}
+                          onChange={(e) => updateCopy(group.key, field.key, e.target.value)}
+                          placeholder={groupDefaults[field.key] || ''}
+                        />
+                      ) : (
+                        <input
+                          className={inputClass}
+                          value={groupValues[field.key] ?? ''}
+                          onChange={(e) => updateCopy(group.key, field.key, e.target.value)}
+                          placeholder={groupDefaults[field.key] || ''}
+                        />
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
   const renderMonetization = () => (
     <div className="space-y-5">
       <div>
@@ -366,6 +614,8 @@ export default function AdminDashboard() {
           <option value={60}>1 hour</option>
           <option value={90}>1.5 hours</option>
           <option value={120}>2 hours</option>
+          <option value={180}>3 hours</option>
+          <option value={240}>4 hours</option>
         </select>
         <p className={helpClass}>Default duration pre-selected when creating new events</p>
       </div>
@@ -400,6 +650,7 @@ export default function AdminDashboard() {
     switch (activeTab) {
       case 'seo': return renderSEO();
       case 'branding': return renderBranding();
+      case 'copy': return renderCopy();
       case 'monetization': return renderMonetization();
       case 'analytics': return renderAnalytics();
       case 'social': return renderSocial();
@@ -431,8 +682,11 @@ export default function AdminDashboard() {
           </div>
           <button
             onClick={handleLogout}
-            className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
+            className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 transition-colors"
           >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />
+            </svg>
             Sign Out
           </button>
         </div>
