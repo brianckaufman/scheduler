@@ -97,17 +97,17 @@ function TimeGridSlotInner({
       onTouchEnd={handleTouchEnd}
       onContextMenu={(e) => { e.preventDefault(); onHold?.(slotKey); }}
       className={`
-        slot-cell w-full min-h-[44px] rounded-lg transition-colors text-xs font-medium select-none
+        slot-cell w-full min-h-[44px] rounded-lg text-xs font-medium select-none
         flex items-center justify-center gap-[3px] flex-wrap p-1
         ${bgClass} ${extra}
-        active:scale-95 touch-manipulation
+        active:scale-[0.93] touch-manipulation
       `}
     >
       {participantColors.map((color, i) => (
         <span
           key={i}
-          className="inline-block w-[10px] h-[10px] rounded-full shrink-0"
-          style={{ backgroundColor: color }}
+          className="dot-pop inline-block w-[10px] h-[10px] rounded-full shrink-0"
+          style={{ backgroundColor: color, animationDelay: `${i * 40}ms` }}
         />
       ))}
     </button>
