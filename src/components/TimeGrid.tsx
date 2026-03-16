@@ -4,7 +4,7 @@ import { useMemo, useCallback, useState, useRef, useEffect } from 'react';
 import { format, parseISO } from 'date-fns';
 import { createClient } from '@/lib/supabase/client';
 import { generateSlots } from '@/lib/slots';
-import { computeOverlap } from '@/lib/overlap';
+import { computeOverlap, getFullOverlapSlots } from '@/lib/overlap';
 import { useRealtimeSlots } from '@/hooks/useRealtimeSlots';
 import { useRealtimeParticipants } from '@/hooks/useRealtimeParticipants';
 import TimeGridSlot, { PARTICIPANT_COLORS } from './TimeGridSlot';
@@ -211,6 +211,25 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
     if (tooltipTimeout.current) clearTimeout(tooltipTimeout.current);
   }, []);
 
+  // Overlap status (always visible, not behind toggle)
+  const overlapStatus = useMemo(() => {
+    if (totalParticipants < 2) return 'waiting' as const;
+    const full = getFullOverlapSlots(overlapMap, totalParticipants);
+    return full.length > 0 ? 'found' as const : 'none' as const;
+  }, [overlapMap, totalParticipants]);
+
+  // Delete participant handler (organizer only)
+  const handleDeleteParticipant = useCallback(async (pid: string) => {
+    if (!organizerToken) return;
+    const res = await fetch(
+      `/api/events/${event.id}?organizer_token=${encodeURIComponent(organizerToken)}&participant_id=${encodeURIComponent(pid)}`,
+      { method: 'DELETE' }
+    );
+    if (!res.ok) {
+      console.error('Failed to delete participant');
+    }
+  }, [event.id, organizerToken]);
+
   // Finalize handler
   const handleFinalize = useCallback(async (time: string) => {
     await fetch(`/api/events/${event.id}`, {
@@ -226,6 +245,23 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
 
   return (
     <div className="space-y-6" onMouseUp={handleDragEnd} onMouseLeave={handleDragEnd}>
+      {/* Always-visible status notice */}
+      {overlapStatus === 'waiting' && (
+        <div className="bg-gray-50 rounded-xl p-4 text-center text-sm text-gray-500">
+          Waiting for more participants to join...
+        </div>
+      )}
+      {overlapStatus === 'none' && (
+        <div className="bg-amber-50 rounded-xl p-4 text-center text-sm text-amber-700">
+          No times work for everyone yet. Keep adding your availability!
+        </div>
+      )}
+      {overlapStatus === 'found' && (
+        <div className="bg-green-50 rounded-xl p-3 text-center text-sm text-green-700 font-medium">
+          Times found where everyone can meet!
+        </div>
+      )}
+
       {/* Collapsible results section */}
       <button
         type="button"
@@ -397,6 +433,22 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
               <span className="text-gray-700">
                 {p.name}{p.id === participantId && ' (you)'}
               </span>
+              {isOrganizer && p.id !== participantId && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (confirm(`Remove ${p.name} and all their availability?`)) {
+                      handleDeleteParticipant(p.id);
+                    }
+                  }}
+                  className="ml-0.5 text-gray-400 hover:text-red-500 transition-colors"
+                  title={`Remove ${p.name}`}
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
             </span>
           ))}
         </div>
