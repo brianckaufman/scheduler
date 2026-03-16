@@ -8,7 +8,7 @@ CREATE TABLE events (
   description TEXT CHECK (description IS NULL OR char_length(description) <= 500),
   organizer_name TEXT CHECK (organizer_name IS NULL OR char_length(organizer_name) <= 50),
   location TEXT CHECK (location IS NULL OR char_length(location) <= 100),
-  duration_minutes INTEGER DEFAULT 30 CHECK (duration_minutes IN (30, 60, 90, 120, 180, 240)),
+  duration_minutes INTEGER DEFAULT 30 CHECK (duration_minutes IN (10, 15, 30, 45, 60, 90, 120, 180, 240)),
   response_deadline TIMESTAMPTZ,
   finalized_time TIMESTAMPTZ,
   organizer_token TEXT NOT NULL,

@@ -41,6 +41,9 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
   // Collapsible results
   const [showResults, setShowResults] = useState(false);
 
+  // Time picker modal (organizer only)
+  const [showTimePicker, setShowTimePicker] = useState(false);
+
   // Tooltip
   const [tooltipSlot, setTooltipSlot] = useState<string | null>(null);
   const tooltipTimeout = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -258,8 +261,23 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
         </div>
       )}
       {overlapStatus === 'found' && (
-        <div className="animate-fade-in-scale bg-green-50 rounded-xl p-3 text-center text-sm text-green-700 font-medium">
-          Times found where everyone can meet!
+        <div className="animate-fade-in-scale bg-green-50 rounded-xl p-4 text-center">
+          <p className="text-sm text-green-700 font-medium">
+            Times found where everyone can meet!
+          </p>
+          {isOrganizer ? (
+            <button
+              type="button"
+              onClick={() => setShowTimePicker(true)}
+              className="mt-2 px-5 py-2 bg-green-600 text-white text-sm font-semibold rounded-full hover:bg-green-700 shadow-sm hover:shadow-md transition-all duration-200 active:scale-95"
+            >
+              Pick a Time
+            </button>
+          ) : (
+            <p className="text-xs text-green-600 mt-1">
+              Waiting for {event.organizer_name?.split(' ')[0] || 'the organizer'} to pick a time
+            </p>
+          )}
         </div>
       )}
 
@@ -414,6 +432,44 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
           participants={participants}
           onClose={() => setTooltipSlot(null)}
         />
+      )}
+
+      {/* Time Picker Modal (organizer only) */}
+      {showTimePicker && (
+        <div
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 animate-fade-in"
+          onClick={(e) => { if (e.target === e.currentTarget) setShowTimePicker(false); }}
+        >
+          <div className="bg-white w-full max-w-md rounded-t-2xl sm:rounded-2xl shadow-xl animate-slide-up max-h-[85vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white border-b border-gray-100 px-5 py-4 flex items-center justify-between rounded-t-2xl">
+              <h2 className="text-lg font-bold text-gray-900">Pick a Time</h2>
+              <button
+                type="button"
+                onClick={() => setShowTimePicker(false)}
+                className="p-1.5 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="p-5 space-y-2">
+              <p className="text-sm text-gray-500 mb-4">
+                Choose the best time for <span className="font-medium text-gray-700">{event.name}</span>
+              </p>
+              <BestTimes
+                overlapMap={overlapMap}
+                totalParticipants={totalParticipants}
+                durationMinutes={event.duration_minutes || 30}
+                participants={participants}
+                onFinalize={isOrganizer ? (time: string) => {
+                  handleFinalize(time);
+                  setShowTimePicker(false);
+                } : undefined}
+              />
+            </div>
+          </div>
+        </div>
       )}
 
       <div className="space-y-3">

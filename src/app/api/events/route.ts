@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid timezone' }, { status: 400 });
   }
 
-  const validDurations = [30, 60, 90, 120, 180, 240];
+  const validDurations = [10, 15, 30, 45, 60, 90, 120, 180, 240];
   const safeDuration = validDurations.includes(durationMinutes) ? durationMinutes : 30;
 
   // --- Sanitize text inputs ---

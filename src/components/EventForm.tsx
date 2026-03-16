@@ -37,7 +37,10 @@ function formatTimeLabel(time: string) {
 
 const TIME_OPTIONS = generateTimeOptions();
 const DURATION_OPTIONS = [
+  { value: 10, label: '10 minutes' },
+  { value: 15, label: '15 minutes' },
   { value: 30, label: '30 minutes' },
+  { value: 45, label: '45 minutes' },
   { value: 60, label: '1 hour' },
   { value: 90, label: '1.5 hours' },
   { value: 120, label: '2 hours' },
@@ -137,7 +140,7 @@ export default function EventForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim() || selectedDates.length === 0) return;
+    if (!name.trim() || !organizerName.trim() || selectedDates.length === 0) return;
     if (timeStart >= timeEnd) {
       setError('End time must be after start time');
       return;
@@ -226,15 +229,16 @@ export default function EventForm() {
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label htmlFor="organizerName" className="block text-sm font-medium text-gray-700 mb-1">
-            Your name (optional)
+            Your name
           </label>
           <input
             id="organizerName"
             type="text"
             value={organizerName}
             onChange={(e) => setOrganizerName(e.target.value)}
-            placeholder="Who's organizing?"
+            placeholder="Your name"
             className={inputClass}
+            required
             maxLength={50}
           />
         </div>
@@ -326,7 +330,7 @@ export default function EventForm() {
 
       <button
         type="submit"
-        disabled={loading || !name.trim() || selectedDates.length === 0}
+        disabled={loading || !name.trim() || !organizerName.trim() || selectedDates.length === 0}
         className="w-full py-3 px-4 bg-teal-500 text-white font-semibold rounded-xl hover:bg-teal-600 hover:shadow-md hover:shadow-teal-200 transition-all duration-200 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {loading ? 'Creating...' : 'Create Event'}

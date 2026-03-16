@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { checkRateLimit } from '@/lib/rate-limit';
+import { sendPushNotifications } from '@/lib/push';
 
 function getClientIp(request: NextRequest): string {
   return (
@@ -76,6 +77,19 @@ export async function PATCH(
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  // Send push notifications when a time is finalized (not when un-finalizing)
+  if (finalized_time && data) {
+    const finalDate = new Date(finalized_time);
+    const timeStr = finalDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
+      + ' at ' + finalDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+
+    sendPushNotifications(supabase, id, {
+      title: `${data.name} — Time Picked!`,
+      body: `${data.organizer_name || 'The organizer'} picked ${timeStr}`,
+      url: `/e/${data.slug}`,
+    }).catch((err) => console.error('Push notification error:', err));
   }
 
   return NextResponse.json(data);
