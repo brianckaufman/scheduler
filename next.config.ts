@@ -51,10 +51,10 @@ const nextConfig: NextConfig = {
             key: 'Content-Security-Policy',
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://www.google-analytics.com https://ssl.google-analytics.com",
               "style-src 'self' 'unsafe-inline'",
-              `connect-src ${connectSrc}`,
-              "img-src 'self' data: blob:",
+              `connect-src ${connectSrc} https://www.google-analytics.com https://analytics.google.com https://www.googletagmanager.com`,
+              "img-src 'self' data: blob: https://www.googletagmanager.com https://www.google-analytics.com",
               "font-src 'self'",
               "frame-ancestors 'none'",
               "base-uri 'self'",
