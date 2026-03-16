@@ -88,12 +88,16 @@ export default function BestTimes({ overlapMap, totalParticipants, durationMinut
   return (
     <div className="space-y-2">
       <h3 className="text-sm font-semibold text-gray-700">Best times</h3>
-      {bestBlocks.map((block) => {
+      {bestBlocks.map((block, i) => {
         const start = new Date(block.start);
         const names = Array.from(block.participantIds).map((id) => participantMap.get(id) || '?');
 
         return (
-          <div key={block.start} className="flex items-center gap-3 bg-gray-50 rounded-xl p-3">
+          <div
+            key={block.start}
+            className="animate-fade-in flex items-center gap-3 bg-gray-50 rounded-xl p-3 transition-all duration-200 hover:shadow-sm hover:bg-gray-100/80"
+            style={{ animationDelay: `${i * 80}ms` }}
+          >
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-gray-900">
                 {format(start, 'EEE, MMM d')} &middot; {format(start, 'h:mm a')}
@@ -103,7 +107,7 @@ export default function BestTimes({ overlapMap, totalParticipants, durationMinut
               </p>
             </div>
             {block.count === totalParticipants && (
-              <span className="shrink-0 text-xs font-medium text-green-600 bg-green-100 px-2 py-1 rounded-full">
+              <span className="shrink-0 text-xs font-medium text-green-600 bg-green-100 px-2 py-1 rounded-full animate-fade-in-scale">
                 All available
               </span>
             )}
@@ -111,7 +115,7 @@ export default function BestTimes({ overlapMap, totalParticipants, durationMinut
               <button
                 type="button"
                 onClick={() => onFinalize(block.start)}
-                className="shrink-0 text-xs font-medium text-teal-600 hover:text-teal-800 bg-teal-50 px-2 py-1 rounded-full transition-colors"
+                className="shrink-0 text-xs font-medium text-teal-600 hover:text-teal-800 bg-teal-50 hover:bg-teal-100 px-2 py-1 rounded-full transition-all duration-200 active:scale-95"
               >
                 Pick
               </button>

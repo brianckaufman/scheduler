@@ -44,7 +44,7 @@ export default function ParticipantEntry({ eventId, eventName, onJoin }: Partici
           <h1 className="text-2xl font-bold text-gray-900 mb-1">{eventName}</h1>
           <p className="text-gray-500 text-sm">Enter your name to mark your availability</p>
         </div>
-        <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="animate-fade-in bg-white rounded-2xl shadow-sm border border-gray-100 p-6 space-y-4">
           <input
             type="text"
             value={name}
@@ -58,7 +58,7 @@ export default function ParticipantEntry({ eventId, eventName, onJoin }: Partici
           <button
             type="submit"
             disabled={loading || !name.trim()}
-            className="w-full py-3 px-4 bg-teal-500 text-white font-semibold rounded-xl hover:bg-teal-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full py-3 px-4 bg-teal-500 text-white font-semibold rounded-xl hover:bg-teal-600 hover:shadow-md hover:shadow-teal-200 transition-all duration-200 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? 'Joining...' : 'Join'}
           </button>

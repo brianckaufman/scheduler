@@ -69,7 +69,7 @@ export default function FinalizedBanner({ event, isOrganizer, organizerToken, on
   };
 
   return (
-    <div className="mb-4 bg-green-50 border border-green-200 rounded-2xl p-4">
+    <div className="animate-fade-in-scale mb-4 bg-green-50 border border-green-200 rounded-2xl p-4">
       <div className="text-center">
         <p className="text-sm font-semibold text-green-800">Time confirmed!</p>
         <p className="text-lg font-bold text-green-900 mt-1">
@@ -84,14 +84,14 @@ export default function FinalizedBanner({ event, isOrganizer, organizerToken, on
           href={getGoogleCalendarUrl(event)}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex-1 py-2 px-3 bg-white border border-green-300 text-green-700 text-sm font-medium rounded-xl text-center hover:bg-green-50 transition-colors"
+          className="flex-1 py-2 px-3 bg-white border border-green-300 text-green-700 text-sm font-medium rounded-xl text-center hover:bg-green-50 hover:shadow-sm transition-all duration-200 active:scale-[0.97]"
         >
           Google Calendar
         </a>
         <button
           type="button"
           onClick={handleDownloadICS}
-          className="flex-1 py-2 px-3 bg-white border border-green-300 text-green-700 text-sm font-medium rounded-xl text-center hover:bg-green-50 transition-colors"
+          className="flex-1 py-2 px-3 bg-white border border-green-300 text-green-700 text-sm font-medium rounded-xl text-center hover:bg-green-50 hover:shadow-sm transition-all duration-200 active:scale-[0.97]"
         >
           Download .ics
         </button>

@@ -247,17 +247,17 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
     <div className="space-y-6" onMouseUp={handleDragEnd} onMouseLeave={handleDragEnd}>
       {/* Always-visible status notice */}
       {overlapStatus === 'waiting' && (
-        <div className="bg-gray-50 rounded-xl p-4 text-center text-sm text-gray-500">
+        <div className="animate-fade-in bg-gray-50 rounded-xl p-4 text-center text-sm text-gray-500">
           Waiting for more participants to join...
         </div>
       )}
       {overlapStatus === 'none' && (
-        <div className="bg-amber-50 rounded-xl p-4 text-center text-sm text-amber-700">
+        <div className="animate-fade-in bg-amber-50 rounded-xl p-4 text-center text-sm text-amber-700">
           No times work for everyone yet. Keep adding your availability!
         </div>
       )}
       {overlapStatus === 'found' && (
-        <div className="bg-green-50 rounded-xl p-3 text-center text-sm text-green-700 font-medium">
+        <div className="animate-fade-in-scale bg-green-50 rounded-xl p-3 text-center text-sm text-green-700 font-medium">
           Times found where everyone can meet!
         </div>
       )}
@@ -277,7 +277,7 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
         </svg>
       </button>
       {showResults && (
-        <div className="space-y-4">
+        <div className="animate-slide-down space-y-4">
           <OverlapSummary overlapMap={overlapMap} totalParticipants={totalParticipants} />
           <BestTimes
             overlapMap={overlapMap}
@@ -297,7 +297,7 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
               key={date}
               type="button"
               onClick={() => setActiveDay(i)}
-              className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+              className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 ${
                 i === activeDay
                   ? 'bg-teal-500 text-white'
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -421,10 +421,11 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
           Participants ({participants.length})
         </h3>
         <div className="flex flex-wrap gap-2">
-          {participants.map((p) => (
+          {participants.map((p, i) => (
             <span
               key={p.id}
-              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm bg-gray-50"
+              className="animate-fade-in inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm bg-gray-50 transition-all duration-200 hover:shadow-sm"
+              style={{ animationDelay: `${i * 50}ms` }}
             >
               <span
                 className="inline-block w-3 h-3 rounded-full shrink-0"

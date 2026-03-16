@@ -118,10 +118,10 @@ export default function EventForm() {
                 disabled={past || !inMonth}
                 onClick={() => toggleDate(day)}
                 className={`
-                  py-2 rounded-lg text-sm font-medium transition-colors
+                  py-2 rounded-lg text-sm font-medium transition-all duration-150
                   ${!inMonth ? 'invisible' : ''}
-                  ${past ? 'text-gray-300 cursor-not-allowed' : 'cursor-pointer'}
-                  ${selected ? 'bg-teal-500 text-white' : ''}
+                  ${past ? 'text-gray-300 cursor-not-allowed' : 'cursor-pointer active:scale-90'}
+                  ${selected ? 'bg-teal-500 text-white shadow-sm shadow-teal-200' : ''}
                   ${!selected && !past && inMonth ? 'text-gray-700 hover:bg-gray-100' : ''}
                   ${isToday(day) && !selected ? 'ring-1 ring-teal-400' : ''}
                 `}
@@ -316,7 +316,7 @@ export default function EventForm() {
       <button
         type="submit"
         disabled={loading || !name.trim() || selectedDates.length === 0}
-        className="w-full py-3 px-4 bg-teal-500 text-white font-semibold rounded-xl hover:bg-teal-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full py-3 px-4 bg-teal-500 text-white font-semibold rounded-xl hover:bg-teal-600 hover:shadow-md hover:shadow-teal-200 transition-all duration-200 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {loading ? 'Creating...' : 'Create Event'}
       </button>
