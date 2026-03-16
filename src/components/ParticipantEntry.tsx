@@ -93,7 +93,8 @@ export default function ParticipantEntry({ event, onJoin }: ParticipantEntryProp
                     <img
                       src={branding.logo_url}
                       alt={branding.site_name}
-                      className="h-7 w-auto object-contain brightness-0 invert"
+                      style={{ height: `${Math.round((branding.logo_height || 40) * 0.7)}px` }}
+                      className="w-auto object-contain brightness-0 invert"
                     />
                   </div>
                 )}

@@ -4,6 +4,9 @@ import { createContext, useContext } from 'react';
 
 interface BrandingValues {
   logo_url: string;
+  logo_height: number;
+  hide_home_title: boolean;
+  hide_home_subtitle: boolean;
   accent_color: string;
   footer_text: string;
   site_name: string;
@@ -11,6 +14,9 @@ interface BrandingValues {
 
 const defaults: BrandingValues = {
   logo_url: '',
+  logo_height: 40,
+  hide_home_title: false,
+  hide_home_subtitle: false,
   accent_color: '#0d9488',
   footer_text: 'Free forever. No sign-up. No spam.',
   site_name: 'Scheduler',

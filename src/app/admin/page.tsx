@@ -232,7 +232,7 @@ export default function AdminDashboard() {
   const updateSection = <K extends keyof SiteSettings>(
     section: K,
     field: keyof SiteSettings[K],
-    value: string | number
+    value: string | number | boolean
   ) => {
     setSettings((prev) => ({
       ...prev,
@@ -426,6 +426,53 @@ export default function AdminDashboard() {
         help="Displayed in the app header and shared links"
         aspectHint="SVG or PNG recommended (transparent background)"
       />
+
+      {/* Logo display options — only shown when a logo is uploaded */}
+      {settings.branding.logo_url && (
+        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-4">
+          <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Logo Display Options</p>
+
+          <div>
+            <label className={labelClass}>Logo Height (px)</label>
+            <div className="flex items-center gap-3">
+              <input
+                type="range"
+                min={20}
+                max={120}
+                step={4}
+                value={settings.branding.logo_height || 40}
+                onChange={(e) => updateSection('branding', 'logo_height', Number(e.target.value))}
+                className="flex-1 accent-teal-500"
+              />
+              <span className="text-sm text-gray-600 w-12 text-right">{settings.branding.logo_height || 40}px</span>
+            </div>
+            <p className={helpClass}>Controls the logo size on the homepage. Event pages use 70% of this value.</p>
+          </div>
+
+          <div className="space-y-2">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={settings.branding.hide_home_title || false}
+                onChange={(e) => updateSection('branding', 'hide_home_title', e.target.checked)}
+                className="w-4 h-4 rounded border-gray-300 text-teal-500 focus:ring-teal-400"
+              />
+              <span className="text-sm text-gray-700">Hide homepage title</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={settings.branding.hide_home_subtitle || false}
+                onChange={(e) => updateSection('branding', 'hide_home_subtitle', e.target.checked)}
+                className="w-4 h-4 rounded border-gray-300 text-teal-500 focus:ring-teal-400"
+              />
+              <span className="text-sm text-gray-700">Hide homepage subtitle</span>
+            </label>
+            <p className={helpClass}>When checked, the title/subtitle text is hidden so only the logo shows.</p>
+          </div>
+        </div>
+      )}
+
       <div>
         <label className={labelClass}>Accent Color</label>
         <div className="flex gap-3 items-center">

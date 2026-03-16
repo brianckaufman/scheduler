@@ -129,7 +129,8 @@ export default function EventView({ event: initialEvent }: EventViewProps) {
             <img
               src={branding.logo_url}
               alt={branding.site_name}
-              className="h-7 w-auto object-contain"
+              style={{ height: `${Math.round((branding.logo_height || 40) * 0.7)}px` }}
+              className="w-auto object-contain"
             />
           </div>
         )}

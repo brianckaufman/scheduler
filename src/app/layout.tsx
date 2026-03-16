@@ -11,13 +11,47 @@ const geist = Geist({
   subsets: ['latin'],
 });
 
+/** Detect MIME type from a favicon URL's file extension */
+function getFaviconType(url: string): string {
+  const clean = url.split('?')[0]; // strip query params
+  const ext = clean.split('.').pop()?.toLowerCase();
+  switch (ext) {
+    case 'svg': return 'image/svg+xml';
+    case 'ico': return 'image/x-icon';
+    case 'png': return 'image/png';
+    case 'jpg':
+    case 'jpeg': return 'image/jpeg';
+    case 'webp': return 'image/webp';
+    case 'gif': return 'image/gif';
+    default: return 'image/png';
+  }
+}
+
 export async function generateMetadata(): Promise<Metadata> {
   const settings = await getSettings();
+  const faviconUrl = settings.seo.favicon;
+
+  // Build proper icon entries with type so browsers handle PNG/SVG/ICO correctly
+  const icons: Metadata['icons'] = faviconUrl
+    ? {
+        icon: [
+          {
+            url: faviconUrl,
+            type: getFaviconType(faviconUrl),
+          },
+        ],
+        apple: [
+          {
+            url: faviconUrl,
+          },
+        ],
+      }
+    : undefined;
 
   return {
     title: settings.seo.site_name || 'Scheduler',
     description: settings.seo.og_description || 'Find a time that works for everyone. No accounts needed.',
-    icons: settings.seo.favicon ? { icon: settings.seo.favicon } : undefined,
+    icons,
     openGraph: {
       title: settings.seo.og_title || settings.seo.site_name || 'Scheduler',
       description: settings.seo.og_description || 'Find a time that works for everyone.',
@@ -79,6 +113,9 @@ export default async function RootLayout({
         <BrandingProvider
           branding={{
             logo_url: settings.branding.logo_url,
+            logo_height: settings.branding.logo_height || 40,
+            hide_home_title: settings.branding.hide_home_title || false,
+            hide_home_subtitle: settings.branding.hide_home_subtitle || false,
             accent_color: accentColor,
             footer_text: settings.branding.footer_text,
             site_name: settings.seo.site_name || 'Scheduler',

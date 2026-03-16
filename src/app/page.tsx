@@ -3,28 +3,34 @@ import { getSettings } from '@/lib/settings';
 
 export default async function Home() {
   const settings = await getSettings();
-  const { copy: { home } } = settings;
+  const { copy: { home }, branding } = settings;
+  const logoHeight = branding.logo_height || 40;
 
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-md mx-auto px-4 py-12">
         <div className="text-center mb-6">
-          {settings.branding.logo_url && (
+          {branding.logo_url && (
             <div className="mb-4 flex justify-center">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={settings.branding.logo_url}
+                src={branding.logo_url}
                 alt={settings.seo.site_name || 'Logo'}
-                className="h-10 w-auto object-contain"
+                style={{ height: `${logoHeight}px` }}
+                className="w-auto object-contain"
               />
             </div>
           )}
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            {home.title}
-          </h1>
-          <p className="text-gray-500">
-            {home.subtitle}
-          </p>
+          {!branding.hide_home_title && (
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              {home.title}
+            </h1>
+          )}
+          {!branding.hide_home_subtitle && (
+            <p className="text-gray-500">
+              {home.subtitle}
+            </p>
+          )}
         </div>
 
         {/* How it works */}

@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import { isAdminAuthenticated } from '@/lib/admin-auth';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { getSettings, deepMerge } from '@/lib/settings';
@@ -63,6 +64,10 @@ export async function PUT(request: Request) {
         { status: 500 }
       );
     }
+
+    // Bust Next.js server component cache so all pages pick up new settings
+    // Using 'layout' type invalidates the root layout + all child pages
+    revalidatePath('/', 'layout');
 
     // Return the fully merged settings (with defaults filled in)
     const finalSettings = await getSettings();
