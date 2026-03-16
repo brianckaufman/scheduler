@@ -214,8 +214,9 @@ export default function AdminDashboard() {
       }
       if (res.ok) {
         const data = await res.json();
-        setSettings(data);
-        setOriginalSettings(data);
+        const s = data.settings ?? data;
+        setSettings(s);
+        setOriginalSettings(s);
       }
     } catch {
       // If fetch fails, use defaults
@@ -288,7 +289,7 @@ export default function AdminDashboard() {
       const res = await fetch('/api/admin/settings', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(sectionUpdate),
+        body: JSON.stringify({ settings: sectionUpdate }),
       });
 
       if (res.status === 401) {

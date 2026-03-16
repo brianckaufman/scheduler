@@ -34,7 +34,7 @@ export default function ImageUpload({
       try {
         const formData = new FormData();
         formData.append('file', file);
-        formData.append('folder', folder);
+        formData.append('path', folder);
 
         const res = await fetch('/api/admin/upload', {
           method: 'POST',
