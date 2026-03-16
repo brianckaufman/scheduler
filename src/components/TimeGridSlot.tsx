@@ -17,6 +17,9 @@ export const PARTICIPANT_COLORS = [
   '#a855f7', // purple-500
 ];
 
+// Max dots to show before switching to count mode
+const MAX_DOTS = 6;
+
 interface TimeGridSlotProps {
   slotKey: string;
   isMine: boolean;
@@ -44,15 +47,30 @@ function TimeGridSlotInner({
   onHold,
   onRelease,
 }: TimeGridSlotProps) {
-  // Tracks whether mouseDown started a drag (desktop only)
   const mouseDidDrag = useRef(false);
+  // Suppress unused var warning — onRelease kept for API compatibility
+  void onRelease;
 
+  const totalAvailable = participantColors.length;
+  const useCountMode = totalParticipants > MAX_DOTS || totalAvailable > MAX_DOTS;
+
+  // Heat-map background: intensity based on fraction of participants available
   let bgClass = 'bg-gray-100';
   let extra = '';
+  let heatStyle: React.CSSProperties | undefined;
 
   if (isAllMatch) {
     bgClass = 'bg-green-100';
     extra = 'ring-2 ring-green-300';
+  } else if (totalAvailable > 0 && useCountMode) {
+    // Heat-map: more people = deeper teal
+    const fraction = totalAvailable / totalParticipants;
+    const alpha = 0.12 + fraction * 0.45; // 12% to 57% opacity
+    bgClass = '';
+    heatStyle = { backgroundColor: `rgba(20, 184, 166, ${alpha})` }; // teal
+    if (isMine) {
+      extra = 'ring-2 ring-teal-300';
+    }
   } else if (isMine && othersCount > 1) {
     bgClass = 'bg-teal-100';
   } else if (isMine) {
@@ -61,23 +79,18 @@ function TimeGridSlotInner({
     bgClass = 'bg-gray-200';
   }
 
-  // Desktop: mouseDown starts drag mode (toggle + drag)
+  // Desktop drag
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     mouseDidDrag.current = true;
     onDragStart(slotKey);
   }, [slotKey, onDragStart]);
 
-  // onClick fires on BOTH desktop and mobile.
-  // On desktop: mouseDown already handled it, so skip.
-  // On mobile: this is the primary interaction — the browser's native
-  // click event already filters out scrolls, so no custom threshold needed.
   const handleClick = useCallback(() => {
     if (mouseDidDrag.current) {
       mouseDidDrag.current = false;
-      return; // Desktop mouseDown already toggled
+      return;
     }
-    // Mobile tap — simple, reliable
     onToggle(slotKey);
   }, [slotKey, onToggle]);
 
@@ -96,14 +109,27 @@ function TimeGridSlotInner({
         ${isMine ? 'slot-selected' : ''} ${isAllMatch ? 'slot-match' : ''}
         active:scale-[0.93] touch-manipulation
       `}
+      style={heatStyle}
     >
-      {participantColors.map((color, i) => (
-        <span
-          key={i}
-          className="inline-block w-[10px] h-[10px] rounded-full shrink-0"
-          style={{ backgroundColor: color }}
-        />
-      ))}
+      {useCountMode ? (
+        // Count mode: show number instead of dots for large groups
+        totalAvailable > 0 && (
+          <span className={`text-[11px] font-bold ${
+            isAllMatch ? 'text-green-700' : isMine ? 'text-teal-700' : 'text-teal-600'
+          }`}>
+            {totalAvailable}
+          </span>
+        )
+      ) : (
+        // Dot mode: show individual colored dots for small groups
+        participantColors.map((color, i) => (
+          <span
+            key={i}
+            className="inline-block w-[10px] h-[10px] rounded-full shrink-0"
+            style={{ backgroundColor: color }}
+          />
+        ))
+      )}
     </button>
   );
 }

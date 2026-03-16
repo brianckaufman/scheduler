@@ -44,6 +44,9 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
   // Time picker modal (organizer only)
   const [showTimePicker, setShowTimePicker] = useState(false);
 
+  // Expandable participant list for large groups
+  const [showAllParticipants, setShowAllParticipants] = useState(false);
+
   // Tooltip
   const [tooltipSlot, setTooltipSlot] = useState<string | null>(null);
   const tooltipTimeout = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -473,11 +476,25 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
       )}
 
       <div className="space-y-3">
-        <h3 className="text-sm font-medium text-gray-700">
-          Participants ({participants.length})
-        </h3>
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-medium text-gray-700">
+            Participants ({participants.length})
+          </h3>
+          {participants.length > 8 && (
+            <button
+              type="button"
+              onClick={() => setShowAllParticipants((v) => !v)}
+              className="text-xs text-teal-500 hover:text-teal-700 font-medium cursor-pointer"
+            >
+              {showAllParticipants ? 'Show less' : 'Show all'}
+            </button>
+          )}
+        </div>
         <div className="flex flex-wrap gap-2">
-          {participants.map((p, i) => (
+          {(participants.length > 8 && !showAllParticipants
+            ? participants.slice(0, 6)
+            : participants
+          ).map((p, i) => (
             <span
               key={p.id}
               className="animate-fade-in inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm bg-gray-50 transition-all duration-200 hover:shadow-sm"
@@ -498,7 +515,7 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
                       handleDeleteParticipant(p.id);
                     }
                   }}
-                  className="ml-0.5 text-gray-400 hover:text-red-500 transition-colors"
+                  className="ml-0.5 text-gray-400 hover:text-red-500 transition-colors cursor-pointer"
                   title={`Remove ${p.name}`}
                 >
                   <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -508,10 +525,24 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
               )}
             </span>
           ))}
+          {participants.length > 8 && !showAllParticipants && (
+            <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-gray-50 text-gray-400">
+              +{participants.length - 6} more
+            </span>
+          )}
         </div>
-        <div className="flex items-center gap-2 text-xs text-gray-500">
-          <div className="w-4 h-4 rounded bg-green-100 ring-2 ring-green-300" />
-          <span>Everyone can meet</span>
+        {/* Legend */}
+        <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500">
+          <div className="flex items-center gap-1.5">
+            <div className="w-4 h-4 rounded bg-green-100 ring-2 ring-green-300" />
+            <span>Everyone can meet</span>
+          </div>
+          {totalParticipants > 6 && (
+            <div className="flex items-center gap-1.5">
+              <div className="w-4 h-4 rounded" style={{ backgroundColor: 'rgba(20, 184, 166, 0.35)' }} />
+              <span>More = darker</span>
+            </div>
+          )}
         </div>
       </div>
     </div>
