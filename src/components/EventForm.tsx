@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useCopy } from '@/contexts/CopyContext';
+import { useCreatedEvents } from '@/hooks/useCreatedEvents';
 import {
   format,
   addMonths,
@@ -52,10 +53,15 @@ const DURATION_OPTIONS = [
 export default function EventForm() {
   const router = useRouter();
   const copy = useCopy();
+  const { addEvent } = useCreatedEvents();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [organizerName, setOrganizerName] = useState('');
+  const [organizerFirstName, setOrganizerFirstName] = useState('');
+  const [organizerLastName, setOrganizerLastName] = useState('');
   const [location, setLocation] = useState('');
+
+  // Combine into full name for API
+  const organizerName = `${organizerFirstName.trim()} ${organizerLastName.trim()}`.trim();
   const [durationMinutes, setDurationMinutes] = useState(60);
   const [responseDeadline, setResponseDeadline] = useState('');
   const [selectedDates, setSelectedDates] = useState<Date[]>([]);
@@ -168,7 +174,7 @@ export default function EventForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim() || !organizerName.trim() || selectedDates.length === 0) return;
+    if (!name.trim() || !organizerFirstName.trim() || !organizerLastName.trim() || selectedDates.length === 0) return;
     if (timeStart >= timeEnd) {
       setError(copy.form.error_time);
       return;
@@ -212,6 +218,8 @@ export default function EventForm() {
           JSON.stringify({ id: organizerParticipantId, name: returnedName })
         );
       }
+      // Track event for returning user banner
+      addEvent(slug, name.trim());
       router.push(`/e/${slug}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong');
@@ -257,20 +265,38 @@ export default function EventForm() {
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label htmlFor="organizerName" className="block text-sm font-medium text-gray-700 mb-1">
-            {copy.form.name_label}
+          <label htmlFor="organizerFirstName" className="block text-sm font-medium text-gray-700 mb-1">
+            First name
           </label>
           <input
-            id="organizerName"
+            id="organizerFirstName"
             type="text"
-            value={organizerName}
-            onChange={(e) => setOrganizerName(e.target.value)}
-            placeholder={copy.form.name_placeholder}
+            value={organizerFirstName}
+            onChange={(e) => setOrganizerFirstName(e.target.value)}
+            placeholder="First name"
             className={inputClass}
             required
-            maxLength={50}
+            maxLength={25}
           />
         </div>
+        <div>
+          <label htmlFor="organizerLastName" className="block text-sm font-medium text-gray-700 mb-1">
+            Last name
+          </label>
+          <input
+            id="organizerLastName"
+            type="text"
+            value={organizerLastName}
+            onChange={(e) => setOrganizerLastName(e.target.value)}
+            placeholder="Last name"
+            className={inputClass}
+            required
+            maxLength={25}
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
         <div>
           <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-1">
             {copy.form.location_label}
@@ -380,7 +406,7 @@ export default function EventForm() {
 
       <button
         type="submit"
-        disabled={loading || !name.trim() || !organizerName.trim() || selectedDates.length === 0}
+        disabled={loading || !name.trim() || !organizerFirstName.trim() || !organizerLastName.trim() || selectedDates.length === 0}
         className="w-full py-3 px-4 bg-teal-500 text-white font-semibold rounded-xl hover:bg-teal-600 hover:shadow-md hover:shadow-teal-200 transition-all duration-200 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {loading ? copy.form.submitting : copy.form.submit}

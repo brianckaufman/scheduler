@@ -92,6 +92,20 @@ export interface CopySettings {
     enable: string;
     dismiss: string;
   };
+  celebration: {
+    time_saved_quips: string[];
+    bookmark_title: string;
+    bookmark_desc: string;
+    bookmark_shortcut_mac: string;
+    bookmark_shortcut_win: string;
+    bookmark_mobile: string;
+    bookmark_dismiss: string;
+  };
+  returning: {
+    welcome_back: string;
+    your_events: string;
+    new_event: string;
+  };
 }
 
 // ── Site Settings ───────────────────────────────────────────────
@@ -146,14 +160,14 @@ export interface SiteSettings {
 export const DEFAULT_COPY: CopySettings = {
   home: {
     title: 'Scheduler',
-    subtitle: 'Find a time that works for everyone. No accounts needed.',
+    subtitle: 'Stop texting "does Tuesday work?" to 14 people.',
     step1_title: 'Create an event',
-    step1_desc: 'Pick dates & times',
+    step1_desc: 'Takes about 30 seconds',
     step2_title: 'Share the link',
-    step2_desc: 'Everyone taps availability',
+    step2_desc: 'Watch people actually respond',
     step3_title: 'Pick the best time',
-    step3_desc: 'See overlap instantly',
-    footer: 'Free forever. No sign-up. No spam.',
+    step3_desc: 'Zero back-and-forth needed',
+    footer: 'Free forever. Zero accounts. Your group chat will thank you.',
   },
   form: {
     event_label: "What's the event?",
@@ -170,25 +184,25 @@ export const DEFAULT_COPY: CopySettings = {
     duration_label: 'How long do you need?',
     deadline_label: 'Respond by (optional)',
     submit: 'Create Event',
-    submitting: 'Creating...',
+    submitting: 'Working on it...',
     error_time: 'End time must be after start time',
   },
   onboarding: {
     name_label: 'Your name',
     name_placeholder: 'Enter your name',
-    next: 'Next',
+    next: "Let's go",
     back: 'Back',
-    greeting: "Hi {{name}}, here's how it works",
-    greeting_subtitle: 'It only takes a moment',
+    greeting: "Hey {{name}}, this'll be quick",
+    greeting_subtitle: 'Faster than reading a group text',
     step1_title: "Tap the times you're free",
-    step1_desc: 'Each cell is a 30-minute slot. Tap to select, tap again to deselect.',
-    step2_title: 'Your picks save automatically',
-    step2_desc: "No submit button needed. Just tap and you're done.",
+    step1_desc: 'Each cell is a time slot. Tap to select, tap again to undo. Easy.',
+    step2_title: 'It saves automatically',
+    step2_desc: "No submit button. We respect your time more than that.",
     step3_title: '{{organizer}} picks the final time',
-    step3_desc: 'Once everyone responds, the best time will be chosen.',
-    submit: 'Pick Your Times',
-    submitting: 'Getting ready...',
-    footer: 'Powered by Scheduler. Free, no account needed.',
+    step3_desc: "Once everyone responds, the best time gets picked. You'll know.",
+    submit: "Let's Pick Times",
+    submitting: 'One sec...',
+    footer: 'Free. No account. No nonsense.',
     error_name: 'Please enter a valid name.',
   },
   event: {
@@ -197,18 +211,18 @@ export const DEFAULT_COPY: CopySettings = {
     deadline_passed: 'Response deadline has passed',
     respond_by: 'Respond by {{date}} ({{relative}})',
     tap_instruction: "Tap the times you're available",
-    all_set_title: "You're all set!",
-    all_set_desc: '{{count}} time(s) selected. You can change your availability anytime by tapping the grid above.',
-    cta_prompt: 'Need to schedule your own event?',
-    cta_button: 'Create your own for free',
-    cta_footer: 'No account needed',
+    all_set_title: 'Done. That was easy.',
+    all_set_desc: '{{count}} time(s) selected. Change anytime by tapping the grid above.',
+    cta_prompt: 'Impressed? (You should be.)',
+    cta_button: 'Schedule your own event',
+    cta_footer: 'Still free. Still no sign-up. Still magic.',
   },
   grid: {
-    waiting: 'Waiting for more participants to join...',
-    no_overlap: 'No times work for everyone yet. Keep adding your availability!',
-    overlap_found: 'Times found where everyone can meet!',
+    waiting: 'Waiting for more people to join...',
+    no_overlap: "No perfect overlap yet. But we're getting there.",
+    overlap_found: 'We found times that work for everyone!',
     pick_time: 'Pick a Time',
-    waiting_organizer: 'Waiting for {{name}} to pick a time',
+    waiting_organizer: 'Waiting for {{name}} to make the call',
     best_times: 'Best Times & Overlap',
     timezone_label: 'Times shown in {{timezone}}',
     participants_label: 'Participants ({{count}})',
@@ -224,21 +238,46 @@ export const DEFAULT_COPY: CopySettings = {
     copy_link: 'Copy Link',
     copied: 'Copied!',
     share: 'Share',
-    share_prompt: 'Share this link so others can pick their availability',
-    share_text: 'When can you meet for "{{event}}"? Tap your availability:',
+    share_prompt: 'Send this before someone starts a group text about it',
+    share_text: 'When can you meet for "{{event}}"? Tap your availability (takes 10 seconds):',
   },
   notifications: {
     title: 'Get notified when a time is picked',
-    description: "We'll send you a notification when {{name}} finalizes the time.",
-    enable: 'Enable',
+    description: "We'll ping you when {{name}} locks in the time. No spam, ever.",
+    enable: 'Notify me',
     dismiss: 'No thanks',
+  },
+  celebration: {
+    time_saved_quips: [
+      "That's roughly {{texts}} texts you just avoided.",
+      'You just saved everyone a {{texts}}-message group chat.',
+      'Somewhere, a group text thread just breathed a sigh of relief.',
+      "{{texts}} back-and-forth messages? Not today.",
+      "Scheduling in under a minute. You're basically a productivity influencer now.",
+      'That was faster than finding a GIF to send in the group chat.',
+      "Your future self just high-fived you.",
+      "Look at you, being a functional adult.",
+      "{{texts}} potential 'does this work?' texts, eliminated.",
+      "You just got {{seconds}} seconds of your life back. You're welcome.",
+    ],
+    bookmark_title: 'Bookmark this page',
+    bookmark_desc: "You'll want to come back to check responses and pick the final time.",
+    bookmark_shortcut_mac: 'Press Cmd+D to bookmark',
+    bookmark_shortcut_win: 'Press Ctrl+D to bookmark',
+    bookmark_mobile: 'Tap Share, then "Add to Home Screen"',
+    bookmark_dismiss: 'Got it',
+  },
+  returning: {
+    welcome_back: 'Welcome back',
+    your_events: 'Your events',
+    new_event: 'New event',
   },
 };
 
 export const DEFAULT_SETTINGS: SiteSettings = {
   seo: {
     og_title: 'Scheduler',
-    og_description: 'Find a time that works for everyone. No accounts needed.',
+    og_description: 'Stop texting "does Tuesday work?" to 14 people. Free group scheduling, no sign-up required.',
     og_image: '',
     favicon: '',
     site_name: 'Scheduler',
@@ -251,7 +290,7 @@ export const DEFAULT_SETTINGS: SiteSettings = {
     hide_home_title: false,
     hide_home_subtitle: false,
     accent_color: '#0d9488',
-    footer_text: 'Free forever. No sign-up. No spam.',
+    footer_text: 'Free forever. Zero accounts. Your group chat will thank you.',
   },
   monetization: {
     buymeacoffee_url: '',
@@ -270,7 +309,7 @@ export const DEFAULT_SETTINGS: SiteSettings = {
     twitter_url: '',
     instagram_url: '',
     tiktok_url: '',
-    share_default_text: 'Help me find a time that works! Fill in your availability:',
+    share_default_text: 'Help me find a time that works! Fill in your availability (takes 10 seconds):',
   },
   app: {
     default_duration: 60,

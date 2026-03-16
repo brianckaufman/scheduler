@@ -15,6 +15,9 @@ import FinalizedBanner from '@/components/FinalizedBanner';
 import EditEventModal from '@/components/EditEventModal';
 import SkeletonLoader from '@/components/SkeletonLoader';
 import SupportBanner from '@/components/SupportBanner';
+import BookmarkPrompt from '@/components/BookmarkPrompt';
+import { optimizedLogoUrl } from '@/lib/image';
+import { formatDisplayName, firstName } from '@/lib/names';
 import type { Event } from '@/types';
 
 interface EventViewProps {
@@ -37,27 +40,12 @@ export default function EventView({ event: initialEvent }: EventViewProps) {
   const gridRef = useRef<HTMLDivElement>(null);
   const [justJoined, setJustJoined] = useState(false);
 
-  // Slot count from TimeGrid (via callback, avoids duplicate real-time subscription)
-  const [mySlotCount, setMySlotCount] = useState(0);
-
-  // Show "all set" confirmation after first selection, with a brief delay
-  const [showAllSet, setShowAllSet] = useState(false);
-  const [prevSlotCount, setPrevSlotCount] = useState(0);
+  // Track whether user has selected any slots (for donation banner)
+  const [hasSelections, setHasSelections] = useState(false);
 
   const handleSlotCountChange = useCallback((count: number) => {
-    setMySlotCount(count);
+    if (count > 0) setHasSelections(true);
   }, []);
-
-  useEffect(() => {
-    if (mySlotCount > 0 && prevSlotCount === 0) {
-      const timer = setTimeout(() => setShowAllSet(true), 800);
-      return () => clearTimeout(timer);
-    }
-    if (mySlotCount === 0) {
-      setShowAllSet(false);
-    }
-    setPrevSlotCount(mySlotCount);
-  }, [mySlotCount, prevSlotCount]);
 
   useEffect(() => {
     const token = localStorage.getItem(`organizer_${event.slug}`);
@@ -130,7 +118,7 @@ export default function EventView({ event: initialEvent }: EventViewProps) {
           <div className="mb-3">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={branding.logo_url}
+              src={optimizedLogoUrl(branding.logo_url, Math.round((branding.logo_height || 40) * 0.7))}
               alt={branding.site_name}
               style={{ height: `${Math.round((branding.logo_height || 40) * 0.7)}px` }}
               className="w-auto object-contain"
@@ -160,7 +148,7 @@ export default function EventView({ event: initialEvent }: EventViewProps) {
           )}
           <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2">
             {event.organizer_name && (
-              <span className="text-xs text-gray-400">{interpolate(copy.event.organized_by, { name: event.organizer_name })}</span>
+              <span className="text-xs text-gray-400">{interpolate(copy.event.organized_by, { name: formatDisplayName(event.organizer_name) })}</span>
             )}
             {event.location && (
               <span className="text-xs text-gray-400">{event.location}</span>
@@ -205,9 +193,9 @@ export default function EventView({ event: initialEvent }: EventViewProps) {
               </svg>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-blue-900">{copy.notifications.title}</p>
+              <p className="text-sm font-medium text-blue-900">{interpolate(copy.notifications.title, { name: firstName(event.organizer_name || 'the organizer') })}</p>
               <p className="text-xs text-blue-600 mt-0.5">
-                {interpolate(copy.notifications.description, { name: event.organizer_name?.split(' ')[0] || 'the organizer' })}
+                {interpolate(copy.notifications.description, { name: firstName(event.organizer_name || 'the organizer') })}
               </p>
               <div className="flex gap-2 mt-2">
                 <button
@@ -229,6 +217,9 @@ export default function EventView({ event: initialEvent }: EventViewProps) {
           </div>
         )}
 
+        {/* Bookmark prompt for organizers */}
+        {isOrganizer && <BookmarkPrompt eventSlug={event.slug} />}
+
         <div className="mb-4">
           <ShareLink eventName={event.name} isOrganizer={isOrganizer} />
         </div>
@@ -245,29 +236,16 @@ export default function EventView({ event: initialEvent }: EventViewProps) {
           />
         </div>
 
-        {/* "You're all set" confirmation */}
-        {showAllSet && !event.finalized_time && (
-          <div className="animate-fade-in-scale mt-4 bg-teal-50 border border-teal-100 rounded-2xl p-4 text-center">
-            <div className="flex items-center justify-center gap-2 mb-1">
-              <svg className="w-5 h-5 text-teal-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <p className="text-sm font-semibold text-teal-800">{copy.event.all_set_title}</p>
-            </div>
-            <p className="text-xs text-teal-600">
-              {interpolate(copy.event.all_set_desc, { count: mySlotCount })}
-            </p>
+        {/* Donation banner — shown after user selects availability */}
+        {hasSelections && !event.finalized_time && monetization.buymeacoffee_url && monetization.show_on_success && (
+          <div className="mt-4">
+            <SupportBanner
+              url={monetization.buymeacoffee_url}
+              cta={monetization.donation_cta}
+              message={monetization.donation_message}
+              variant="banner"
+            />
           </div>
-        )}
-
-        {/* Donation banner — shown after "all set" (highest-conversion moment) */}
-        {showAllSet && !event.finalized_time && monetization.buymeacoffee_url && monetization.show_on_success && (
-          <SupportBanner
-            url={monetization.buymeacoffee_url}
-            cta={monetization.donation_cta}
-            message={monetization.donation_message}
-            variant="banner"
-          />
         )}
 
         {/* Viral CTA footer */}

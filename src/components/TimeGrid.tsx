@@ -4,6 +4,7 @@ import { useMemo, useCallback, useState, useRef, useEffect } from 'react';
 import { format, parseISO } from 'date-fns';
 import { createClient } from '@/lib/supabase/client';
 import { useCopy, interpolate } from '@/contexts/CopyContext';
+import { formatDisplayName } from '@/lib/names';
 import { generateSlots } from '@/lib/slots';
 import { computeOverlap, getFullOverlapSlots } from '@/lib/overlap';
 import { useRealtimeSlots } from '@/hooks/useRealtimeSlots';
@@ -62,9 +63,10 @@ interface TimeGridProps {
   organizerToken?: string | null;
   onFinalize?: (time: string) => void;
   onMySlotCountChange?: (count: number) => void;
+  onParticipantCountChange?: (count: number) => void;
 }
 
-export default function TimeGrid({ event, participantId, isOrganizer, organizerToken, onFinalize, onMySlotCountChange }: TimeGridProps) {
+export default function TimeGrid({ event, participantId, isOrganizer, organizerToken, onFinalize, onMySlotCountChange, onParticipantCountChange }: TimeGridProps) {
   const copy = useCopy();
   const { slots: allSlots, removeByParticipant: removeSlotsForParticipant } = useRealtimeSlots(event.id);
   const { participants, removeParticipant } = useRealtimeParticipants(event.id);
@@ -159,6 +161,12 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
   useEffect(() => {
     onMySlotCountChange?.(mySlotCount);
   }, [mySlotCount, onMySlotCountChange]);
+
+  // Report participant count to parent (for celebration component)
+  const participantCount = participants.length;
+  useEffect(() => {
+    onParticipantCountChange?.(participantCount);
+  }, [participantCount, onParticipantCountChange]);
 
   // Clean up pending state when server catches up
   useEffect(() => {
@@ -360,7 +368,7 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
             </button>
           ) : (
             <p className="text-xs text-green-600 mt-1">
-              {interpolate(copy.grid.waiting_organizer, { name: event.organizer_name?.split(' ')[0] || 'the organizer' })}
+              {interpolate(copy.grid.waiting_organizer, { name: formatDisplayName(event.organizer_name || 'the organizer') })}
             </p>
           )}
         </div>
@@ -604,18 +612,18 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
                 style={{ backgroundColor: participantColorMap.get(p.id) }}
               />
               <span className="text-gray-700">
-                {p.name}{p.id === participantId && ` ${copy.grid.you_suffix}`}
+                {formatDisplayName(p.name)}{p.id === participantId && ` ${copy.grid.you_suffix}`}
               </span>
               {isOrganizer && p.id !== participantId && (
                 <button
                   type="button"
                   onClick={() => {
-                    if (confirm(`Remove ${p.name} and all their availability?`)) {
+                    if (confirm(`Remove ${formatDisplayName(p.name)} and all their availability?`)) {
                       handleDeleteParticipant(p.id);
                     }
                   }}
                   className="ml-0.5 text-gray-400 hover:text-red-500 transition-colors cursor-pointer"
-                  title={`Remove ${p.name}`}
+                  title={`Remove ${formatDisplayName(p.name)}`}
                 >
                   <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />

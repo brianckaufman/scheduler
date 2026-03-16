@@ -1,6 +1,8 @@
 import EventForm from '@/components/EventForm';
 import SupportBanner from '@/components/SupportBanner';
+import ReturningUserBanner from '@/components/ReturningUserBanner';
 import { getSettings } from '@/lib/settings';
+import { optimizedLogoUrl } from '@/lib/image';
 
 export default async function Home() {
   const settings = await getSettings();
@@ -16,7 +18,7 @@ export default async function Home() {
             <div className="mb-4 flex justify-center">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={branding.logo_url}
+                src={optimizedLogoUrl(branding.logo_url, logoHeight)}
                 alt={settings.seo.site_name || 'Logo'}
                 style={{ height: `${logoHeight}px` }}
                 className="w-auto object-contain"
@@ -55,6 +57,9 @@ export default async function Home() {
             </div>
           </div>
         </div>
+
+        {/* Returning user quick links */}
+        <ReturningUserBanner />
 
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
           <EventForm />

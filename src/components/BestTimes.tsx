@@ -2,6 +2,7 @@
 
 import { useMemo } from 'react';
 import { format } from 'date-fns';
+import { formatDisplayName } from '@/lib/names';
 import type { Participant } from '@/types';
 
 interface BestTimesProps {
@@ -83,7 +84,7 @@ export default function BestTimes({ overlapMap, totalParticipants, durationMinut
 
   if (bestBlocks.length === 0) return null;
 
-  const participantMap = new Map(participants.map((p) => [p.id, p.name]));
+  const participantMap = new Map(participants.map((p) => [p.id, formatDisplayName(p.name)]));
 
   return (
     <div className="space-y-2">

@@ -192,6 +192,27 @@ const COPY_GROUPS: CopyGroup[] = [
       { key: 'dismiss', label: 'Dismiss Button' },
     ],
   },
+  {
+    key: 'celebration',
+    label: 'Celebration & Bookmark',
+    fields: [
+      { key: 'bookmark_title', label: 'Bookmark Title' },
+      { key: 'bookmark_desc', label: 'Bookmark Description', multiline: true },
+      { key: 'bookmark_shortcut_mac', label: 'Bookmark Shortcut (Mac)' },
+      { key: 'bookmark_shortcut_win', label: 'Bookmark Shortcut (Windows)' },
+      { key: 'bookmark_mobile', label: 'Bookmark Instruction (Mobile)' },
+      { key: 'bookmark_dismiss', label: 'Bookmark Dismiss Button' },
+    ],
+  },
+  {
+    key: 'returning',
+    label: 'Returning Users',
+    fields: [
+      { key: 'welcome_back', label: 'Welcome Back Title' },
+      { key: 'your_events', label: 'Your Events Label' },
+      { key: 'new_event', label: 'New Event Link' },
+    ],
+  },
 ];
 
 export default function AdminDashboard() {

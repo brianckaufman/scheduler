@@ -1,6 +1,7 @@
 'use client';
 
 import { format } from 'date-fns';
+import { formatDisplayName } from '@/lib/names';
 import type { Participant } from '@/types';
 
 interface SlotTooltipProps {
@@ -12,7 +13,7 @@ interface SlotTooltipProps {
 
 export default function SlotTooltip({ slotKey, overlapMap, participants, onClose }: SlotTooltipProps) {
   const participantIds = overlapMap.get(slotKey);
-  const participantMap = new Map(participants.map((p) => [p.id, p.name]));
+  const participantMap = new Map(participants.map((p) => [p.id, formatDisplayName(p.name)]));
   const time = new Date(slotKey);
 
   const availableNames = participantIds
@@ -20,7 +21,7 @@ export default function SlotTooltip({ slotKey, overlapMap, participants, onClose
     : [];
   const unavailableNames = participants
     .filter((p) => !participantIds?.has(p.id))
-    .map((p) => p.name);
+    .map((p) => formatDisplayName(p.name));
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center" onClick={onClose}>

@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { Geist } from 'next/font/google';
+import { Poppins } from 'next/font/google';
 import './globals.css';
 import { getSettings } from '@/lib/settings';
 import { AnalyticsScripts } from '@/components/AnalyticsScripts';
@@ -7,10 +7,13 @@ import { CopyProvider } from '@/contexts/CopyContext';
 import { BrandingProvider } from '@/contexts/BrandingContext';
 import { MonetizationProvider } from '@/contexts/MonetizationContext';
 import JsonLd, { buildWebAppJsonLd } from '@/components/JsonLd';
+import { optimizedOgImageUrl, optimizedFaviconUrl } from '@/lib/image';
 
-const geist = Geist({
-  variable: '--font-geist',
+const poppins = Poppins({
+  variable: '--font-poppins',
   subsets: ['latin'],
+  weight: ['300', '400', '500', '600', '700'],
+  display: 'swap',
 });
 
 /** Detect MIME type from a favicon URL's file extension */
@@ -31,7 +34,7 @@ function getFaviconType(url: string): string {
 
 export async function generateMetadata(): Promise<Metadata> {
   const settings = await getSettings();
-  const faviconUrl = settings.seo.favicon;
+  const faviconUrl = settings.seo.favicon ? optimizedFaviconUrl(settings.seo.favicon) : '';
   const siteUrl = settings.seo.site_url || process.env.NEXT_PUBLIC_SITE_URL || '';
   const siteName = settings.seo.site_name || 'Scheduler';
   const ogTitle = settings.seo.og_title || siteName;
@@ -75,14 +78,14 @@ export async function generateMetadata(): Promise<Metadata> {
       title: ogTitle,
       description: ogDesc,
       siteName,
-      ...(settings.seo.og_image ? { images: [{ url: settings.seo.og_image, width: 1200, height: 630, alt: ogTitle }] } : {}),
+      ...(settings.seo.og_image ? { images: [{ url: optimizedOgImageUrl(settings.seo.og_image), width: 1200, height: 630, alt: ogTitle }] } : {}),
     },
     // Twitter card
     twitter: {
       card: 'summary_large_image',
       title: ogTitle,
       description: ogDesc,
-      ...(settings.seo.og_image ? { images: [{ url: settings.seo.og_image, alt: ogTitle }] } : {}),
+      ...(settings.seo.og_image ? { images: [{ url: optimizedOgImageUrl(settings.seo.og_image), alt: ogTitle }] } : {}),
       ...(settings.social.twitter_url ? { site: settings.social.twitter_url.split('/').pop() ? `@${settings.social.twitter_url.split('/').pop()}` : undefined } : {}),
     },
     // Facebook App ID (for fb:app_id OG tag)
@@ -138,7 +141,7 @@ export default async function RootLayout({
           customScripts={settings.analytics.custom_head_scripts}
         />
       </head>
-      <body className={`${geist.variable} font-sans antialiased`}>
+      <body className={`${poppins.variable} font-sans antialiased`}>
         {settings.analytics.gtm_id && (
           <noscript>
             <iframe

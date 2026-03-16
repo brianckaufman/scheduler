@@ -5,6 +5,8 @@ import { format, formatDistanceToNow, isPast } from 'date-fns';
 import { createClient } from '@/lib/supabase/client';
 import { useCopy, interpolate } from '@/contexts/CopyContext';
 import { useBranding } from '@/contexts/BrandingContext';
+import { optimizedLogoUrl } from '@/lib/image';
+import { formatDisplayName, firstName } from '@/lib/names';
 import type { Event } from '@/types';
 
 interface ParticipantEntryProps {
@@ -16,20 +18,24 @@ export default function ParticipantEntry({ event, onJoin }: ParticipantEntryProp
   const copy = useCopy();
   const branding = useBranding();
   const [step, setStep] = useState<1 | 2>(1);
-  const [name, setName] = useState('');
+  const [firstName_, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // Combine first + last into full name for storage
+  const fullName = `${firstName_.trim()} ${lastName.trim()}`.trim();
 
   const deadlinePassed = event.response_deadline && isPast(new Date(event.response_deadline));
 
   const handleJoin = async () => {
-    if (!name.trim()) return;
+    if (!fullName) return;
 
     setLoading(true);
     setError('');
 
     // Sanitize: strip any HTML tags, limit length
-    const safeName = name.trim().replace(/<[^>]*>/g, '').slice(0, 50);
+    const safeName = fullName.replace(/<[^>]*>/g, '').slice(0, 50);
     if (!safeName) {
       setError(copy.onboarding.error_name);
       setLoading(false);
@@ -69,7 +75,7 @@ export default function ParticipantEntry({ event, onJoin }: ParticipantEntryProp
 
   const handleNextStep = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) return;
+    if (!firstName_.trim()) return;
     setStep(2);
   };
 
@@ -91,7 +97,7 @@ export default function ParticipantEntry({ event, onJoin }: ParticipantEntryProp
                   <div className="mb-3">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
-                      src={branding.logo_url}
+                      src={optimizedLogoUrl(branding.logo_url, Math.round((branding.logo_height || 40) * 0.7))}
                       alt={branding.site_name}
                       style={{ height: `${Math.round((branding.logo_height || 40) * 0.7)}px` }}
                       className="w-auto object-contain brightness-0 invert"
@@ -111,7 +117,7 @@ export default function ParticipantEntry({ event, onJoin }: ParticipantEntryProp
                     <svg className="w-5 h-5 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                     </svg>
-                    <span className="text-base text-gray-700">{interpolate(copy.event.organized_by, { name: event.organizer_name })}</span>
+                    <span className="text-base text-gray-700">{interpolate(copy.event.organized_by, { name: formatDisplayName(event.organizer_name!) })}</span>
                   </div>
                 )}
                 {event.location && (
@@ -147,23 +153,37 @@ export default function ParticipantEntry({ event, onJoin }: ParticipantEntryProp
 
               {/* Name entry */}
               <form onSubmit={handleNextStep} className="px-6 py-5 space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-500 mb-1.5">{copy.onboarding.name_label}</label>
-                  <input
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder={copy.onboarding.name_placeholder}
-                    autoFocus
-                    maxLength={50}
-                    className="w-full px-4 py-3.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-transparent text-base text-gray-900 placeholder-gray-400"
-                    required
-                  />
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-500 mb-1.5">First name</label>
+                    <input
+                      type="text"
+                      value={firstName_}
+                      onChange={(e) => setFirstName(e.target.value)}
+                      placeholder="First name"
+                      autoFocus
+                      maxLength={25}
+                      className="w-full px-4 py-3.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-transparent text-base text-gray-900 placeholder-gray-400"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-500 mb-1.5">Last name</label>
+                    <input
+                      type="text"
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                      placeholder="Last name"
+                      maxLength={25}
+                      className="w-full px-4 py-3.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-transparent text-base text-gray-900 placeholder-gray-400"
+                      required
+                    />
+                  </div>
                 </div>
                 {error && <p className="text-red-500 text-sm">{error}</p>}
                 <button
                   type="submit"
-                  disabled={!name.trim()}
+                  disabled={!firstName_.trim() || !lastName.trim()}
                   className="w-full py-3.5 px-4 bg-teal-500 text-white text-base font-semibold rounded-xl hover:bg-teal-600 transition-all duration-200 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                 >
                   {copy.onboarding.next}
@@ -187,7 +207,7 @@ export default function ParticipantEntry({ event, onJoin }: ParticipantEntryProp
                   </svg>
                 </div>
                 <h2 className="text-xl font-bold text-gray-900">
-                  {interpolate(copy.onboarding.greeting, { name: name.trim().split(' ')[0] })}
+                  {interpolate(copy.onboarding.greeting, { name: firstName_.trim() })}
                 </h2>
                 <p className="text-base text-gray-500 mt-1">{copy.onboarding.greeting_subtitle}</p>
               </div>
@@ -210,7 +230,7 @@ export default function ParticipantEntry({ event, onJoin }: ParticipantEntryProp
                 <div className="flex items-start gap-3.5">
                   <div className="shrink-0 w-8 h-8 rounded-full bg-teal-50 text-teal-600 flex items-center justify-center text-sm font-bold mt-0.5">3</div>
                   <div>
-                    <p className="text-base font-medium text-gray-800">{interpolate(copy.onboarding.step3_title, { organizer: event.organizer_name?.split(' ')[0] || 'The organizer' })}</p>
+                    <p className="text-base font-medium text-gray-800">{interpolate(copy.onboarding.step3_title, { organizer: firstName(event.organizer_name || 'The organizer') })}</p>
                     <p className="text-sm text-gray-500 mt-0.5 leading-relaxed">{copy.onboarding.step3_desc}</p>
                   </div>
                 </div>
