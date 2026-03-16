@@ -22,6 +22,7 @@ export async function generateMetadata({ params }: EventPageProps) {
     .single();
 
   const siteName = settings.seo.site_name || 'Scheduler';
+  const siteUrl = settings.seo.site_url || process.env.NEXT_PUBLIC_SITE_URL || '';
 
   if (!event) {
     return { title: `Event Not Found | ${siteName}` };
@@ -30,21 +31,26 @@ export async function generateMetadata({ params }: EventPageProps) {
   const title = `${event.name} | ${siteName}`;
   const description = event.description
     || `Tap your availability for "${event.name}"${event.organizer_name ? ` organized by ${event.organizer_name}` : ''}`;
+  const eventUrl = siteUrl ? `${siteUrl}/e/${slug}` : undefined;
 
   return {
     title,
     description,
+    ...(eventUrl ? { alternates: { canonical: eventUrl } } : {}),
     openGraph: {
+      type: 'website',
+      locale: 'en_US',
+      ...(eventUrl ? { url: eventUrl } : {}),
       title,
       description,
       siteName,
-      ...(settings.seo.og_image ? { images: [{ url: settings.seo.og_image, width: 1200, height: 630 }] } : {}),
+      ...(settings.seo.og_image ? { images: [{ url: settings.seo.og_image, width: 1200, height: 630, alt: title }] } : {}),
     },
     twitter: {
       card: 'summary_large_image' as const,
       title,
       description,
-      ...(settings.seo.og_image ? { images: [settings.seo.og_image] } : {}),
+      ...(settings.seo.og_image ? { images: [{ url: settings.seo.og_image, alt: title }] } : {}),
     },
   };
 }

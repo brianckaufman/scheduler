@@ -103,6 +103,8 @@ export interface SiteSettings {
     og_image: string;
     favicon: string;
     site_name: string;
+    site_url: string;
+    fb_app_id: string;
   };
   branding: {
     logo_url: string;
@@ -115,6 +117,10 @@ export interface SiteSettings {
   monetization: {
     buymeacoffee_url: string;
     donation_cta: string;
+    donation_message: string;
+    show_on_home: boolean;
+    show_on_event: boolean;
+    show_on_success: boolean;
   };
   analytics: {
     ga_id: string;
@@ -236,6 +242,8 @@ export const DEFAULT_SETTINGS: SiteSettings = {
     og_image: '',
     favicon: '',
     site_name: 'Scheduler',
+    site_url: '',
+    fb_app_id: '',
   },
   branding: {
     logo_url: '',
@@ -247,7 +255,11 @@ export const DEFAULT_SETTINGS: SiteSettings = {
   },
   monetization: {
     buymeacoffee_url: '',
-    donation_cta: 'Buy me a coffee',
+    donation_cta: 'Buy me a coffee ☕',
+    donation_message: 'Love this app? Help keep it free!',
+    show_on_home: true,
+    show_on_event: true,
+    show_on_success: true,
   },
   analytics: {
     ga_id: '',

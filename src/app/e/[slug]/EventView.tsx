@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { format, formatDistanceToNow, isPast } from 'date-fns';
 import { useCopy, interpolate } from '@/contexts/CopyContext';
 import { useBranding } from '@/contexts/BrandingContext';
+import { useMonetization } from '@/contexts/MonetizationContext';
 import { useParticipantSession } from '@/hooks/useParticipantSession';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import ParticipantEntry from '@/components/ParticipantEntry';
@@ -13,6 +14,7 @@ import ShareLink from '@/components/ShareLink';
 import FinalizedBanner from '@/components/FinalizedBanner';
 import EditEventModal from '@/components/EditEventModal';
 import SkeletonLoader from '@/components/SkeletonLoader';
+import SupportBanner from '@/components/SupportBanner';
 import type { Event } from '@/types';
 
 interface EventViewProps {
@@ -22,6 +24,7 @@ interface EventViewProps {
 export default function EventView({ event: initialEvent }: EventViewProps) {
   const copy = useCopy();
   const branding = useBranding();
+  const monetization = useMonetization();
   const router = useRouter();
   const [event, setEvent] = useState(initialEvent);
   const [isOrganizer, setIsOrganizer] = useState(false);
@@ -257,6 +260,16 @@ export default function EventView({ event: initialEvent }: EventViewProps) {
           </div>
         )}
 
+        {/* Donation banner — shown after "all set" (highest-conversion moment) */}
+        {showAllSet && !event.finalized_time && monetization.buymeacoffee_url && monetization.show_on_success && (
+          <SupportBanner
+            url={monetization.buymeacoffee_url}
+            cta={monetization.donation_cta}
+            message={monetization.donation_message}
+            variant="banner"
+          />
+        )}
+
         {/* Viral CTA footer */}
         <div className="mt-8 mb-4 text-center">
           <div className="border-t border-gray-100 pt-6">
@@ -271,6 +284,17 @@ export default function EventView({ event: initialEvent }: EventViewProps) {
               {copy.event.cta_button}
             </a>
             <p className="text-[10px] text-gray-300 mt-2">{copy.event.cta_footer}</p>
+
+            {/* Inline donation in footer */}
+            {monetization.buymeacoffee_url && monetization.show_on_event && (
+              <div className="mt-3">
+                <SupportBanner
+                  url={monetization.buymeacoffee_url}
+                  cta={monetization.donation_cta}
+                  variant="inline"
+                />
+              </div>
+            )}
           </div>
         </div>
       </div>

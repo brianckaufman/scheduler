@@ -1,10 +1,12 @@
 import EventForm from '@/components/EventForm';
+import SupportBanner from '@/components/SupportBanner';
 import { getSettings } from '@/lib/settings';
 
 export default async function Home() {
   const settings = await getSettings();
-  const { copy: { home }, branding } = settings;
+  const { copy: { home }, branding, monetization } = settings;
   const logoHeight = branding.logo_height || 40;
+  const showDonation = monetization.buymeacoffee_url && monetization.show_on_home !== false;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -62,6 +64,15 @@ export default async function Home() {
         <div className="mt-10 text-center text-[10px] text-gray-300">
           <p>{home.footer}</p>
         </div>
+
+        {/* Donation link in footer */}
+        {showDonation && (
+          <SupportBanner
+            url={monetization.buymeacoffee_url}
+            cta={monetization.donation_cta || 'Buy me a coffee ☕'}
+            variant="inline"
+          />
+        )}
       </div>
     </div>
   );

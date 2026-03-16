@@ -373,6 +373,16 @@ export default function AdminDashboard() {
         <p className={helpClass}>Displayed in browser tabs and search results</p>
       </div>
       <div>
+        <label className={labelClass}>Site URL</label>
+        <input
+          className={inputClass}
+          value={settings.seo.site_url || ''}
+          onChange={(e) => updateSection('seo', 'site_url', e.target.value)}
+          placeholder="https://yourdomain.com"
+        />
+        <p className={helpClass}>Required for og:url, canonical links, and rich social previews. Include https://</p>
+      </div>
+      <div>
         <label className={labelClass}>OG Title</label>
         <input
           className={inputClass}
@@ -412,6 +422,16 @@ export default function AdminDashboard() {
         accept="image/png,image/x-icon,image/vnd.microsoft.icon,image/svg+xml"
         aspectHint="32 x 32px or 64 x 64px (ICO, PNG, or SVG)"
       />
+      <div>
+        <label className={labelClass}>Facebook App ID</label>
+        <input
+          className={inputClass}
+          value={settings.seo.fb_app_id || ''}
+          onChange={(e) => updateSection('seo', 'fb_app_id', e.target.value)}
+          placeholder="123456789012345"
+        />
+        <p className={helpClass}>Optional. Required for Facebook Insights and some rich preview features. Get one at developers.facebook.com</p>
+      </div>
     </div>
   );
 
@@ -587,18 +607,62 @@ export default function AdminDashboard() {
           onChange={(e) => updateSection('monetization', 'buymeacoffee_url', e.target.value)}
           placeholder="https://buymeacoffee.com/yourusername"
         />
-        <p className={helpClass}>Leave empty to hide the donation button</p>
+        <p className={helpClass}>Leave empty to hide all donation prompts throughout the app</p>
       </div>
       <div>
-        <label className={labelClass}>Donation CTA Text</label>
+        <label className={labelClass}>Donation Button Text</label>
         <input
           className={inputClass}
           value={settings.monetization.donation_cta}
           onChange={(e) => updateSection('monetization', 'donation_cta', e.target.value)}
-          placeholder="Buy me a coffee"
+          placeholder="Buy me a coffee ☕"
         />
         <p className={helpClass}>Text shown on the donation button</p>
       </div>
+      <div>
+        <label className={labelClass}>Donation Message</label>
+        <input
+          className={inputClass}
+          value={settings.monetization.donation_message || ''}
+          onChange={(e) => updateSection('monetization', 'donation_message', e.target.value)}
+          placeholder="Love this app? Help keep it free!"
+        />
+        <p className={helpClass}>Short message shown above the donation button</p>
+      </div>
+
+      {settings.monetization.buymeacoffee_url && (
+        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-3">
+          <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Visibility</p>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={settings.monetization.show_on_home !== false}
+              onChange={(e) => updateSection('monetization', 'show_on_home', e.target.checked)}
+              className="w-4 h-4 rounded border-gray-300 text-teal-500 focus:ring-teal-400"
+            />
+            <span className="text-sm text-gray-700">Show on homepage footer</span>
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={settings.monetization.show_on_event !== false}
+              onChange={(e) => updateSection('monetization', 'show_on_event', e.target.checked)}
+              className="w-4 h-4 rounded border-gray-300 text-teal-500 focus:ring-teal-400"
+            />
+            <span className="text-sm text-gray-700">Show on event page footer</span>
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={settings.monetization.show_on_success !== false}
+              onChange={(e) => updateSection('monetization', 'show_on_success', e.target.checked)}
+              className="w-4 h-4 rounded border-gray-300 text-teal-500 focus:ring-teal-400"
+            />
+            <span className="text-sm text-gray-700">Show after availability submitted (&quot;all set&quot; moment)</span>
+          </label>
+          <p className={helpClass}>Control where donation prompts appear. The &quot;all set&quot; moment is the highest-conversion placement — users just got value and feel grateful.</p>
+        </div>
+      )}
     </div>
   );
 
