@@ -90,7 +90,7 @@ function TimeGridSlotInner({
       onClick={handleClick}
       onContextMenu={(e) => { e.preventDefault(); onHold?.(slotKey); }}
       className={`
-        slot-cell w-full min-h-[44px] rounded-lg text-xs font-medium select-none
+        slot-cell w-full min-h-[44px] rounded-lg text-xs font-medium select-none cursor-pointer
         flex items-center justify-center gap-[3px] flex-wrap p-1
         ${bgClass} ${extra}
         active:scale-[0.93] touch-manipulation

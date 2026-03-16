@@ -250,17 +250,17 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
   return (
     <div className="space-y-6" onMouseUp={handleDragEnd} onMouseLeave={handleDragEnd}>
       {/* Always-visible status notice */}
-      {overlapStatus === 'waiting' && (
+      {overlapStatus === 'waiting' && !event.finalized_time && (
         <div className="animate-fade-in bg-gray-50 rounded-xl p-4 text-center text-sm text-gray-500">
           Waiting for more participants to join...
         </div>
       )}
-      {overlapStatus === 'none' && (
+      {overlapStatus === 'none' && !event.finalized_time && (
         <div className="animate-fade-in bg-amber-50 rounded-xl p-4 text-center text-sm text-amber-700">
           No times work for everyone yet. Keep adding your availability!
         </div>
       )}
-      {overlapStatus === 'found' && (
+      {overlapStatus === 'found' && !event.finalized_time && (
         <div className="animate-fade-in-scale bg-green-50 rounded-xl p-4 text-center">
           <p className="text-sm text-green-700 font-medium">
             Times found where everyone can meet!
