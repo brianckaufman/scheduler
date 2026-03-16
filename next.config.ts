@@ -1,7 +1,27 @@
 import type { NextConfig } from "next";
 
+// Extract Supabase host for CSP (e.g., "arbhvqurgaowcddvcxqx.supabase.co")
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+let supabaseHost = '';
+try {
+  supabaseHost = new URL(supabaseUrl).host;
+} catch {
+  // fallback if env not set at build time
+}
+
 const nextConfig: NextConfig = {
   async headers() {
+    // Build connect-src with both wildcard and specific host for maximum compatibility
+    const connectSrc = [
+      "'self'",
+      'https://*.supabase.co',
+      'wss://*.supabase.co',
+      'https://*.supabase.com',
+      'wss://*.supabase.com',
+      // Add the specific project host (some browsers need exact match)
+      ...(supabaseHost ? [`https://${supabaseHost}`, `wss://${supabaseHost}`] : []),
+    ].join(' ');
+
     return [
       {
         // Apply security headers to all routes
@@ -33,7 +53,7 @@ const nextConfig: NextConfig = {
               "default-src 'self'",
               "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
               "style-src 'self' 'unsafe-inline'",
-              `connect-src 'self' https://*.supabase.co wss://*.supabase.co`,
+              `connect-src ${connectSrc}`,
               "img-src 'self' data: blob:",
               "font-src 'self'",
               "frame-ancestors 'none'",

@@ -81,8 +81,7 @@ export default function EventView({ event: initialEvent }: EventViewProps) {
   if (!hasSession || !participantId) {
     return (
       <ParticipantEntry
-        eventId={event.id}
-        eventName={event.name}
+        event={event}
         onJoin={(id, name) => saveSession(id, name)}
       />
     );
