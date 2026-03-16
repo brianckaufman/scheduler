@@ -8,7 +8,6 @@ import { computeOverlap } from '@/lib/overlap';
 import { useRealtimeSlots } from '@/hooks/useRealtimeSlots';
 import { useRealtimeParticipants } from '@/hooks/useRealtimeParticipants';
 import TimeGridSlot, { PARTICIPANT_COLORS } from './TimeGridSlot';
-import ParticipantList from './ParticipantList';
 import OverlapSummary from './OverlapSummary';
 import BestTimes from './BestTimes';
 import SlotTooltip from './SlotTooltip';
@@ -38,6 +37,9 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
   // Mobile day tabs
   const [activeDay, setActiveDay] = useState<number>(0);
   const [isMobile, setIsMobile] = useState(false);
+
+  // Collapsible results
+  const [showResults, setShowResults] = useState(false);
 
   // Tooltip
   const [tooltipSlot, setTooltipSlot] = useState<string | null>(null);
@@ -224,15 +226,32 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
 
   return (
     <div className="space-y-6" onMouseUp={handleDragEnd} onMouseLeave={handleDragEnd}>
-      <OverlapSummary overlapMap={overlapMap} totalParticipants={totalParticipants} />
-
-      <BestTimes
-        overlapMap={overlapMap}
-        totalParticipants={totalParticipants}
-        durationMinutes={event.duration_minutes || 30}
-        participants={participants}
-        onFinalize={isOrganizer ? handleFinalize : undefined}
-      />
+      {/* Collapsible results section */}
+      <button
+        type="button"
+        onClick={() => setShowResults((v) => !v)}
+        className="w-full flex items-center justify-between px-4 py-2.5 bg-gray-50 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors"
+      >
+        <span>Best Times &amp; Overlap</span>
+        <svg
+          className={`w-4 h-4 transition-transform ${showResults ? 'rotate-180' : ''}`}
+          fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+      {showResults && (
+        <div className="space-y-4">
+          <OverlapSummary overlapMap={overlapMap} totalParticipants={totalParticipants} />
+          <BestTimes
+            overlapMap={overlapMap}
+            totalParticipants={totalParticipants}
+            durationMinutes={event.duration_minutes || 30}
+            participants={participants}
+            onFinalize={isOrganizer ? handleFinalize : undefined}
+          />
+        </div>
+      )}
 
       {/* Mobile day tabs */}
       {isMobile && dates.length > 1 && (
@@ -261,7 +280,7 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
         onTouchEnd={handleDragEnd}
       >
         <div
-          className="grid gap-1"
+          className="grid gap-1 pb-1"
           style={{
             gridTemplateColumns: `auto repeat(${visibleDates.length}, minmax(60px, 1fr))`,
           }}
@@ -361,27 +380,31 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
         />
       )}
 
-      <div className="space-y-2 text-xs">
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded bg-green-100 ring-2 ring-green-300" />
-          <span className="text-gray-600">Everyone can meet</span>
-        </div>
-        <div className="flex flex-wrap gap-3">
+      <div className="space-y-3">
+        <h3 className="text-sm font-medium text-gray-700">
+          Participants ({participants.length})
+        </h3>
+        <div className="flex flex-wrap gap-2">
           {participants.map((p) => (
-            <div key={p.id} className="flex items-center gap-1.5">
+            <span
+              key={p.id}
+              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm bg-gray-50"
+            >
               <span
-                className="inline-block w-3 h-3 rounded-full"
+                className="inline-block w-3 h-3 rounded-full shrink-0"
                 style={{ backgroundColor: participantColorMap.get(p.id) }}
               />
-              <span className="text-gray-600">
-                {p.id === participantId ? `${p.name} (you)` : p.name}
+              <span className="text-gray-700">
+                {p.name}{p.id === participantId && ' (you)'}
               </span>
-            </div>
+            </span>
           ))}
         </div>
+        <div className="flex items-center gap-2 text-xs text-gray-500">
+          <div className="w-4 h-4 rounded bg-green-100 ring-2 ring-green-300" />
+          <span>Everyone can meet</span>
+        </div>
       </div>
-
-      <ParticipantList participants={participants} currentParticipantId={participantId} />
     </div>
   );
 }
