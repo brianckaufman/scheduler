@@ -60,9 +60,10 @@ interface TimeGridProps {
   isOrganizer?: boolean;
   organizerToken?: string | null;
   onFinalize?: (time: string) => void;
+  onMySlotCountChange?: (count: number) => void;
 }
 
-export default function TimeGrid({ event, participantId, isOrganizer, organizerToken, onFinalize }: TimeGridProps) {
+export default function TimeGrid({ event, participantId, isOrganizer, organizerToken, onFinalize, onMySlotCountChange }: TimeGridProps) {
   const { slots: allSlots, removeByParticipant: removeSlotsForParticipant } = useRealtimeSlots(event.id);
   const { participants, removeParticipant } = useRealtimeParticipants(event.id);
 
@@ -150,6 +151,12 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
     for (const key of pendingRemoves) set.delete(key);
     return set;
   }, [serverMySlots, pendingAdds, pendingRemoves]);
+
+  // Report slot count changes to parent (for "all set" feedback)
+  const mySlotCount = mySlots.size;
+  useEffect(() => {
+    onMySlotCountChange?.(mySlotCount);
+  }, [mySlotCount, onMySlotCountChange]);
 
   // Clean up pending state when server catches up
   useEffect(() => {
