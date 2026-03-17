@@ -10,7 +10,6 @@ import { computeOverlap, getFullOverlapSlots } from '@/lib/overlap';
 import { useRealtimeSlots } from '@/hooks/useRealtimeSlots';
 import { useRealtimeParticipants } from '@/hooks/useRealtimeParticipants';
 import TimeGridSlot, { PARTICIPANT_COLORS } from './TimeGridSlot';
-import OverlapSummary from './OverlapSummary';
 import BestTimes from './BestTimes';
 import SlotTooltip from './SlotTooltip';
 import UndoToast from './UndoToast';
@@ -90,9 +89,6 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
   // Mobile day tabs
   const [activeDay, setActiveDay] = useState<number>(0);
   const [isMobile, setIsMobile] = useState(false);
-
-  // Collapsible results
-  const [showResults, setShowResults] = useState(false);
 
   // Time picker modal (organizer only)
   const [showTimePicker, setShowTimePicker] = useState(false);
@@ -371,33 +367,6 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
               {interpolate(copy.grid.waiting_organizer, { name: formatDisplayName(event.organizer_name || 'the organizer') })}
             </p>
           )}
-        </div>
-      )}
-
-      {/* Collapsible results section */}
-      <button
-        type="button"
-        onClick={() => setShowResults((v) => !v)}
-        className="w-full flex items-center justify-between px-4 py-2.5 bg-gray-50 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors cursor-pointer"
-      >
-        <span>{copy.grid.best_times}</span>
-        <svg
-          className={`w-4 h-4 transition-transform ${showResults ? 'rotate-180' : ''}`}
-          fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-        </svg>
-      </button>
-      {showResults && (
-        <div className="animate-slide-down space-y-4">
-          <OverlapSummary overlapMap={overlapMap} totalParticipants={totalParticipants} />
-          <BestTimes
-            overlapMap={overlapMap}
-            totalParticipants={totalParticipants}
-            durationMinutes={event.duration_minutes || 30}
-            participants={participants}
-            onFinalize={isOrganizer ? handleFinalize : undefined}
-          />
         </div>
       )}
 

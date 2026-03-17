@@ -126,7 +126,7 @@ export default function EventView({ event: initialEvent }: EventViewProps) {
   }
 
   const deadlinePassed = event.response_deadline && isPast(new Date(event.response_deadline));
-  const showPushPrompt = pushSupported && !isSubscribed && !pushDismissed && !event.finalized_time;
+  const showPushPrompt = pushSupported && !isSubscribed && !pushDismissed && !event.finalized_time && !isOrganizer;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -145,55 +145,6 @@ export default function EventView({ event: initialEvent }: EventViewProps) {
           </div>
         )}
 
-        {/* Event header */}
-        <div className="mb-4">
-          <div className="flex items-start justify-between gap-2">
-            <h1 className="text-xl font-bold text-gray-900">{event.name}</h1>
-            {isOrganizer && (
-              <button
-                type="button"
-                onClick={() => setShowEditModal(true)}
-                className="shrink-0 p-1.5 text-gray-400 hover:text-teal-600 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
-                title="Edit event"
-              >
-                <svg className="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                </svg>
-              </button>
-            )}
-          </div>
-          {event.description && (
-            <p className="text-sm text-gray-600 mt-1">{event.description}</p>
-          )}
-          <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2">
-            {event.organizer_name && (
-              <span className="text-xs text-gray-400">{interpolate(copy.event.organized_by, { name: formatDisplayName(event.organizer_name) })}</span>
-            )}
-            {event.location && (
-              <span className="text-xs text-gray-400">{event.location}</span>
-            )}
-            {event.duration_minutes && (
-              <span className="text-xs text-gray-400">
-                {interpolate(copy.event.duration_needed, { duration: event.duration_minutes >= 60
-                  ? `${event.duration_minutes / 60}h`
-                  : `${event.duration_minutes}min` })}
-              </span>
-            )}
-          </div>
-          {event.response_deadline && (
-            <p className={`text-xs mt-1 ${deadlinePassed ? 'text-red-400' : 'text-amber-500'}`}>
-              {deadlinePassed
-                ? copy.event.deadline_passed
-                : interpolate(copy.event.respond_by, { date: format(new Date(event.response_deadline), 'MMM d'), relative: formatDistanceToNow(new Date(event.response_deadline), { addSuffix: true }) })}
-            </p>
-          )}
-          {!event.finalized_time && (
-            <p className="text-sm text-gray-500 mt-2">
-              {copy.event.tap_instruction}
-            </p>
-          )}
-        </div>
-
         {event.finalized_time && (
           <FinalizedBanner
             event={event}
@@ -203,7 +154,7 @@ export default function EventView({ event: initialEvent }: EventViewProps) {
           />
         )}
 
-        {/* Push notification opt-in */}
+        {/* Push notification opt-in (participants only) */}
         {showPushPrompt && (
           <div className="animate-fade-in mb-4 bg-blue-50 border border-blue-100 rounded-2xl p-4 flex items-start gap-3">
             <div className="shrink-0 mt-0.5">
@@ -243,8 +194,71 @@ export default function EventView({ event: initialEvent }: EventViewProps) {
           <ShareLink eventName={event.name} isOrganizer={isOrganizer} />
         </div>
 
-        {/* Grid section with scroll target ref */}
+        {/* Main card: event details + grid */}
         <div ref={gridRef} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+          {/* Event details header */}
+          <div className="mb-4 pb-4 border-b border-gray-100">
+            <div className="flex items-start justify-between gap-2">
+              <h1 className="text-xl font-bold text-gray-900">{event.name}</h1>
+              {isOrganizer && (
+                <button
+                  type="button"
+                  onClick={() => setShowEditModal(true)}
+                  className="shrink-0 p-1.5 text-gray-400 hover:text-teal-600 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+                  title="Edit event"
+                >
+                  <svg className="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
+                </button>
+              )}
+            </div>
+            {event.description && (
+              <p className="text-sm text-gray-500 mt-1">{event.description}</p>
+            )}
+            <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2">
+              {event.organizer_name && (
+                <span className="flex items-center gap-1 text-xs text-gray-400">
+                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                  {interpolate(copy.event.organized_by, { name: formatDisplayName(event.organizer_name) })}
+                </span>
+              )}
+              {event.location && (
+                <span className="flex items-center gap-1 text-xs text-gray-400">
+                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  {event.location}
+                </span>
+              )}
+              {event.duration_minutes && (
+                <span className="flex items-center gap-1 text-xs text-gray-400">
+                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  {interpolate(copy.event.duration_needed, { duration: event.duration_minutes >= 60
+                    ? `${event.duration_minutes / 60}h`
+                    : `${event.duration_minutes}min` })}
+                </span>
+              )}
+            </div>
+            {event.response_deadline && (
+              <p className={`text-xs mt-1 ${deadlinePassed ? 'text-red-400' : 'text-amber-500'}`}>
+                {deadlinePassed
+                  ? copy.event.deadline_passed
+                  : interpolate(copy.event.respond_by, { date: format(new Date(event.response_deadline), 'MMM d'), relative: formatDistanceToNow(new Date(event.response_deadline), { addSuffix: true }) })}
+              </p>
+            )}
+            {!event.finalized_time && (
+              <p className="text-sm text-gray-500 mt-2">
+                {copy.event.tap_instruction}
+              </p>
+            )}
+          </div>
+
           <TimeGrid
             event={event}
             participantId={participantId}

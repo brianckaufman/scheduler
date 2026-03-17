@@ -87,26 +87,29 @@ function TimeGridSlotInner({
   const totalAvailable = participantColors.length;
   const useCountMode = totalParticipants > MAX_DOTS || totalAvailable > MAX_DOTS;
 
-  // Heat-map background: intensity based on fraction of participants available
+  // Slot background: clear visual distinction for selected vs unselected
   let bgClass = 'bg-gray-100';
   let extra = '';
   let heatStyle: React.CSSProperties | undefined;
 
   if (isAllMatch) {
     bgClass = 'bg-green-100';
-    extra = 'ring-2 ring-green-300';
+    extra = 'ring-2 ring-green-400';
   } else if (totalAvailable > 0 && useCountMode) {
     const fraction = totalAvailable / totalParticipants;
     const alpha = 0.12 + fraction * 0.45;
     bgClass = '';
     heatStyle = { backgroundColor: `rgba(20, 184, 166, ${alpha})` };
     if (isMine) {
-      extra = 'ring-2 ring-teal-300';
+      extra = 'ring-2 ring-gray-400';
     }
-  } else if (isMine && othersCount > 1) {
-    bgClass = 'bg-teal-100';
+  } else if (isMine && othersCount > 0) {
+    bgClass = 'bg-gray-300';
+    extra = 'ring-2 ring-gray-400';
   } else if (isMine) {
-    bgClass = 'bg-teal-50';
+    bgClass = 'bg-gray-250';
+    extra = 'ring-2 ring-gray-400';
+    heatStyle = { backgroundColor: '#d1d5db' }; // gray-300
   } else if (othersCount > 0) {
     bgClass = 'bg-gray-200';
   }
