@@ -16,6 +16,7 @@ import EditEventModal from '@/components/EditEventModal';
 import SkeletonLoader from '@/components/SkeletonLoader';
 import SupportBanner from '@/components/SupportBanner';
 import BookmarkPrompt from '@/components/BookmarkPrompt';
+import ConfettiCelebration from '@/components/ConfettiCelebration';
 import { useCreatedEvents } from '@/hooks/useCreatedEvents';
 import { optimizedLogoUrl } from '@/lib/image';
 import { formatDisplayName, firstName } from '@/lib/names';
@@ -44,6 +45,7 @@ export default function EventView({ event: initialEvent }: EventViewProps) {
 
   // Track whether user has selected any slots (for donation banner)
   const [hasSelections, setHasSelections] = useState(false);
+  const [showCelebration, setShowCelebration] = useState(false);
 
   const handleSlotCountChange = useCallback((count: number) => {
     if (count > 0) setHasSelections(true);
@@ -53,6 +55,18 @@ export default function EventView({ event: initialEvent }: EventViewProps) {
     const token = localStorage.getItem(`organizer_${event.slug}`);
     setIsOrganizer(!!token);
   }, [event.slug]);
+
+  // Check if this is a fresh event creation — show celebration
+  useEffect(() => {
+    try {
+      if (sessionStorage.getItem('just_created') === 'true') {
+        sessionStorage.removeItem('just_created');
+        setShowCelebration(true);
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
 
   useEffect(() => {
     setPushDismissed(localStorage.getItem(`push_dismissed_${event.id}`) === 'true');
@@ -116,6 +130,7 @@ export default function EventView({ event: initialEvent }: EventViewProps) {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {showCelebration && <ConfettiCelebration onComplete={() => setShowCelebration(false)} />}
       <div className="max-w-lg mx-auto px-4 py-6">
         {/* Logo */}
         {branding.logo_url && (

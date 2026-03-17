@@ -184,3 +184,61 @@
 .slot-cell {
   transition: background-color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease, ring-color 0.2s ease;
 }
+
+/* === Onboarding overlay animations === */
+
+@keyframes onboarding-enter {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes onboarding-exit {
+  from { opacity: 1; transform: scale(1); }
+  to { opacity: 0; transform: scale(1.05); }
+}
+
+.onboarding-enter {
+  animation: onboarding-enter 0.4s ease-out both;
+}
+
+.onboarding-exit {
+  animation: onboarding-exit 0.4s ease-in both;
+}
+
+@keyframes slide-in-right {
+  from { opacity: 0; transform: translateX(30px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slide-in-left {
+  from { opacity: 0; transform: translateX(-30px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.onboarding-slide-in-right {
+  animation: slide-in-right 0.3s ease-out both;
+}
+
+.onboarding-slide-in-left {
+  animation: slide-in-left 0.3s ease-out both;
+}
+
+/* === Confetti particle animation === */
+
+@keyframes confetti-fall {
+  0% {
+    transform: translate(0, 0) rotate(0deg);
+    opacity: 1;
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--vx), calc(var(--vy) + 400px)) rotate(var(--rot));
+    opacity: 0;
+  }
+}
+
+.confetti-particle {
+  animation: confetti-fall 1.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+}

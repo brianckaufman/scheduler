@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useCopy } from '@/contexts/CopyContext';
 import { useCreatedEvents } from '@/hooks/useCreatedEvents';
@@ -67,9 +67,18 @@ export default function EventForm() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showOptional, setShowOptional] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
 
   const today = startOfDay(new Date());
   const minDeadline = format(addDays(new Date(), 1), 'yyyy-MM-dd');
+
+  // Progress tracking
+  const hasName = name.trim().length > 0;
+  const hasOrganizer = organizerName.trim().length > 0;
+  const hasDates = selectedDates.length > 0;
+  const filledSteps = [hasName, hasOrganizer, hasDates].filter(Boolean).length;
+  const isReady = hasName && hasOrganizer && hasDates;
 
   const toggleDate = (date: Date) => {
     if (isBefore(date, today)) return;
@@ -77,7 +86,6 @@ export default function EventForm() {
       const exists = prev.find((d) => isSameDay(d, date));
       if (exists) {
         const updated = prev.filter((d) => !isSameDay(d, date));
-        // Reset times when all dates are cleared
         if (updated.length === 0) {
           setTimeStart('09:00');
           setTimeEnd('17:00');
@@ -86,16 +94,12 @@ export default function EventForm() {
       }
       const updated = [...prev, date].sort((a, b) => a.getTime() - b.getTime());
 
-      // Smart time suggestion: when first date is selected, check if all selected
-      // dates are weekends and adjust times accordingly
       if (prev.length === 0) {
         const day = date.getDay();
         if (day === 0 || day === 6) {
-          // Weekend: suggest broader times (10 AM - 8 PM)
           setTimeStart('10:00');
           setTimeEnd('20:00');
         } else {
-          // Weekday: standard business hours
           setTimeStart('09:00');
           setTimeEnd('17:00');
         }
@@ -118,22 +122,26 @@ export default function EventForm() {
           <button
             type="button"
             onClick={() => setCurrentMonth(addMonths(currentMonth, -1))}
-            className="p-2 text-gray-500 hover:text-gray-700"
+            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
           >
-            &larr;
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+            </svg>
           </button>
-          <span className="font-medium text-gray-900">
+          <span className="font-semibold text-gray-900 text-sm">
             {format(currentMonth, 'MMMM yyyy')}
           </span>
           <button
             type="button"
             onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
-            className="p-2 text-gray-500 hover:text-gray-700"
+            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
           >
-            &rarr;
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+            </svg>
           </button>
         </div>
-        <div className="grid grid-cols-7 gap-1 text-center text-xs text-gray-500 mb-1">
+        <div className="grid grid-cols-7 gap-1 text-center text-[11px] text-gray-400 font-medium mb-1">
           {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((d) => (
             <div key={d} className="py-1">{d}</div>
           ))}
@@ -154,7 +162,7 @@ export default function EventForm() {
                   py-2 rounded-lg text-sm font-medium transition-all duration-150
                   ${!inMonth ? 'invisible' : ''}
                   ${past ? 'text-gray-300 cursor-not-allowed' : 'cursor-pointer active:scale-90'}
-                  ${selected ? 'bg-teal-500 text-white shadow-sm shadow-teal-200' : ''}
+                  ${selected ? 'bg-teal-500 text-white shadow-sm shadow-teal-200 animate-pop' : ''}
                   ${!selected && !past && inMonth ? 'text-gray-700 hover:bg-gray-100' : ''}
                   ${isToday(day) && !selected ? 'ring-1 ring-teal-400' : ''}
                 `}
@@ -207,14 +215,14 @@ export default function EventForm() {
 
       const { slug, organizerToken, organizerParticipantId, organizerName: returnedName } = await res.json();
       localStorage.setItem(`organizer_${slug}`, organizerToken);
-      // Auto-save the organizer as a participant so they skip the name entry screen
       if (organizerParticipantId && returnedName) {
         localStorage.setItem(
           `participant_${slug}`,
           JSON.stringify({ id: organizerParticipantId, name: returnedName })
         );
       }
-      // Track event for returning user banner
+      // Flag that this is a fresh creation for celebration animation
+      sessionStorage.setItem('just_created', 'true');
       addEvent(slug, name.trim());
       router.push(`/e/${slug}`);
     } catch (err) {
@@ -223,61 +231,63 @@ export default function EventForm() {
     }
   };
 
-  const inputClass = "w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-transparent text-gray-900 placeholder-gray-400";
-  const selectClass = "w-full px-3 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-teal-400 text-gray-900 bg-white";
+  const inputClass = "w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-transparent text-gray-900 placeholder-gray-400 transition-shadow duration-200";
+  const selectClass = "w-full px-3 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-teal-400 text-gray-900 bg-white transition-shadow duration-200";
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <div>
-        <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-          {copy.form.event_label}
-        </label>
-        <input
-          id="name"
-          type="text"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder={copy.form.event_placeholder}
-          className={inputClass}
-          maxLength={100}
-          required
-        />
-      </div>
-
-      <div>
-        <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
-          {copy.form.description_label}
-        </label>
-        <input
-          id="description"
-          type="text"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          placeholder={copy.form.description_placeholder}
-          className={inputClass}
-          maxLength={500}
-        />
-      </div>
-
-      <div>
-        <label htmlFor="organizerName" className="block text-sm font-medium text-gray-700 mb-1">
-          {copy.form.name_label}
-        </label>
-        <input
-          id="organizerName"
-          type="text"
-          value={organizerName}
-          onChange={(e) => setOrganizerName(e.target.value)}
-          placeholder={copy.form.name_placeholder}
-          className={inputClass}
-          required
-          maxLength={50}
-        />
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
+    <form ref={formRef} onSubmit={handleSubmit} className="space-y-5">
+      {/* === Section 1: Event Details === */}
+      <div className="space-y-4 stagger-children">
         <div>
-          <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1.5">
+            {copy.form.event_label}
+          </label>
+          <input
+            id="name"
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder={copy.form.event_placeholder}
+            className={inputClass}
+            maxLength={100}
+            required
+            autoFocus
+          />
+        </div>
+
+        <div>
+          <label htmlFor="organizerName" className="block text-sm font-medium text-gray-700 mb-1.5">
+            {copy.form.name_label}
+          </label>
+          <input
+            id="organizerName"
+            type="text"
+            value={organizerName}
+            onChange={(e) => setOrganizerName(e.target.value)}
+            placeholder={copy.form.name_placeholder}
+            className={inputClass}
+            required
+            maxLength={50}
+          />
+        </div>
+
+        <div>
+          <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1.5">
+            {copy.form.description_label}
+          </label>
+          <input
+            id="description"
+            type="text"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder={copy.form.description_placeholder}
+            className={inputClass}
+            maxLength={500}
+          />
+        </div>
+
+        <div>
+          <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-1.5">
             {copy.form.location_label}
           </label>
           <input
@@ -292,44 +302,53 @@ export default function EventForm() {
         </div>
       </div>
 
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          {copy.form.dates_label}
-        </label>
-        {renderCalendar()}
-        {selectedDates.length > 0 && (
-          <p className="mt-2 text-sm text-teal-600">
-            {selectedDates.length} day{selectedDates.length !== 1 ? 's' : ''} selected
-          </p>
-        )}
-      </div>
+      {/* Subtle divider */}
+      <div className="border-t border-gray-100" />
 
-      <div className="grid grid-cols-2 gap-4">
+      {/* === Section 2: Scheduling === */}
+      <div className="space-y-4">
         <div>
-          <label htmlFor="timeStart" className="block text-sm font-medium text-gray-700 mb-1">
-            {copy.form.earliest_label}
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            {copy.form.dates_label}
           </label>
-          <select id="timeStart" value={timeStart} onChange={(e) => setTimeStart(e.target.value)} className={selectClass}>
-            {TIME_OPTIONS.map((t) => (
-              <option key={t} value={t}>{formatTimeLabel(t)}</option>
-            ))}
-          </select>
+          {renderCalendar()}
+          {selectedDates.length > 0 && (
+            <div className="mt-2 flex items-center gap-1.5 animate-fade-in">
+              <svg className="w-3.5 h-3.5 text-teal-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+              <p className="text-sm text-teal-600 font-medium">
+                {selectedDates.length} day{selectedDates.length !== 1 ? 's' : ''} selected
+              </p>
+            </div>
+          )}
         </div>
-        <div>
-          <label htmlFor="timeEnd" className="block text-sm font-medium text-gray-700 mb-1">
-            {copy.form.latest_label}
-          </label>
-          <select id="timeEnd" value={timeEnd} onChange={(e) => setTimeEnd(e.target.value)} className={selectClass}>
-            {TIME_OPTIONS.map((t) => (
-              <option key={t} value={t}>{formatTimeLabel(t)}</option>
-            ))}
-          </select>
-        </div>
-      </div>
 
-      <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label htmlFor="timeStart" className="block text-sm font-medium text-gray-700 mb-1.5">
+              {copy.form.earliest_label}
+            </label>
+            <select id="timeStart" value={timeStart} onChange={(e) => setTimeStart(e.target.value)} className={selectClass}>
+              {TIME_OPTIONS.map((t) => (
+                <option key={t} value={t}>{formatTimeLabel(t)}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label htmlFor="timeEnd" className="block text-sm font-medium text-gray-700 mb-1.5">
+              {copy.form.latest_label}
+            </label>
+            <select id="timeEnd" value={timeEnd} onChange={(e) => setTimeEnd(e.target.value)} className={selectClass}>
+              {TIME_OPTIONS.map((t) => (
+                <option key={t} value={t}>{formatTimeLabel(t)}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+
         <div>
-          <label htmlFor="duration" className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="duration" className="block text-sm font-medium text-gray-700 mb-1.5">
             {copy.form.duration_label}
           </label>
           <select
@@ -343,53 +362,109 @@ export default function EventForm() {
             ))}
           </select>
         </div>
-        <div>
-          <label htmlFor="deadline" className="block text-sm font-medium text-gray-700 mb-1">
-            {copy.form.deadline_label}
-          </label>
-          <input
-            id="deadline"
-            type="date"
-            value={responseDeadline}
-            min={minDeadline}
-            onChange={(e) => setResponseDeadline(e.target.value)}
-            className={selectClass}
-          />
-        </div>
       </div>
 
+      {/* === Optional section (collapsed by default) === */}
       <div>
-        <label htmlFor="maxParticipants" className="block text-sm font-medium text-gray-700 mb-1">
-          Max participants <span className="text-gray-400 font-normal">(optional)</span>
-        </label>
-        <input
-          id="maxParticipants"
-          type="number"
-          value={maxParticipants}
-          onChange={(e) => setMaxParticipants(e.target.value)}
-          placeholder="No limit"
-          min={2}
-          max={1000}
-          className={inputClass}
-        />
-        {maxParticipants && parseInt(maxParticipants, 10) > 0 && (
-          <p className="text-xs text-gray-400 mt-1">
-            New participants will be blocked after {maxParticipants} have joined
-          </p>
+        {!showOptional && (
+          <button
+            type="button"
+            onClick={() => setShowOptional(true)}
+            className="w-full flex items-center justify-center gap-1.5 py-2 text-xs font-medium text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
+            More options
+          </button>
+        )}
+
+        {showOptional && (
+          <div className="space-y-4 animate-slide-down">
+            <div className="border-t border-gray-100 pt-4">
+              <p className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-3">Additional options</p>
+            </div>
+
+            <div>
+              <label htmlFor="deadline" className="block text-sm font-medium text-gray-700 mb-1.5">
+                {copy.form.deadline_label}
+              </label>
+              <input
+                id="deadline"
+                type="date"
+                value={responseDeadline}
+                min={minDeadline}
+                onChange={(e) => setResponseDeadline(e.target.value)}
+                className={selectClass}
+              />
+            </div>
+
+            <div>
+              <label htmlFor="maxParticipants" className="block text-sm font-medium text-gray-700 mb-1.5">
+                Max participants <span className="text-gray-400 font-normal">(optional)</span>
+              </label>
+              <input
+                id="maxParticipants"
+                type="number"
+                value={maxParticipants}
+                onChange={(e) => setMaxParticipants(e.target.value)}
+                placeholder="No limit"
+                min={2}
+                max={1000}
+                className={inputClass}
+              />
+              {maxParticipants && parseInt(maxParticipants, 10) > 0 && (
+                <p className="text-xs text-gray-400 mt-1">
+                  New participants will be blocked after {maxParticipants} have joined
+                </p>
+              )}
+            </div>
+          </div>
         )}
       </div>
 
       {error && (
-        <p className="text-red-500 text-sm">{error}</p>
+        <p className="text-red-500 text-sm animate-fade-in">{error}</p>
       )}
 
-      <button
-        type="submit"
-        disabled={loading || !name.trim() || !organizerName.trim() || selectedDates.length === 0}
-        className="w-full py-3 px-4 bg-teal-500 text-white font-semibold rounded-xl hover:bg-teal-600 hover:shadow-md hover:shadow-teal-200 transition-all duration-200 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        {loading ? copy.form.submitting : copy.form.submit}
-      </button>
+      {/* Progress indicator + Submit */}
+      <div className="space-y-3 pt-1">
+        {/* Mini progress */}
+        <div className="flex items-center gap-2">
+          {[0, 1, 2].map((i) => (
+            <div
+              key={i}
+              className={`h-1 flex-1 rounded-full transition-all duration-500 ${
+                i < filledSteps ? 'bg-teal-400' : 'bg-gray-100'
+              }`}
+            />
+          ))}
+        </div>
+
+        <button
+          type="submit"
+          disabled={loading || !isReady}
+          className={`
+            relative w-full py-3.5 px-4 font-semibold rounded-2xl transition-all duration-300
+            ${isReady && !loading
+              ? 'bg-teal-500 text-white hover:bg-teal-600 shadow-lg shadow-teal-200/50 hover:shadow-xl hover:shadow-teal-200/60 active:scale-[0.97] cursor-pointer'
+              : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+            }
+          `}
+        >
+          {loading ? (
+            <span className="flex items-center justify-center gap-2">
+              <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" className="opacity-25" />
+                <path d="M4 12a8 8 0 018-8" stroke="currentColor" strokeWidth="3" strokeLinecap="round" className="opacity-75" />
+              </svg>
+              {copy.form.submitting}
+            </span>
+          ) : (
+            copy.form.submit
+          )}
+        </button>
+      </div>
     </form>
   );
 }
