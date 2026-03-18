@@ -134,12 +134,12 @@ export default function EventView({ event: initialEvent }: EventViewProps) {
       <div className="max-w-lg mx-auto px-4 py-6">
         {/* Logo */}
         {branding.logo_url && (
-          <div className="mb-3">
+          <div className="mb-4 flex justify-center">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={optimizedLogoUrl(branding.logo_url, Math.round((branding.logo_height || 40) * 0.7))}
+              src={optimizedLogoUrl(branding.logo_url, branding.logo_height || 40)}
               alt={branding.site_name}
-              style={{ height: `${Math.round((branding.logo_height || 40) * 0.7)}px` }}
+              style={{ height: `${branding.logo_height || 40}px` }}
               className="w-auto object-contain"
             />
           </div>

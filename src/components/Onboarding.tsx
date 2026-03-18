@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useCopy } from '@/contexts/CopyContext';
 
 const STORAGE_KEY = 'onboarding_seen';
 
@@ -11,6 +12,7 @@ interface Step {
 }
 
 export default function Onboarding() {
+  const copy = useCopy();
   const [visible, setVisible] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [exiting, setExiting] = useState(false);
@@ -63,8 +65,8 @@ export default function Onboarding() {
           </svg>
         </div>
       ),
-      title: 'Create your event',
-      description: 'Name it, pick some dates, set a time window. Takes about 30 seconds.',
+      title: copy.home.step1_title,
+      description: copy.home.step1_desc,
     },
     {
       icon: (
@@ -74,8 +76,8 @@ export default function Onboarding() {
           </svg>
         </div>
       ),
-      title: 'Share the link',
-      description: 'Send it to your group. No accounts needed — they just tap and pick their times.',
+      title: copy.home.step2_title,
+      description: copy.home.step2_desc,
     },
     {
       icon: (
@@ -85,8 +87,8 @@ export default function Onboarding() {
           </svg>
         </div>
       ),
-      title: 'Pick the best time',
-      description: 'See when everyone overlaps. Lock in the time. Zero back-and-forth.',
+      title: copy.home.step3_title,
+      description: copy.home.step3_desc,
     },
   ];
 

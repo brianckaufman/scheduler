@@ -22,8 +22,35 @@ function haptic() {
   }
 }
 
+// Popular timezones for the picker
+const POPULAR_TIMEZONES = [
+  { value: 'America/New_York', label: 'Eastern Time (ET)' },
+  { value: 'America/Chicago', label: 'Central Time (CT)' },
+  { value: 'America/Denver', label: 'Mountain Time (MT)' },
+  { value: 'America/Los_Angeles', label: 'Pacific Time (PT)' },
+  { value: 'America/Anchorage', label: 'Alaska Time (AKT)' },
+  { value: 'Pacific/Honolulu', label: 'Hawaii Time (HT)' },
+  { value: 'Europe/London', label: 'London (GMT/BST)' },
+  { value: 'Europe/Paris', label: 'Central Europe (CET)' },
+  { value: 'Europe/Berlin', label: 'Berlin (CET)' },
+  { value: 'Asia/Tokyo', label: 'Tokyo (JST)' },
+  { value: 'Asia/Shanghai', label: 'China (CST)' },
+  { value: 'Asia/Kolkata', label: 'India (IST)' },
+  { value: 'Asia/Dubai', label: 'Dubai (GST)' },
+  { value: 'Australia/Sydney', label: 'Sydney (AEST)' },
+  { value: 'Australia/Perth', label: 'Perth (AWST)' },
+  { value: 'America/Sao_Paulo', label: 'São Paulo (BRT)' },
+  { value: 'America/Mexico_City', label: 'Mexico City (CST)' },
+  { value: 'Asia/Singapore', label: 'Singapore (SGT)' },
+  { value: 'Asia/Seoul', label: 'Seoul (KST)' },
+  { value: 'Africa/Johannesburg', label: 'South Africa (SAST)' },
+];
+
 // Friendly timezone name (e.g., "Eastern Time", "Pacific Time")
 function getTimezoneLabel(tz: string): string {
+  // Check if it's in our popular list first
+  const popular = POPULAR_TIMEZONES.find((t) => t.value === tz);
+  if (popular) return popular.label;
   try {
     // Use Intl to get a readable abbreviation
     const now = new Date();
@@ -31,14 +58,14 @@ function getTimezoneLabel(tz: string): string {
     const abbr = short.split(' ').pop() || '';
     // Map common abbreviations to friendly names
     const friendlyMap: Record<string, string> = {
-      EST: 'Eastern Time',
-      EDT: 'Eastern Time',
-      CST: 'Central Time',
-      CDT: 'Central Time',
-      MST: 'Mountain Time',
-      MDT: 'Mountain Time',
-      PST: 'Pacific Time',
-      PDT: 'Pacific Time',
+      EST: 'Eastern Time (ET)',
+      EDT: 'Eastern Time (ET)',
+      CST: 'Central Time (CT)',
+      CDT: 'Central Time (CT)',
+      MST: 'Mountain Time (MT)',
+      MDT: 'Mountain Time (MT)',
+      PST: 'Pacific Time (PT)',
+      PDT: 'Pacific Time (PT)',
       GMT: 'GMT',
       UTC: 'UTC',
       BST: 'British Summer Time',
@@ -52,6 +79,14 @@ function getTimezoneLabel(tz: string): string {
     return friendlyMap[abbr] || abbr || tz.replace(/_/g, ' ').split('/').pop() || tz;
   } catch {
     return tz.replace(/_/g, ' ').split('/').pop() || tz;
+  }
+}
+
+function detectUserTimezone(): string {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone;
+  } catch {
+    return '';
   }
 }
 
@@ -95,6 +130,19 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
 
   // Expandable participant list for large groups
   const [showAllParticipants, setShowAllParticipants] = useState(false);
+
+  // Timezone override — auto-detect user's timezone
+  const [showTzPicker, setShowTzPicker] = useState(false);
+  const [tzOverride, setTzOverride] = useState<string | null>(null);
+
+  useEffect(() => {
+    const detected = detectUserTimezone();
+    if (detected && detected !== event.timezone) {
+      setTzOverride(detected);
+    }
+  }, [event.timezone]);
+
+  const displayTimezone = tzOverride || event.timezone;
 
   // Tooltip
   const [tooltipSlot, setTooltipSlot] = useState<string | null>(null);
@@ -334,7 +382,7 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
   const visibleDates = isMobile && dates.length > 1 ? [dates[activeDay]] : dates;
 
   // Timezone label
-  const timezoneLabel = useMemo(() => getTimezoneLabel(event.timezone), [event.timezone]);
+  const timezoneLabel = useMemo(() => getTimezoneLabel(displayTimezone), [displayTimezone]);
 
   return (
     <div className="space-y-6" onMouseUp={handleDragEnd} onMouseLeave={handleDragEnd}>
@@ -390,12 +438,42 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
         </div>
       )}
 
-      {/* Timezone indicator */}
-      <div className="flex items-center gap-1.5 text-xs text-gray-400">
-        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-        <span>{interpolate(copy.grid.timezone_label, { timezone: timezoneLabel })}</span>
+      {/* Timezone indicator — clickable to change */}
+      <div className="relative">
+        <button
+          type="button"
+          onClick={() => setShowTzPicker((v) => !v)}
+          className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-teal-600 transition-colors cursor-pointer"
+        >
+          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span>{interpolate(copy.grid.timezone_label, { timezone: timezoneLabel })}</span>
+          <svg className={`w-3 h-3 transition-transform ${showTzPicker ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+          </svg>
+        </button>
+        {showTzPicker && (
+          <div className="absolute z-30 mt-1 left-0 bg-white border border-gray-200 rounded-xl shadow-lg py-1 max-h-52 overflow-y-auto w-64 animate-fade-in">
+            {POPULAR_TIMEZONES.map((tz) => (
+              <button
+                key={tz.value}
+                type="button"
+                onClick={() => {
+                  setTzOverride(tz.value);
+                  setShowTzPicker(false);
+                }}
+                className={`w-full text-left px-3 py-2 text-xs transition-colors cursor-pointer ${
+                  displayTimezone === tz.value
+                    ? 'bg-teal-50 text-teal-700 font-medium'
+                    : 'text-gray-600 hover:bg-gray-50'
+                }`}
+              >
+                {tz.label}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       <div
@@ -551,36 +629,50 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
         </div>
       )}
 
-      <div className="space-y-3">
+      {/* Participants & Legend */}
+      <div className="mt-2 pt-4 border-t border-gray-100 space-y-3">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-medium text-gray-700">
+          <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
             {interpolate(copy.grid.participants_label, { count: participants.length })}
           </h3>
-          {participants.length > 8 && (
-            <button
-              type="button"
-              onClick={() => setShowAllParticipants((v) => !v)}
-              className="text-xs text-teal-500 hover:text-teal-700 font-medium cursor-pointer"
-            >
-              {showAllParticipants ? copy.grid.show_less : copy.grid.show_all}
-            </button>
-          )}
+          <div className="flex items-center gap-2">
+            {/* Legend inline */}
+            <div className="flex items-center gap-1">
+              <div className="w-3 h-3 rounded bg-green-100 ring-1 ring-green-300" />
+              <span className="text-[10px] text-gray-400">{copy.grid.legend_all}</span>
+            </div>
+            {totalParticipants > 6 && (
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-3 rounded" style={{ backgroundColor: 'rgba(20, 184, 166, 0.35)' }} />
+                <span className="text-[10px] text-gray-400">{copy.grid.legend_heat}</span>
+              </div>
+            )}
+            {participants.length > 8 && (
+              <button
+                type="button"
+                onClick={() => setShowAllParticipants((v) => !v)}
+                className="text-[10px] text-teal-500 hover:text-teal-700 font-medium cursor-pointer ml-1"
+              >
+                {showAllParticipants ? copy.grid.show_less : copy.grid.show_all}
+              </button>
+            )}
+          </div>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-1.5">
           {(participants.length > 8 && !showAllParticipants
             ? participants.slice(0, 6)
             : participants
           ).map((p, i) => (
             <span
               key={p.id}
-              className="animate-fade-in inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm bg-gray-50 transition-all duration-200 hover:shadow-sm"
+              className="animate-fade-in inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs bg-gray-50 border border-gray-100 transition-all duration-200"
               style={{ animationDelay: `${i * 50}ms` }}
             >
               <span
-                className="inline-block w-3 h-3 rounded-full shrink-0"
+                className="inline-block w-2.5 h-2.5 rounded-full shrink-0"
                 style={{ backgroundColor: participantColorMap.get(p.id) }}
               />
-              <span className="text-gray-700">
+              <span className="text-gray-600">
                 {formatDisplayName(p.name)}{p.id === participantId && ` ${copy.grid.you_suffix}`}
               </span>
               {isOrganizer && p.id !== participantId && (
@@ -591,10 +683,10 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
                       handleDeleteParticipant(p.id);
                     }
                   }}
-                  className="ml-0.5 text-gray-400 hover:text-red-500 transition-colors cursor-pointer"
+                  className="ml-0.5 text-gray-300 hover:text-red-500 transition-colors cursor-pointer"
                   title={`Remove ${formatDisplayName(p.name)}`}
                 >
-                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
@@ -602,22 +694,9 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
             </span>
           ))}
           {participants.length > 8 && !showAllParticipants && (
-            <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-gray-50 text-gray-400">
+            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs bg-gray-50 border border-gray-100 text-gray-400">
               +{participants.length - 6} more
             </span>
-          )}
-        </div>
-        {/* Legend */}
-        <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500">
-          <div className="flex items-center gap-1.5">
-            <div className="w-4 h-4 rounded bg-green-100 ring-2 ring-green-300" />
-            <span>{copy.grid.legend_all}</span>
-          </div>
-          {totalParticipants > 6 && (
-            <div className="flex items-center gap-1.5">
-              <div className="w-4 h-4 rounded" style={{ backgroundColor: 'rgba(20, 184, 166, 0.35)' }} />
-              <span>{copy.grid.legend_heat}</span>
-            </div>
           )}
         </div>
 
@@ -652,12 +731,12 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
               document.body.removeChild(a);
               URL.revokeObjectURL(url);
             }}
-            className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-teal-600 hover:bg-gray-50 rounded-xl transition-colors cursor-pointer"
+            className="inline-flex items-center gap-1.5 text-xs text-gray-400 hover:text-teal-600 transition-colors cursor-pointer"
           >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
-            Export Participants (CSV)
+            Export CSV
           </button>
         )}
       </div>

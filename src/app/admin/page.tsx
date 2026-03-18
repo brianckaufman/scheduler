@@ -66,6 +66,7 @@ interface CopyField {
   key: string;
   label: string;
   multiline?: boolean;
+  variables?: string[];
 }
 
 interface CopyGroup {
@@ -120,13 +121,13 @@ const COPY_GROUPS: CopyGroup[] = [
       { key: 'name_placeholder', label: 'Name Placeholder' },
       { key: 'next', label: 'Next Button' },
       { key: 'back', label: 'Back Button' },
-      { key: 'greeting', label: 'Greeting' },
+      { key: 'greeting', label: 'Greeting', variables: ['name'] },
       { key: 'greeting_subtitle', label: 'Greeting Subtitle' },
       { key: 'step1_title', label: 'Step 1 Title' },
       { key: 'step1_desc', label: 'Step 1 Description', multiline: true },
       { key: 'step2_title', label: 'Step 2 Title' },
       { key: 'step2_desc', label: 'Step 2 Description', multiline: true },
-      { key: 'step3_title', label: 'Step 3 Title' },
+      { key: 'step3_title', label: 'Step 3 Title', variables: ['organizer'] },
       { key: 'step3_desc', label: 'Step 3 Description', multiline: true },
       { key: 'submit', label: 'Submit Button' },
       { key: 'submitting', label: 'Submitting Text' },
@@ -138,13 +139,13 @@ const COPY_GROUPS: CopyGroup[] = [
     key: 'event',
     label: 'Event Page',
     fields: [
-      { key: 'organized_by', label: 'Organized By' },
-      { key: 'duration_needed', label: 'Duration Needed' },
+      { key: 'organized_by', label: 'Organized By', variables: ['name'] },
+      { key: 'duration_needed', label: 'Duration Needed', variables: ['duration'] },
       { key: 'deadline_passed', label: 'Deadline Passed' },
-      { key: 'respond_by', label: 'Respond By' },
+      { key: 'respond_by', label: 'Respond By', variables: ['date', 'relative'] },
       { key: 'tap_instruction', label: 'Tap Instruction' },
       { key: 'all_set_title', label: 'All Set Title' },
-      { key: 'all_set_desc', label: 'All Set Description', multiline: true },
+      { key: 'all_set_desc', label: 'All Set Description', multiline: true, variables: ['count'] },
       { key: 'cta_prompt', label: 'CTA Prompt' },
       { key: 'cta_button', label: 'CTA Button' },
       { key: 'cta_footer', label: 'CTA Footer' },
@@ -158,10 +159,10 @@ const COPY_GROUPS: CopyGroup[] = [
       { key: 'no_overlap', label: 'No Overlap Message', multiline: true },
       { key: 'overlap_found', label: 'Overlap Found Message' },
       { key: 'pick_time', label: 'Pick Time Button' },
-      { key: 'waiting_organizer', label: 'Waiting for Organizer' },
+      { key: 'waiting_organizer', label: 'Waiting for Organizer', variables: ['name'] },
       { key: 'best_times', label: 'Best Times Header' },
-      { key: 'timezone_label', label: 'Timezone Label' },
-      { key: 'participants_label', label: 'Participants Label' },
+      { key: 'timezone_label', label: 'Timezone Label', variables: ['timezone'] },
+      { key: 'participants_label', label: 'Participants Label', variables: ['count'] },
       { key: 'show_less', label: 'Show Less' },
       { key: 'show_all', label: 'Show All' },
       { key: 'you_suffix', label: 'You Suffix' },
@@ -179,7 +180,7 @@ const COPY_GROUPS: CopyGroup[] = [
       { key: 'copied', label: 'Copied Text' },
       { key: 'share', label: 'Share Button' },
       { key: 'share_prompt', label: 'Share Prompt', multiline: true },
-      { key: 'share_text', label: 'Share Text', multiline: true },
+      { key: 'share_text', label: 'Share Text', multiline: true, variables: ['event'] },
     ],
   },
   {
@@ -187,7 +188,7 @@ const COPY_GROUPS: CopyGroup[] = [
     label: 'Notifications',
     fields: [
       { key: 'title', label: 'Title' },
-      { key: 'description', label: 'Description', multiline: true },
+      { key: 'description', label: 'Description', multiline: true, variables: ['name'] },
       { key: 'enable', label: 'Enable Button' },
       { key: 'dismiss', label: 'Dismiss Button' },
     ],
@@ -204,6 +205,7 @@ const COPY_GROUPS: CopyGroup[] = [
       { key: 'bookmark_dismiss', label: 'Bookmark Dismiss Button' },
     ],
   },
+  // Note: celebration.time_saved_quips use {{texts}} and {{seconds}} but are managed as an array, not individual fields
   {
     key: 'returning',
     label: 'Returning Users',
@@ -606,6 +608,25 @@ export default function AdminDashboard() {
                           onChange={(e) => updateCopy(group.key, field.key, e.target.value)}
                           placeholder={groupDefaults[field.key] || ''}
                         />
+                      )}
+                      {field.variables && field.variables.length > 0 && (
+                        <div className="flex items-center gap-1.5 mt-1.5">
+                          <span className="text-[10px] text-gray-400 uppercase tracking-wide">Variables:</span>
+                          {field.variables.map((v) => (
+                            <button
+                              key={v}
+                              type="button"
+                              onClick={() => {
+                                const current = groupValues[field.key] ?? '';
+                                updateCopy(group.key, field.key, current + `{{${v}}}`);
+                              }}
+                              className="px-1.5 py-0.5 bg-teal-50 text-teal-700 text-[11px] font-mono rounded border border-teal-200 hover:bg-teal-100 transition-colors cursor-pointer"
+                              title={`Click to insert {{${v}}}`}
+                            >
+                              {`{{${v}}}`}
+                            </button>
+                          ))}
+                        </div>
                       )}
                     </div>
                   ))}

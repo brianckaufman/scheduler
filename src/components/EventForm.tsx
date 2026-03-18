@@ -3,7 +3,7 @@
 import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useCopy } from '@/contexts/CopyContext';
-import { useCreatedEvents } from '@/hooks/useCreatedEvents';
+import { useCreatedEvents, saveUserDisplayName } from '@/hooks/useCreatedEvents';
 import {
   format,
   addMonths,
@@ -224,6 +224,7 @@ export default function EventForm() {
       // Flag that this is a fresh creation for celebration animation
       sessionStorage.setItem('just_created', 'true');
       addEvent(slug, name.trim());
+      saveUserDisplayName(organizerName.trim());
       router.push(`/e/${slug}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong');
