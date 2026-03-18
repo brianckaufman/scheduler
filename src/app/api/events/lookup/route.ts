@@ -22,7 +22,16 @@ export async function GET(request: NextRequest) {
     .eq('slug', slug)
     .single();
 
-  if (error || !data) {
+  if (error) {
+    // PGRST116 = "no rows returned" → genuine not-found
+    if (error.code === 'PGRST116') {
+      return NextResponse.json({ error: 'Event not found' }, { status: 404 });
+    }
+    // Any other error (connection failure, misconfiguration, etc.) → 500
+    return NextResponse.json({ error: 'Service unavailable' }, { status: 500 });
+  }
+
+  if (!data) {
     return NextResponse.json({ error: 'Event not found' }, { status: 404 });
   }
 

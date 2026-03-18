@@ -1,6 +1,7 @@
 import EventForm from '@/components/EventForm';
 import SupportBanner from '@/components/SupportBanner';
 import ReturningUserBanner from '@/components/ReturningUserBanner';
+import InstallPrompt from '@/components/InstallPrompt';
 import Onboarding from '@/components/Onboarding';
 import { getSettings } from '@/lib/settings';
 import { optimizedLogoUrl } from '@/lib/image';
@@ -44,6 +45,9 @@ export default async function Home() {
 
         {/* Returning user quick links */}
         <ReturningUserBanner />
+
+        {/* PWA install prompt for returning users */}
+        <InstallPrompt />
 
         {/* Main form card */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 animate-fade-in">

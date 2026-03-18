@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
-import { useCreatedEvents, getUserDisplayName, type CreatedEvent } from '@/hooks/useCreatedEvents';
-import { useCopy, interpolate } from '@/contexts/CopyContext';
+import { useEffect, useState, useCallback, useRef } from 'react';
+import { useCreatedEvents, getUserDisplayName } from '@/hooks/useCreatedEvents';
+import { useCopy } from '@/contexts/CopyContext';
 import { firstName } from '@/lib/names';
 import { format } from 'date-fns';
 
@@ -18,8 +18,6 @@ const DEFAULT_VISIBLE = 3;
 export default function ReturningUserBanner() {
   const { events, loaded, removeEvent, updateEvent } = useCreatedEvents();
   const copy = useCopy();
-  const [validatedEvents, setValidatedEvents] = useState<CreatedEvent[]>([]);
-  const [validated, setValidated] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [deletingSlug, setDeletingSlug] = useState<string | null>(null);
   const [userName, setUserName] = useState<string | null>(null);
@@ -28,24 +26,23 @@ export default function ReturningUserBanner() {
     setUserName(getUserDisplayName());
   }, []);
 
-  // Validate events still exist and refresh finalized status
+  // Background validation: refresh finalized status, prune deleted events
+  // Runs once after initial load — uses a ref to avoid re-running on events changes
+  const hasValidated = useRef(false);
   useEffect(() => {
-    if (!loaded || events.length === 0) {
-      setValidated(true);
-      return;
-    }
-
+    if (!loaded || events.length === 0 || hasValidated.current) return;
+    hasValidated.current = true;
     let cancelled = false;
 
-    async function validateEvents() {
-      const results: CreatedEvent[] = [];
+    // Snapshot the slugs at validation time to avoid stale closure issues
+    const eventsSnapshot = [...events];
 
+    async function validateEvents() {
       await Promise.all(
-        events.map(async (event) => {
+        eventsSnapshot.map(async (event) => {
           try {
-            const res = await fetch(`/api/events/lookup?slug=${encodeURIComponent(event.slug)}`, {
-              method: 'GET',
-            });
+            const res = await fetch(`/api/events/lookup?slug=${encodeURIComponent(event.slug)}`);
+            if (cancelled) return;
             if (res.ok) {
               const data = await res.json();
               if (data.finalized_time !== (event.finalizedTime || null)) {
@@ -53,31 +50,15 @@ export default function ReturningUserBanner() {
                   finalizedTime: data.finalized_time || null,
                   name: data.name || event.name,
                 });
-                results.push({
-                  ...event,
-                  finalizedTime: data.finalized_time || null,
-                  name: data.name || event.name,
-                });
-              } else {
-                results.push(event);
               }
             } else if (res.status === 404) {
               removeEvent(event.slug);
-            } else {
-              results.push(event);
             }
           } catch {
-            results.push(event);
+            // Network error — leave as-is
           }
         })
       );
-
-      if (!cancelled) {
-        const slugOrder = events.map((e) => e.slug);
-        results.sort((a, b) => slugOrder.indexOf(a.slug) - slugOrder.indexOf(b.slug));
-        setValidatedEvents(results);
-        setValidated(true);
-      }
     }
 
     validateEvents();
@@ -87,15 +68,13 @@ export default function ReturningUserBanner() {
   const handleDelete = useCallback((slug: string, eventName: string) => {
     if (!confirm(`Remove "${eventName}" from your list?`)) return;
     setDeletingSlug(slug);
-    // Animate out, then remove
     setTimeout(() => {
       removeEvent(slug);
-      setValidatedEvents((prev) => prev.filter((e) => e.slug !== slug));
       setDeletingSlug(null);
     }, 200);
   }, [removeEvent]);
 
-  if (!loaded || !validated || validatedEvents.length === 0) return null;
+  if (!loaded || events.length === 0) return null;
 
   const returningCopy = copy.returning;
   const newEvent = returningCopy?.new_event || 'New event';
@@ -108,9 +87,9 @@ export default function ReturningUserBanner() {
     }
   }
 
-  const visibleEvents = expanded ? validatedEvents : validatedEvents.slice(0, DEFAULT_VISIBLE);
-  const hasMore = validatedEvents.length > DEFAULT_VISIBLE;
-  const hiddenCount = validatedEvents.length - DEFAULT_VISIBLE;
+  const visibleEvents = expanded ? events : events.slice(0, DEFAULT_VISIBLE);
+  const hasMore = events.length > DEFAULT_VISIBLE;
+  const hiddenCount = events.length - DEFAULT_VISIBLE;
 
   // Personalized greeting
   const greeting = userName
@@ -123,7 +102,7 @@ export default function ReturningUserBanner() {
       <div className="px-4 pt-4 pb-2 flex items-center justify-between">
         <p className="text-sm font-semibold text-gray-900">{greeting}</p>
         <span className="text-[10px] text-gray-400 uppercase tracking-wide">
-          {validatedEvents.length} event{validatedEvents.length !== 1 ? 's' : ''}
+          {events.length} event{events.length !== 1 ? 's' : ''}
         </span>
       </div>
 
