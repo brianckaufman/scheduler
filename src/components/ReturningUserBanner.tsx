@@ -1,13 +1,17 @@
 'use client';
 
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { useCreatedEvents } from '@/hooks/useCreatedEvents';
+import type { useCreatedEvents } from '@/hooks/useCreatedEvents';
 import { format } from 'date-fns';
 
 const DEFAULT_VISIBLE = 3;
 
-export default function ReturningUserBanner() {
-  const { events, loaded, removeEvent, updateEvent } = useCreatedEvents();
+interface ReturningUserBannerProps {
+  createdEvents: ReturnType<typeof useCreatedEvents>;
+}
+
+export default function ReturningUserBanner({ createdEvents }: ReturningUserBannerProps) {
+  const { events, loaded, removeEvent, updateEvent } = createdEvents;
   const [expanded, setExpanded] = useState(false);
   const [deletingSlug, setDeletingSlug] = useState<string | null>(null);
   const [menuSlug, setMenuSlug] = useState<string | null>(null);
@@ -79,7 +83,15 @@ export default function ReturningUserBanner() {
     window.location.href = `/?${params.toString()}`;
   }, []);
 
-  if (!loaded || events.length === 0) return null;
+  if (!loaded) return null;
+
+  if (events.length === 0) {
+    return (
+      <div className="animate-fade-in bg-white rounded-2xl shadow-sm border border-gray-100 p-6 text-center">
+        <p className="text-sm text-gray-400">No events yet. Create one to get started!</p>
+      </div>
+    );
+  }
 
   function formatFinalizedDate(isoString: string): string {
     try {
@@ -94,7 +106,7 @@ export default function ReturningUserBanner() {
   const hiddenCount = events.length - DEFAULT_VISIBLE;
 
   return (
-    <div className="animate-fade-in bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+    <div className="animate-fade-in bg-white rounded-2xl shadow-sm border border-gray-100 overflow-visible">
       {/* Auto-delete info */}
       <div className="px-4 pt-3 pb-1">
         <p className="text-[11px] text-gray-400">
@@ -156,11 +168,13 @@ export default function ReturningUserBanner() {
                   e.stopPropagation();
                   setMenuSlug(menuSlug === event.slug ? null : event.slug);
                 }}
-                className="opacity-0 group-hover:opacity-100 p-1.5 mr-1 text-gray-300 hover:text-gray-500 rounded-lg hover:bg-gray-100 transition-all duration-150 cursor-pointer"
+                className="p-1.5 mr-1 text-gray-400 hover:text-teal-600 rounded-lg hover:bg-gray-100 transition-all duration-150 cursor-pointer"
                 title="More actions"
               >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 5v.01M12 12v.01M12 19v.01" />
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                  <circle cx="12" cy="5" r="2" />
+                  <circle cx="12" cy="12" r="2" />
+                  <circle cx="12" cy="19" r="2" />
                 </svg>
               </button>
 

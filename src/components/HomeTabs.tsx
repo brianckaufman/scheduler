@@ -10,7 +10,8 @@ interface HomeTabsProps {
 }
 
 export default function HomeTabs({ children }: HomeTabsProps) {
-  const { events, loaded } = useCreatedEvents();
+  const createdEvents = useCreatedEvents();
+  const { events, loaded } = createdEvents;
   const [activeTab, setActiveTab] = useState<'new' | 'events'>('new');
 
   // Don't show tabs if no events — just render the form directly
@@ -70,7 +71,7 @@ export default function HomeTabs({ children }: HomeTabsProps) {
       {activeTab === 'new' ? (
         children
       ) : (
-        <ReturningUserBanner />
+        <ReturningUserBanner createdEvents={createdEvents} />
       )}
     </div>
   );
