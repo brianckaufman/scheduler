@@ -13,80 +13,13 @@ import TimeGridSlot, { PARTICIPANT_COLORS } from './TimeGridSlot';
 import BestTimes from './BestTimes';
 import SlotTooltip from './SlotTooltip';
 import UndoToast from './UndoToast';
+import { getTimezoneLabel } from '@/lib/timezones';
 import type { Event } from '@/types';
 
 // Cross-platform tap feedback (Android vibrate + iOS AudioContext micro-click)
 function haptic() {
   if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
     try { navigator.vibrate(10); } catch { /* ignore */ }
-  }
-}
-
-// Popular timezones for the picker
-const POPULAR_TIMEZONES = [
-  { value: 'America/New_York', label: 'Eastern Time (ET)' },
-  { value: 'America/Chicago', label: 'Central Time (CT)' },
-  { value: 'America/Denver', label: 'Mountain Time (MT)' },
-  { value: 'America/Los_Angeles', label: 'Pacific Time (PT)' },
-  { value: 'America/Anchorage', label: 'Alaska Time (AKT)' },
-  { value: 'Pacific/Honolulu', label: 'Hawaii Time (HT)' },
-  { value: 'Europe/London', label: 'London (GMT/BST)' },
-  { value: 'Europe/Paris', label: 'Central Europe (CET)' },
-  { value: 'Europe/Berlin', label: 'Berlin (CET)' },
-  { value: 'Asia/Tokyo', label: 'Tokyo (JST)' },
-  { value: 'Asia/Shanghai', label: 'China (CST)' },
-  { value: 'Asia/Kolkata', label: 'India (IST)' },
-  { value: 'Asia/Dubai', label: 'Dubai (GST)' },
-  { value: 'Australia/Sydney', label: 'Sydney (AEST)' },
-  { value: 'Australia/Perth', label: 'Perth (AWST)' },
-  { value: 'America/Sao_Paulo', label: 'São Paulo (BRT)' },
-  { value: 'America/Mexico_City', label: 'Mexico City (CST)' },
-  { value: 'Asia/Singapore', label: 'Singapore (SGT)' },
-  { value: 'Asia/Seoul', label: 'Seoul (KST)' },
-  { value: 'Africa/Johannesburg', label: 'South Africa (SAST)' },
-];
-
-// Friendly timezone name (e.g., "Eastern Time", "Pacific Time")
-function getTimezoneLabel(tz: string): string {
-  // Check if it's in our popular list first
-  const popular = POPULAR_TIMEZONES.find((t) => t.value === tz);
-  if (popular) return popular.label;
-  try {
-    // Use Intl to get a readable abbreviation
-    const now = new Date();
-    const short = now.toLocaleTimeString('en-US', { timeZone: tz, timeZoneName: 'short' });
-    const abbr = short.split(' ').pop() || '';
-    // Map common abbreviations to friendly names
-    const friendlyMap: Record<string, string> = {
-      EST: 'Eastern Time (ET)',
-      EDT: 'Eastern Time (ET)',
-      CST: 'Central Time (CT)',
-      CDT: 'Central Time (CT)',
-      MST: 'Mountain Time (MT)',
-      MDT: 'Mountain Time (MT)',
-      PST: 'Pacific Time (PT)',
-      PDT: 'Pacific Time (PT)',
-      GMT: 'GMT',
-      UTC: 'UTC',
-      BST: 'British Summer Time',
-      CET: 'Central European Time',
-      CEST: 'Central European Time',
-      IST: 'India Standard Time',
-      JST: 'Japan Standard Time',
-      AEST: 'Australian Eastern Time',
-      AEDT: 'Australian Eastern Time',
-    };
-    return friendlyMap[abbr] || abbr || tz.replace(/_/g, ' ').split('/').pop() || tz;
-  } catch {
-    return tz.replace(/_/g, ' ').split('/').pop() || tz;
-  }
-}
-
-function detectUserTimezone(): string {
-  try {
-    return Intl.DateTimeFormat().resolvedOptions().timeZone;
-  } catch {
-    return '';
   }
 }
 
@@ -130,19 +63,6 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
 
   // Expandable participant list for large groups
   const [showAllParticipants, setShowAllParticipants] = useState(false);
-
-  // Timezone override — auto-detect user's timezone
-  const [showTzPicker, setShowTzPicker] = useState(false);
-  const [tzOverride, setTzOverride] = useState<string | null>(null);
-
-  useEffect(() => {
-    const detected = detectUserTimezone();
-    if (detected && detected !== event.timezone) {
-      setTzOverride(detected);
-    }
-  }, [event.timezone]);
-
-  const displayTimezone = tzOverride || event.timezone;
 
   // Tooltip
   const [tooltipSlot, setTooltipSlot] = useState<string | null>(null);
@@ -382,7 +302,7 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
   const visibleDates = isMobile && dates.length > 1 ? [dates[activeDay]] : dates;
 
   // Timezone label
-  const timezoneLabel = useMemo(() => getTimezoneLabel(displayTimezone), [displayTimezone]);
+  const timezoneLabel = useMemo(() => getTimezoneLabel(event.timezone), [event.timezone]);
 
   return (
     <div className="space-y-6" onMouseUp={handleDragEnd} onMouseLeave={handleDragEnd}>
@@ -438,42 +358,12 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
         </div>
       )}
 
-      {/* Timezone indicator — clickable to change */}
-      <div className="relative">
-        <button
-          type="button"
-          onClick={() => setShowTzPicker((v) => !v)}
-          className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-teal-600 transition-colors cursor-pointer"
-        >
-          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <span>{interpolate(copy.grid.timezone_label, { timezone: timezoneLabel })}</span>
-          <svg className={`w-3 h-3 transition-transform ${showTzPicker ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-          </svg>
-        </button>
-        {showTzPicker && (
-          <div className="absolute z-30 mt-1 left-0 bg-white border border-gray-200 rounded-xl shadow-lg py-1 max-h-52 overflow-y-auto w-64 animate-fade-in">
-            {POPULAR_TIMEZONES.map((tz) => (
-              <button
-                key={tz.value}
-                type="button"
-                onClick={() => {
-                  setTzOverride(tz.value);
-                  setShowTzPicker(false);
-                }}
-                className={`w-full text-left px-3 py-2 text-xs transition-colors cursor-pointer ${
-                  displayTimezone === tz.value
-                    ? 'bg-teal-50 text-teal-700 font-medium'
-                    : 'text-gray-600 hover:bg-gray-50'
-                }`}
-              >
-                {tz.label}
-              </button>
-            ))}
-          </div>
-        )}
+      {/* Timezone indicator */}
+      <div className="flex items-center gap-1.5 text-xs text-gray-400">
+        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <span>{interpolate(copy.grid.timezone_label, { timezone: timezoneLabel })}</span>
       </div>
 
       <div

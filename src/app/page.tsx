@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import EventForm from '@/components/EventForm';
 import SupportBanner from '@/components/SupportBanner';
 import HomeTabs from '@/components/HomeTabs';
@@ -49,7 +50,9 @@ export default async function Home() {
         {/* Tabbed interface: New Event (default) / Your Events */}
         <HomeTabs>
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 animate-fade-in">
-            <EventForm />
+            <Suspense>
+              <EventForm />
+            </Suspense>
           </div>
         </HomeTabs>
 

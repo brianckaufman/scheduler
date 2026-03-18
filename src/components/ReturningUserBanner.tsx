@@ -6,27 +6,19 @@ import { format } from 'date-fns';
 
 const DEFAULT_VISIBLE = 3;
 
-/**
- * Shows returning users their past events on the homepage.
- * - Collapsible list (shows 3 by default, expandable)
- * - Inline delete with swipe-to-reveal pattern
- * - Personalized "Hi Brian, welcome back!" greeting
- * - Auto-prunes deleted events via lookup API
- */
 export default function ReturningUserBanner() {
   const { events, loaded, removeEvent, updateEvent } = useCreatedEvents();
   const [expanded, setExpanded] = useState(false);
   const [deletingSlug, setDeletingSlug] = useState<string | null>(null);
+  const [menuSlug, setMenuSlug] = useState<string | null>(null);
 
   // Background validation: refresh finalized status, prune deleted events
-  // Runs once after initial load — uses a ref to avoid re-running on events changes
   const hasValidated = useRef(false);
   useEffect(() => {
     if (!loaded || events.length === 0 || hasValidated.current) return;
     hasValidated.current = true;
     let cancelled = false;
 
-    // Snapshot the slugs at validation time to avoid stale closure issues
     const eventsSnapshot = [...events];
 
     async function validateEvents() {
@@ -57,14 +49,35 @@ export default function ReturningUserBanner() {
     return () => { cancelled = true; };
   }, [loaded, events, removeEvent, updateEvent]);
 
+  // Close menu when clicking outside
+  useEffect(() => {
+    if (!menuSlug) return;
+    const handler = () => setMenuSlug(null);
+    document.addEventListener('click', handler);
+    return () => document.removeEventListener('click', handler);
+  }, [menuSlug]);
+
   const handleDelete = useCallback((slug: string, eventName: string) => {
-    if (!confirm(`Remove "${eventName}" from your list?`)) return;
+    if (!confirm(`Delete "${eventName}" from your events?`)) return;
     setDeletingSlug(slug);
+    setMenuSlug(null);
     setTimeout(() => {
       removeEvent(slug);
       setDeletingSlug(null);
     }, 200);
   }, [removeEvent]);
+
+  const handlePin = useCallback((slug: string, pinned: boolean) => {
+    updateEvent(slug, { pinned });
+    setMenuSlug(null);
+  }, [updateEvent]);
+
+  const handleDuplicate = useCallback((event: typeof events[0]) => {
+    setMenuSlug(null);
+    // Navigate to homepage with pre-filled event data via query params
+    const params = new URLSearchParams({ duplicate: event.name });
+    window.location.href = `/?${params.toString()}`;
+  }, []);
 
   if (!loaded || events.length === 0) return null;
 
@@ -82,8 +95,15 @@ export default function ReturningUserBanner() {
 
   return (
     <div className="animate-fade-in bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+      {/* Auto-delete info */}
+      <div className="px-4 pt-3 pb-1">
+        <p className="text-[11px] text-gray-400">
+          Finalized events auto-delete after 24 hours. Pin an event to keep it.
+        </p>
+      </div>
+
       {/* Event list */}
-      <div className="px-2 pt-2 pb-1">
+      <div className="px-2 pt-1 pb-1">
         {visibleEvents.map((event) => (
           <div
             key={event.slug}
@@ -112,6 +132,11 @@ export default function ReturningUserBanner() {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-gray-800 truncate group-hover:text-teal-700 transition-colors">
+                  {event.pinned && (
+                    <svg className="w-3 h-3 text-amber-400 inline mr-1 -mt-0.5" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z" />
+                    </svg>
+                  )}
                   {event.name}
                 </p>
                 <p className={`text-[11px] truncate ${event.finalizedTime ? 'text-green-600' : 'text-gray-400'}`}>
@@ -122,17 +147,62 @@ export default function ReturningUserBanner() {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
               </svg>
             </a>
-            {/* Inline delete */}
-            <button
-              type="button"
-              onClick={() => handleDelete(event.slug, event.name)}
-              className="opacity-0 group-hover:opacity-100 shrink-0 p-1.5 mr-1 text-gray-300 hover:text-red-500 rounded-lg hover:bg-red-50 transition-all duration-150 cursor-pointer"
-              title="Remove from list"
-            >
-              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
+
+            {/* Action menu */}
+            <div className="relative shrink-0">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setMenuSlug(menuSlug === event.slug ? null : event.slug);
+                }}
+                className="opacity-0 group-hover:opacity-100 p-1.5 mr-1 text-gray-300 hover:text-gray-500 rounded-lg hover:bg-gray-100 transition-all duration-150 cursor-pointer"
+                title="More actions"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 5v.01M12 12v.01M12 19v.01" />
+                </svg>
+              </button>
+
+              {menuSlug === event.slug && (
+                <div
+                  className="absolute right-0 top-8 z-30 bg-white border border-gray-200 rounded-xl shadow-lg py-1 w-44 animate-fade-in"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <button
+                    type="button"
+                    onClick={() => handlePin(event.slug, !event.pinned)}
+                    className="w-full text-left px-3 py-2 text-xs text-gray-600 hover:bg-gray-50 flex items-center gap-2 transition-colors cursor-pointer"
+                  >
+                    <svg className="w-3.5 h-3.5 text-amber-400" fill={event.pinned ? 'currentColor' : 'none'} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z" />
+                    </svg>
+                    {event.pinned ? 'Unpin event' : 'Pin to keep'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDuplicate(event)}
+                    className="w-full text-left px-3 py-2 text-xs text-gray-600 hover:bg-gray-50 flex items-center gap-2 transition-colors cursor-pointer"
+                  >
+                    <svg className="w-3.5 h-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    </svg>
+                    Duplicate event
+                  </button>
+                  <div className="border-t border-gray-100 my-1" />
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(event.slug, event.name)}
+                    className="w-full text-left px-3 py-2 text-xs text-red-600 hover:bg-red-50 flex items-center gap-2 transition-colors cursor-pointer"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                    Delete event
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         ))}
       </div>

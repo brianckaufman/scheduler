@@ -7,6 +7,7 @@ export interface CreatedEvent {
   name: string;
   createdAt: string;
   finalizedTime?: string | null;
+  pinned?: boolean;
 }
 
 const STORAGE_KEY = 'created_events';
@@ -32,6 +33,7 @@ export function useCreatedEvents() {
           // Auto-expire: remove finalized events older than 24h
           const now = Date.now();
           const active = parsed.filter((e) => {
+            if (e.pinned) return true;
             if (!e.finalizedTime) return true;
             const finalizedAt = new Date(e.finalizedTime).getTime();
             return now - finalizedAt < AUTO_EXPIRE_MS;

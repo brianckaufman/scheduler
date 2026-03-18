@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, useRef } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useCopy } from '@/contexts/CopyContext';
-import { useCreatedEvents, saveUserDisplayName } from '@/hooks/useCreatedEvents';
+import { useCreatedEvents, saveUserDisplayName, getUserDisplayName } from '@/hooks/useCreatedEvents';
 import {
   format,
   addMonths,
@@ -19,6 +19,7 @@ import {
   isBefore,
   startOfDay,
 } from 'date-fns';
+import { POPULAR_TIMEZONES, detectUserTimezone, getTimezoneLabel } from '@/lib/timezones';
 
 function generateTimeOptions() {
   const options: string[] = [];
@@ -52,6 +53,7 @@ const DURATION_OPTIONS = [
 
 export default function EventForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const copy = useCopy();
   const { addEvent } = useCreatedEvents();
   const [name, setName] = useState('');
@@ -64,11 +66,20 @@ export default function EventForm() {
   const [maxParticipants, setMaxParticipants] = useState('');
   const [timeStart, setTimeStart] = useState('09:00');
   const [timeEnd, setTimeEnd] = useState('17:00');
+  const [timezone, setTimezone] = useState(detectUserTimezone);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showOptional, setShowOptional] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
+
+  // Pre-fill from duplicate query param and saved user name
+  useEffect(() => {
+    const dupName = searchParams.get('duplicate');
+    if (dupName) setName(dupName);
+    const savedName = getUserDisplayName();
+    if (savedName) setOrganizerName(savedName);
+  }, [searchParams]);
 
   const today = startOfDay(new Date());
   const minDeadline = format(addDays(new Date(), 1), 'yyyy-MM-dd');
@@ -204,7 +215,7 @@ export default function EventForm() {
           dates: selectedDates.map((d) => format(d, 'yyyy-MM-dd')),
           timeStart,
           timeEnd,
-          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          timezone,
         }),
       });
 
@@ -346,6 +357,25 @@ export default function EventForm() {
               ))}
             </select>
           </div>
+        </div>
+
+        <div>
+          <label htmlFor="timezone" className="block text-sm font-medium text-gray-700 mb-1.5">
+            Timezone
+          </label>
+          <select
+            id="timezone"
+            value={timezone}
+            onChange={(e) => setTimezone(e.target.value)}
+            className={selectClass}
+          >
+            {POPULAR_TIMEZONES.map((tz) => (
+              <option key={tz.value} value={tz.value}>{tz.label}</option>
+            ))}
+            {!POPULAR_TIMEZONES.find((t) => t.value === timezone) && (
+              <option value={timezone}>{getTimezoneLabel(timezone)}</option>
+            )}
+          </select>
         </div>
 
         <div>
