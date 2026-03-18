@@ -1,6 +1,6 @@
 import EventForm from '@/components/EventForm';
 import SupportBanner from '@/components/SupportBanner';
-import ReturningUserBanner from '@/components/ReturningUserBanner';
+import HomeTabs from '@/components/HomeTabs';
 import InstallPrompt from '@/components/InstallPrompt';
 import Onboarding from '@/components/Onboarding';
 import { getSettings } from '@/lib/settings';
@@ -43,16 +43,15 @@ export default async function Home() {
           )}
         </div>
 
-        {/* Returning user quick links */}
-        <ReturningUserBanner />
-
         {/* PWA install prompt for returning users */}
         <InstallPrompt />
 
-        {/* Main form card */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 animate-fade-in">
-          <EventForm />
-        </div>
+        {/* Tabbed interface: New Event (default) / Your Events */}
+        <HomeTabs>
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 animate-fade-in">
+            <EventForm />
+          </div>
+        </HomeTabs>
 
         {/* Trust signals */}
         <div className="mt-8 mb-4">

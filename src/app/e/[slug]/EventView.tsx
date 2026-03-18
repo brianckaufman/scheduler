@@ -132,18 +132,29 @@ export default function EventView({ event: initialEvent }: EventViewProps) {
     <div className="min-h-screen bg-gray-50">
       {showCelebration && <ConfettiCelebration onComplete={() => setShowCelebration(false)} />}
       <div className="max-w-lg mx-auto px-4 py-6">
-        {/* Logo */}
-        {branding.logo_url && (
-          <div className="mb-4 flex justify-center">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={optimizedLogoUrl(branding.logo_url, branding.logo_height || 40)}
-              alt={branding.site_name}
-              style={{ height: `${branding.logo_height || 40}px` }}
-              className="w-auto object-contain"
-            />
-          </div>
-        )}
+        {/* Header with back nav + logo */}
+        <div className="mb-4 flex items-center">
+          <a
+            href="/"
+            className="shrink-0 p-2 -ml-2 text-gray-400 hover:text-teal-600 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+            title="Back to home"
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+            </svg>
+          </a>
+          {branding.logo_url && (
+            <a href="/" className="flex-1 flex justify-center -mr-7">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={optimizedLogoUrl(branding.logo_url, branding.logo_height || 40)}
+                alt={branding.site_name}
+                style={{ height: `${branding.logo_height || 40}px` }}
+                className="w-auto object-contain"
+              />
+            </a>
+          )}
+        </div>
 
         {event.finalized_time && (
           <FinalizedBanner

@@ -1,9 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { useCreatedEvents, getUserDisplayName } from '@/hooks/useCreatedEvents';
-import { useCopy } from '@/contexts/CopyContext';
-import { firstName } from '@/lib/names';
+import { useCreatedEvents } from '@/hooks/useCreatedEvents';
 import { format } from 'date-fns';
 
 const DEFAULT_VISIBLE = 3;
@@ -17,14 +15,8 @@ const DEFAULT_VISIBLE = 3;
  */
 export default function ReturningUserBanner() {
   const { events, loaded, removeEvent, updateEvent } = useCreatedEvents();
-  const copy = useCopy();
   const [expanded, setExpanded] = useState(false);
   const [deletingSlug, setDeletingSlug] = useState<string | null>(null);
-  const [userName, setUserName] = useState<string | null>(null);
-
-  useEffect(() => {
-    setUserName(getUserDisplayName());
-  }, []);
 
   // Background validation: refresh finalized status, prune deleted events
   // Runs once after initial load — uses a ref to avoid re-running on events changes
@@ -76,9 +68,6 @@ export default function ReturningUserBanner() {
 
   if (!loaded || events.length === 0) return null;
 
-  const returningCopy = copy.returning;
-  const newEvent = returningCopy?.new_event || 'New event';
-
   function formatFinalizedDate(isoString: string): string {
     try {
       return format(new Date(isoString), 'EEE, MMM d · h:mm a');
@@ -91,23 +80,10 @@ export default function ReturningUserBanner() {
   const hasMore = events.length > DEFAULT_VISIBLE;
   const hiddenCount = events.length - DEFAULT_VISIBLE;
 
-  // Personalized greeting
-  const greeting = userName
-    ? `Hi ${firstName(userName)}, welcome back`
-    : (returningCopy?.welcome_back || 'Welcome back');
-
   return (
-    <div className="animate-fade-in mb-6 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-      {/* Header */}
-      <div className="px-4 pt-4 pb-2 flex items-center justify-between">
-        <p className="text-sm font-semibold text-gray-900">{greeting}</p>
-        <span className="text-[10px] text-gray-400 uppercase tracking-wide">
-          {events.length} event{events.length !== 1 ? 's' : ''}
-        </span>
-      </div>
-
+    <div className="animate-fade-in bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
       {/* Event list */}
-      <div className="px-2 pb-1">
+      <div className="px-2 pt-2 pb-1">
         {visibleEvents.map((event) => (
           <div
             key={event.slug}
@@ -174,22 +150,6 @@ export default function ReturningUserBanner() {
         </div>
       )}
 
-      {/* Create new event link */}
-      <div className="px-4 pb-3 pt-1 border-t border-gray-100">
-        <a
-          href="#create"
-          onClick={(e) => {
-            e.preventDefault();
-            document.querySelector('form')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          }}
-          className="flex items-center justify-center gap-1.5 text-xs font-medium text-teal-600 hover:text-teal-700 transition-colors cursor-pointer py-1"
-        >
-          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-          </svg>
-          {newEvent}
-        </a>
-      </div>
     </div>
   );
 }
