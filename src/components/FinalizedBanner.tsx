@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { format, addMinutes } from 'date-fns';
 import type { Event } from '@/types';
 
@@ -45,8 +46,25 @@ function getGoogleCalendarUrl(event: Event): string {
   return `https://calendar.google.com/calendar/render?${params}`;
 }
 
+function buildConfirmationText(event: Event): string {
+  const start = new Date(event.finalized_time!);
+  const end = addMinutes(start, event.duration_minutes || 60);
+
+  const lines: string[] = [];
+  lines.push(`${event.name} is confirmed!`);
+  lines.push('');
+  lines.push(`Date: ${format(start, 'EEEE, MMMM d, yyyy')}`);
+  lines.push(`Time: ${format(start, 'h:mm a')} - ${format(end, 'h:mm a')}`);
+  if (event.location) {
+    lines.push(`Location: ${event.location}`);
+  }
+
+  return lines.join('\n');
+}
+
 export default function FinalizedBanner({ event, isOrganizer, organizerToken, onUnfinalize }: FinalizedBannerProps) {
   const start = new Date(event.finalized_time!);
+  const [copied, setCopied] = useState(false);
 
   const handleDownloadICS = () => {
     const ics = generateICS(event);
@@ -57,6 +75,26 @@ export default function FinalizedBanner({ event, isOrganizer, organizerToken, on
     a.download = `${event.name.replace(/\s+/g, '-').toLowerCase()}.ics`;
     a.click();
     URL.revokeObjectURL(url);
+  };
+
+  const handleCopyDetails = async () => {
+    const text = buildConfirmationText(event);
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      textarea.style.position = 'fixed';
+      textarea.style.opacity = '0';
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
   };
 
   const handleUnfinalize = async () => {
@@ -79,28 +117,54 @@ export default function FinalizedBanner({ event, isOrganizer, organizerToken, on
           <p className="text-sm text-green-700 mt-1">{event.location}</p>
         )}
       </div>
-      <div className="flex gap-2 mt-3">
-        <a
-          href={getGoogleCalendarUrl(event)}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex-1 py-2 px-3 bg-white border border-green-300 text-green-700 text-sm font-medium rounded-xl text-center hover:bg-green-50 hover:shadow-sm transition-all duration-200 active:scale-[0.97]"
-        >
-          Google Calendar
-        </a>
-        <button
-          type="button"
-          onClick={handleDownloadICS}
-          className="flex-1 py-2 px-3 bg-white border border-green-300 text-green-700 text-sm font-medium rounded-xl text-center hover:bg-green-50 hover:shadow-sm transition-all duration-200 active:scale-[0.97]"
-        >
-          Download .ics
-        </button>
-      </div>
+
+      {/* Primary action: universal calendar add */}
+      <button
+        type="button"
+        onClick={handleDownloadICS}
+        className="w-full mt-3 py-2.5 px-4 bg-green-600 text-white text-sm font-semibold rounded-xl hover:bg-green-700 shadow-sm hover:shadow-md transition-all duration-200 active:scale-[0.97] cursor-pointer flex items-center justify-center gap-2"
+      >
+        <svg className="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
+        </svg>
+        Add to Calendar
+      </button>
+      <p className="text-[10px] text-green-600 text-center mt-1">
+        Works with Apple Calendar, Google Calendar, Outlook, and more
+      </p>
+
+      {/* Secondary: copy details to share */}
+      <button
+        type="button"
+        onClick={handleCopyDetails}
+        className={`w-full mt-2 py-2 px-4 border text-sm font-medium rounded-xl text-center transition-all duration-200 active:scale-[0.97] cursor-pointer flex items-center justify-center gap-2 ${
+          copied
+            ? 'bg-green-600 border-green-600 text-white'
+            : 'bg-white border-green-300 text-green-700 hover:bg-green-50 hover:shadow-sm'
+        }`}
+      >
+        {copied ? (
+          <>
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+            </svg>
+            Copied!
+          </>
+        ) : (
+          <>
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15.666 3.888A2.25 2.25 0 0013.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 01-.75.75H9.75a.75.75 0 01-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 01-2.25 2.25H6.75A2.25 2.25 0 014.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 011.927-.184" />
+            </svg>
+            Copy event details
+          </>
+        )}
+      </button>
+
       {isOrganizer && (
         <button
           type="button"
           onClick={handleUnfinalize}
-          className="w-full mt-2 py-1.5 text-xs text-green-600 hover:text-green-800 transition-colors"
+          className="w-full mt-2 py-1.5 text-xs text-green-600 hover:text-green-800 transition-colors cursor-pointer"
         >
           Change time
         </button>

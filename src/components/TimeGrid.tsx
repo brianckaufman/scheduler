@@ -326,7 +326,7 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
             <button
               type="button"
               onClick={() => setShowTimePicker(true)}
-              className="mt-2 px-5 py-2 bg-green-600 text-white text-sm font-semibold rounded-full hover:bg-green-700 shadow-sm hover:shadow-md transition-all duration-200 active:scale-95 cursor-pointer"
+              className="mt-3 px-8 py-3 bg-blue-600 text-white text-base font-semibold rounded-full hover:bg-blue-700 shadow-md hover:shadow-lg transition-all duration-200 active:scale-95 cursor-pointer min-w-[180px]"
             >
               {copy.grid.pick_time}
             </button>
