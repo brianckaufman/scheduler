@@ -5,10 +5,11 @@ import { useRouter } from 'next/navigation';
 import type { SiteSettings, CopySettings } from '@/types/settings';
 import { DEFAULT_SETTINGS, DEFAULT_COPY } from '@/types/settings';
 import ImageUpload from '@/components/ImageUpload';
+import RichTextEditor from '@/components/RichTextEditor';
 
 import type { ReactNode } from 'react';
 
-type TabKey = 'seo' | 'branding' | 'copy' | 'monetization' | 'analytics' | 'social' | 'app';
+type TabKey = 'seo' | 'branding' | 'copy' | 'monetization' | 'analytics' | 'social' | 'app' | 'legal';
 
 const iconClass = 'w-4 h-4 flex-shrink-0';
 
@@ -48,6 +49,11 @@ const TAB_ICONS: Record<TabKey, ReactNode> = {
       <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75" />
     </svg>
   ),
+  legal: (
+    <svg className={iconClass} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v17.25m0 0c-1.472 0-2.882.265-4.185.75M12 20.25c1.472 0 2.882.265 4.185.75M18.75 4.97A48.416 48.416 0 0012 4.5c-2.291 0-4.545.16-6.75.47m13.5 0c1.01.143 2.01.317 3 .52m-3-.52l2.62 10.726c.122.499-.106 1.028-.589 1.202a5.988 5.988 0 01-2.031.352 5.988 5.988 0 01-2.031-.352c-.483-.174-.711-.703-.59-1.202L18.75 4.97zm-16.5.52c.99-.203 1.99-.377 3-.52m0 0l2.62 10.726c.122.499-.106 1.028-.589 1.202a5.989 5.989 0 01-2.031.352 5.989 5.989 0 01-2.031-.352c-.483-.174-.711-.703-.59-1.202L5.25 4.97z" />
+    </svg>
+  ),
 };
 
 const TABS: { key: TabKey; label: string }[] = [
@@ -58,6 +64,7 @@ const TABS: { key: TabKey; label: string }[] = [
   { key: 'analytics', label: 'Analytics' },
   { key: 'social', label: 'Social' },
   { key: 'app', label: 'App Settings' },
+  { key: 'legal', label: 'Legal' },
 ];
 
 /* ── Copy group definitions for the Copy & Language tab ── */
@@ -895,6 +902,98 @@ export default function AdminDashboard() {
     </div>
   );
 
+  const renderLegal = () => (
+    <div className="space-y-8">
+      <p className="text-sm text-gray-500">
+        Write your legal policies below. Toggle each one on to show it as a link in the site footer and make its page publicly accessible.
+      </p>
+
+      {/* Privacy Policy */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <label className="text-sm font-semibold text-gray-800">Privacy Policy</label>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <span className="text-xs text-gray-500">Show in footer</span>
+            <div className="relative">
+              <input
+                type="checkbox"
+                className="sr-only"
+                checked={settings.legal?.show_privacy ?? true}
+                onChange={(e) => updateSection('legal', 'show_privacy', e.target.checked)}
+              />
+              <div className={`w-9 h-5 rounded-full transition-colors ${settings.legal?.show_privacy ? 'bg-teal-500' : 'bg-gray-200'}`} />
+              <div className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${settings.legal?.show_privacy ? 'translate-x-4' : ''}`} />
+            </div>
+          </label>
+        </div>
+        <RichTextEditor
+          value={settings.legal?.privacy_policy || ''}
+          onChange={(html) => updateSection('legal', 'privacy_policy', html)}
+          placeholder="Write your privacy policy here..."
+        />
+        {settings.legal?.show_privacy && (
+          <p className={helpClass}>Visible at <a href="/privacy" target="_blank" className="text-teal-600 underline">/privacy</a></p>
+        )}
+      </div>
+
+      {/* Terms of Use */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <label className="text-sm font-semibold text-gray-800">Terms of Use</label>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <span className="text-xs text-gray-500">Show in footer</span>
+            <div className="relative">
+              <input
+                type="checkbox"
+                className="sr-only"
+                checked={settings.legal?.show_terms ?? true}
+                onChange={(e) => updateSection('legal', 'show_terms', e.target.checked)}
+              />
+              <div className={`w-9 h-5 rounded-full transition-colors ${settings.legal?.show_terms ? 'bg-teal-500' : 'bg-gray-200'}`} />
+              <div className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${settings.legal?.show_terms ? 'translate-x-4' : ''}`} />
+            </div>
+          </label>
+        </div>
+        <RichTextEditor
+          value={settings.legal?.terms_of_use || ''}
+          onChange={(html) => updateSection('legal', 'terms_of_use', html)}
+          placeholder="Write your terms of use here..."
+        />
+        {settings.legal?.show_terms && (
+          <p className={helpClass}>Visible at <a href="/terms" target="_blank" className="text-teal-600 underline">/terms</a></p>
+        )}
+      </div>
+
+      {/* Cookie Policy */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <label className="text-sm font-semibold text-gray-800">Cookie Policy</label>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <span className="text-xs text-gray-500">Show in footer</span>
+            <div className="relative">
+              <input
+                type="checkbox"
+                className="sr-only"
+                checked={settings.legal?.show_cookies ?? false}
+                onChange={(e) => updateSection('legal', 'show_cookies', e.target.checked)}
+              />
+              <div className={`w-9 h-5 rounded-full transition-colors ${settings.legal?.show_cookies ? 'bg-teal-500' : 'bg-gray-200'}`} />
+              <div className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${settings.legal?.show_cookies ? 'translate-x-4' : ''}`} />
+            </div>
+          </label>
+        </div>
+        <RichTextEditor
+          value={settings.legal?.cookie_policy || ''}
+          onChange={(html) => updateSection('legal', 'cookie_policy', html)}
+          placeholder="Write your cookie policy here..."
+        />
+        {settings.legal?.show_cookies && (
+          <p className={helpClass}>Visible at <a href="/cookies" target="_blank" className="text-teal-600 underline">/cookies</a></p>
+        )}
+      </div>
+    </div>
+  );
+
   const renderTabContent = () => {
     switch (activeTab) {
       case 'seo': return renderSEO();
@@ -904,6 +1003,7 @@ export default function AdminDashboard() {
       case 'analytics': return renderAnalytics();
       case 'social': return renderSocial();
       case 'app': return renderAppSettings();
+      case 'legal': return renderLegal();
     }
   };
 

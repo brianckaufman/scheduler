@@ -77,7 +77,7 @@ export default function InstallPrompt() {
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-xs font-semibold text-gray-800">Add to Home Screen</p>
-        <p className="text-[11px] text-gray-500 mt-0.5">
+        <p className="text-xs text-gray-500 mt-0.5">
           {deferredPrompt
             ? 'Open instantly, just like a native app.'
             : 'Tap Share, then "Add to Home Screen".'

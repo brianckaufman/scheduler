@@ -3,12 +3,14 @@
 import { useState } from 'react';
 import { format, addMinutes } from 'date-fns';
 import type { Event } from '@/types';
+import { firstName } from '@/lib/names';
 
 interface FinalizedBannerProps {
   event: Event;
   isOrganizer: boolean;
   organizerToken: string | null;
   onUnfinalize: () => void;
+  participantName?: string;
 }
 
 function generateICS(event: Event): string {
@@ -62,7 +64,7 @@ function buildConfirmationText(event: Event): string {
   return lines.join('\n');
 }
 
-export default function FinalizedBanner({ event, isOrganizer, organizerToken, onUnfinalize }: FinalizedBannerProps) {
+export default function FinalizedBanner({ event, isOrganizer, organizerToken, onUnfinalize, participantName }: FinalizedBannerProps) {
   const start = new Date(event.finalized_time!);
   const [copied, setCopied] = useState(false);
 
@@ -109,7 +111,11 @@ export default function FinalizedBanner({ event, isOrganizer, organizerToken, on
   return (
     <div className="animate-fade-in-scale mb-4 bg-green-50 border border-green-200 rounded-2xl p-4">
       <div className="text-center">
-        <p className="text-sm font-semibold text-green-800">Time confirmed!</p>
+        <p className="text-sm font-semibold text-green-800">
+          {event.event_type === 'fixed' && participantName
+            ? `${firstName(participantName)}, you're invited!`
+            : 'Time confirmed!'}
+        </p>
         <p className="text-lg font-bold text-green-900 mt-1">
           {format(start, 'EEEE, MMM d')} at {format(start, 'h:mm a')}
         </p>
@@ -129,7 +135,7 @@ export default function FinalizedBanner({ event, isOrganizer, organizerToken, on
         </svg>
         Add to Calendar
       </button>
-      <p className="text-[10px] text-green-600 text-center mt-1">
+      <p className="text-xs text-green-600 text-center mt-1">
         Works with Apple Calendar, Google Calendar, Outlook, and more
       </p>
 

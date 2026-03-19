@@ -45,6 +45,14 @@ export default function EventView({ event: initialEvent }: EventViewProps) {
   const [hasSelections, setHasSelections] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
   const [bodyExpanded, setBodyExpanded] = useState(false);
+  const [participantName, setParticipantName] = useState(() => {
+    try {
+      const stored = typeof window !== 'undefined'
+        ? localStorage.getItem(`participant_${initialEvent.slug}`)
+        : null;
+      return stored ? (JSON.parse(stored).name as string) : '';
+    } catch { return ''; }
+  });
 
   const isFixed = event.event_type === 'fixed';
 
@@ -84,6 +92,7 @@ export default function EventView({ event: initialEvent }: EventViewProps) {
 
   const handleJoin = (id: string, name: string) => {
     saveSession(id, name);
+    setParticipantName(name);
     setJustJoined(true);
   };
 
@@ -151,6 +160,7 @@ export default function EventView({ event: initialEvent }: EventViewProps) {
             isOrganizer={isOrganizer}
             organizerToken={localStorage.getItem(`organizer_${event.slug}`)}
             onUnfinalize={() => setEvent({ ...event, finalized_time: null })}
+            participantName={participantName}
           />
         )}
 
@@ -301,6 +311,7 @@ export default function EventView({ event: initialEvent }: EventViewProps) {
               event={event}
               participantId={participantId}
               isOrganizer={isOrganizer}
+              organizerToken={localStorage.getItem(`organizer_${event.slug}`)}
             />
           ) : (
             <TimeGrid
@@ -343,7 +354,7 @@ export default function EventView({ event: initialEvent }: EventViewProps) {
               </svg>
               {copy.event.cta_button}
             </a>
-            <p className="text-[10px] text-gray-300 mt-2">{copy.event.cta_footer}</p>
+            <p className="text-xs text-gray-400 mt-2">{copy.event.cta_footer}</p>
 
             {monetization.buymeacoffee_url && monetization.show_on_event && (
               <div className="mt-3">

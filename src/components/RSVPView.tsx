@@ -10,6 +10,7 @@ interface RSVPViewProps {
   event: Event;
   participantId: string;
   isOrganizer: boolean;
+  organizerToken?: string | null;
 }
 
 const RSVP_CONFIG = {
@@ -45,17 +46,20 @@ const RSVP_CONFIG = {
   },
 } as const;
 
-export default function RSVPView({ event, participantId, isOrganizer }: RSVPViewProps) {
+export default function RSVPView({ event, participantId, isOrganizer, organizerToken }: RSVPViewProps) {
   const copy = useCopy();
   const rsvpCopy = copy.rsvp;
-  const { participants } = useRealtimeParticipants(event.id);
+  const { participants, removeParticipant } = useRealtimeParticipants(event.id);
   const [saving, setSaving] = useState(false);
+  // Optimistic state — highlights the tapped button immediately before real-time confirms
+  const [optimisticRsvp, setOptimisticRsvp] = useState<RsvpValue | null>(null);
 
   const me = participants.find((p) => p.id === participantId);
-  const myRsvp = me?.rsvp ?? null;
+  const myRsvp: RsvpValue | null = optimisticRsvp ?? me?.rsvp ?? null;
 
   const handleRsvp = useCallback(async (value: RsvpValue) => {
     if (saving) return;
+    setOptimisticRsvp(value); // Immediate highlight on tap
     setSaving(true);
     try {
       await fetch(`/api/participants/${participantId}`, {
@@ -63,11 +67,22 @@ export default function RSVPView({ event, participantId, isOrganizer }: RSVPView
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ rsvp: value, event_id: event.id }),
       });
-      // Real-time subscription updates the UI; no need to manually refresh
+      setOptimisticRsvp(null); // Real-time will confirm; clear optimistic
+    } catch {
+      setOptimisticRsvp(null); // Revert on error
     } finally {
       setSaving(false);
     }
   }, [participantId, event.id, saving]);
+
+  const handleDeleteParticipant = useCallback(async (pid: string) => {
+    if (!organizerToken) return;
+    removeParticipant(pid);
+    await fetch(
+      `/api/events/${event.id}?organizer_token=${encodeURIComponent(organizerToken)}&participant_id=${encodeURIComponent(pid)}`,
+      { method: 'DELETE' }
+    );
+  }, [event.id, organizerToken, removeParticipant]);
 
   // Group participants by RSVP status
   const going = participants.filter((p) => p.rsvp === 'yes');
@@ -172,11 +187,11 @@ export default function RSVPView({ event, participantId, isOrganizer }: RSVPView
                 <div key={label} className="animate-fade-in">
                   <div className="flex items-center gap-1.5 mb-1.5">
                     {cfg ? (
-                      <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${cfg.badgeClass}`}>
+                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${cfg.badgeClass}`}>
                         {label}
                       </span>
                     ) : (
-                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">
+                      <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">
                         {label}
                       </span>
                     )}
@@ -186,7 +201,7 @@ export default function RSVPView({ event, participantId, isOrganizer }: RSVPView
                       <span
                         key={p.id}
                         className={`
-                          text-xs px-2.5 py-1 rounded-full font-medium border
+                          group relative flex items-center gap-1 text-xs px-2.5 py-1 rounded-full font-medium border
                           ${p.id === participantId
                             ? 'bg-gray-800 text-white border-gray-800'
                             : 'bg-gray-50 text-gray-600 border-gray-200'
@@ -195,6 +210,18 @@ export default function RSVPView({ event, participantId, isOrganizer }: RSVPView
                       >
                         {formatDisplayName(p.name)}
                         {p.id === participantId && ' (you)'}
+                        {isOrganizer && p.id !== participantId && (
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteParticipant(p.id)}
+                            className="ml-0.5 -mr-1 w-3.5 h-3.5 rounded-full flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors cursor-pointer opacity-0 group-hover:opacity-100"
+                            title="Remove participant"
+                          >
+                            <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        )}
                       </span>
                     ))}
                   </div>

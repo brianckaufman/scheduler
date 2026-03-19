@@ -391,7 +391,7 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
                 <button
                   type="button"
                   onClick={() => handleDayToggle(date)}
-                  className="mt-1 text-[10px] text-teal-500 hover:text-teal-700 font-medium cursor-pointer"
+                  className="mt-1 text-xs text-teal-500 hover:text-teal-700 font-medium cursor-pointer"
                 >
                   {allSelected ? copy.grid.clear : copy.grid.all}
                 </button>
@@ -529,19 +529,19 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
             {/* Legend inline */}
             <div className="flex items-center gap-1">
               <div className="w-3 h-3 rounded bg-green-100 ring-1 ring-green-300" />
-              <span className="text-[10px] text-gray-400">{copy.grid.legend_all}</span>
+              <span className="text-xs text-gray-400">{copy.grid.legend_all}</span>
             </div>
             {totalParticipants > 6 && (
               <div className="flex items-center gap-1">
                 <div className="w-3 h-3 rounded" style={{ backgroundColor: 'rgba(20, 184, 166, 0.35)' }} />
-                <span className="text-[10px] text-gray-400">{copy.grid.legend_heat}</span>
+                <span className="text-xs text-gray-400">{copy.grid.legend_heat}</span>
               </div>
             )}
             {participants.length > 8 && (
               <button
                 type="button"
                 onClick={() => setShowAllParticipants((v) => !v)}
-                className="text-[10px] text-teal-500 hover:text-teal-700 font-medium cursor-pointer ml-1"
+                className="text-xs text-teal-500 hover:text-teal-700 font-medium cursor-pointer ml-1"
               >
                 {showAllParticipants ? copy.grid.show_less : copy.grid.show_all}
               </button>

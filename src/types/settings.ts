@@ -177,6 +177,14 @@ export interface SiteSettings {
     rate_limit_events_per_hour: number;
     enable_fixed_events: boolean;
   };
+  legal: {
+    privacy_policy: string;
+    terms_of_use: string;
+    cookie_policy: string;
+    show_privacy: boolean;
+    show_terms: boolean;
+    show_cookies: boolean;
+  };
   copy: CopySettings;
 }
 
@@ -229,7 +237,7 @@ export const DEFAULT_COPY: CopySettings = {
     submitting: 'One sec...',
     footer: 'Free. No account. No nonsense.',
     error_name: 'Please enter a valid name.',
-    rsvp_greeting_subtitle: "Just let us know if you can make it — takes two seconds.",
+    rsvp_greeting_subtitle: "Just let us know if you can make it. Takes two seconds.",
     rsvp_step1_title: 'RSVP with a single tap',
     rsvp_step1_desc: "Going, Maybe, or Can't make it. Done in two seconds.",
     rsvp_step2_title: 'See who else is coming',
@@ -364,6 +372,14 @@ export const DEFAULT_SETTINGS: SiteSettings = {
     max_participants: 100,
     rate_limit_events_per_hour: 10,
     enable_fixed_events: true,
+  },
+  legal: {
+    privacy_policy: '',
+    terms_of_use: '',
+    cookie_policy: '',
+    show_privacy: true,
+    show_terms: true,
+    show_cookies: false,
   },
   copy: DEFAULT_COPY,
 };

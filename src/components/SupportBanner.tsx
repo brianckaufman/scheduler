@@ -62,7 +62,7 @@ export default function SupportBanner({
           {cta}
         </a>
         {branding.site_name && (
-          <p className="text-[10px] text-amber-400 mt-2">
+          <p className="text-xs text-amber-400 mt-2">
             Helps keep {branding.site_name} free for everyone
           </p>
         )}

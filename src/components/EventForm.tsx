@@ -60,7 +60,9 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
   const searchParams = useSearchParams();
   const copy = useCopy();
   const { addEvent } = useCreatedEvents();
-  const [eventType, setEventType] = useState<'availability' | 'fixed'>('availability');
+  const [eventType, setEventType] = useState<'availability' | 'fixed' | null>(
+    enableFixedEvents ? null : 'availability'
+  );
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [organizerName, setOrganizerName] = useState('');
@@ -201,6 +203,8 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
     e.preventDefault();
     if (!name.trim() || !organizerName.trim()) return;
 
+    if (!eventType) return;
+
     if (eventType === 'availability') {
       if (selectedDates.length === 0) return;
       if (timeStart >= timeEnd) {
@@ -270,49 +274,78 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
   const inputClass = "w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-transparent text-gray-900 placeholder-gray-400 transition-shadow duration-200";
   const selectClass = "w-full px-3 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-teal-400 text-gray-900 bg-white transition-shadow duration-200";
 
+  // === Type picker (shown before the form when fixed events are enabled) ===
+  if (enableFixedEvents && eventType === null) {
+    return (
+      <div className="space-y-3 animate-fade-in">
+        <p className="text-sm font-semibold text-gray-700 text-center mb-4">What kind of event are you creating?</p>
+
+        <button
+          type="button"
+          onClick={() => setEventType('availability')}
+          className="w-full flex items-center gap-4 p-5 rounded-2xl border-2 border-gray-200 bg-white hover:border-teal-400 hover:bg-teal-50 text-left transition-all duration-200 active:scale-[0.98] cursor-pointer group"
+        >
+          <div className="w-12 h-12 rounded-xl bg-teal-100 flex items-center justify-center shrink-0 group-hover:bg-teal-200 transition-colors">
+            <svg className="w-6 h-6 text-teal-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-base font-bold text-gray-900">Find a time</p>
+            <p className="text-sm text-gray-500 mt-0.5 leading-snug">Poll your group. Everyone marks when they&apos;re free, then you pick the best time.</p>
+          </div>
+          <svg className="w-5 h-5 text-gray-300 group-hover:text-teal-500 shrink-0 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setEventType('fixed')}
+          className="w-full flex items-center gap-4 p-5 rounded-2xl border-2 border-gray-200 bg-white hover:border-blue-400 hover:bg-blue-50 text-left transition-all duration-200 active:scale-[0.98] cursor-pointer group"
+        >
+          <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center shrink-0 group-hover:bg-blue-200 transition-colors">
+            <svg className="w-6 h-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-base font-bold text-gray-900">Fixed date</p>
+            <p className="text-sm text-gray-500 mt-0.5 leading-snug">You already know the time. Set the date and invite people to RSVP.</p>
+          </div>
+          <svg className="w-5 h-5 text-gray-300 group-hover:text-blue-500 shrink-0 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
+      </div>
+    );
+  }
+
   return (
     <form ref={formRef} onSubmit={handleSubmit} className="space-y-5">
-      {/* === Event type toggle (only when fixed events are enabled) === */}
+      {/* === Event type indicator + change button === */}
       {enableFixedEvents && (
-        <div className="grid grid-cols-2 gap-2">
-          <button
-            type="button"
-            onClick={() => setEventType('availability')}
-            className={`flex items-start gap-2.5 p-3 rounded-xl border-2 text-left transition-all duration-200 cursor-pointer ${
-              eventType === 'availability'
-                ? 'border-teal-500 bg-teal-50'
-                : 'border-gray-200 bg-white hover:border-gray-300'
-            }`}
-          >
-            <div className={`mt-0.5 w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${eventType === 'availability' ? 'bg-teal-100' : 'bg-gray-100'}`}>
-              <svg className={`w-4 h-4 ${eventType === 'availability' ? 'text-teal-600' : 'text-gray-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-            </div>
-            <div>
-              <p className={`text-xs font-semibold ${eventType === 'availability' ? 'text-teal-700' : 'text-gray-600'}`}>Find a time</p>
-              <p className="text-[11px] text-gray-400 mt-0.5 leading-tight">Poll when everyone&apos;s free</p>
-            </div>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setEventType('fixed')}
-            className={`flex items-start gap-2.5 p-3 rounded-xl border-2 text-left transition-all duration-200 cursor-pointer ${
-              eventType === 'fixed'
-                ? 'border-blue-500 bg-blue-50'
-                : 'border-gray-200 bg-white hover:border-gray-300'
-            }`}
-          >
-            <div className={`mt-0.5 w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${eventType === 'fixed' ? 'bg-blue-100' : 'bg-gray-100'}`}>
-              <svg className={`w-4 h-4 ${eventType === 'fixed' ? 'text-blue-600' : 'text-gray-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <div className="flex items-center justify-between">
+          <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold ${
+            eventType === 'fixed' ? 'bg-blue-100 text-blue-700' : 'bg-teal-100 text-teal-700'
+          }`}>
+            {eventType === 'fixed' ? (
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
-            </div>
-            <div>
-              <p className={`text-xs font-semibold ${eventType === 'fixed' ? 'text-blue-700' : 'text-gray-600'}`}>Fixed date</p>
-              <p className="text-[11px] text-gray-400 mt-0.5 leading-tight">Invite others to RSVP</p>
-            </div>
+            ) : (
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+            )}
+            {eventType === 'fixed' ? 'Fixed date' : 'Find a time'}
+          </div>
+          <button
+            type="button"
+            onClick={() => setEventType(null)}
+            className="text-xs text-gray-400 hover:text-gray-600 transition-colors cursor-pointer px-2 py-1"
+          >
+            Change
           </button>
         </div>
       )}

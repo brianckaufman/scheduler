@@ -4,6 +4,7 @@ import SupportBanner from '@/components/SupportBanner';
 import HomeTabs from '@/components/HomeTabs';
 import InstallPrompt from '@/components/InstallPrompt';
 import Onboarding from '@/components/Onboarding';
+import PolicyFooterLinks from '@/components/PolicyFooterLinks';
 import { getSettings } from '@/lib/settings';
 import { optimizedLogoUrl } from '@/lib/image';
 
@@ -81,7 +82,7 @@ export default async function Home() {
             </div>
           </div>
           {home.footer && (
-            <p className="text-center text-[11px] text-gray-300 mt-3">{home.footer}</p>
+            <p className="text-center text-xs text-gray-400 mt-3">{home.footer}</p>
           )}
         </div>
 
@@ -93,6 +94,11 @@ export default async function Home() {
             variant="inline"
           />
         )}
+
+        {/* Policy links */}
+        <div className="mt-4">
+          <PolicyFooterLinks />
+        </div>
       </div>
     </div>
   );

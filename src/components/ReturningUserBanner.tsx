@@ -109,8 +109,8 @@ export default function ReturningUserBanner({ createdEvents }: ReturningUserBann
     <div className="animate-fade-in bg-white rounded-2xl shadow-sm border border-gray-100 overflow-visible">
       {/* Auto-delete info */}
       <div className="px-4 pt-3 pb-1">
-        <p className="text-[11px] text-gray-400">
-          Finalized events auto-delete after 24 hours. Pin an event to keep it.
+        <p className="text-xs text-gray-400">
+          Finalized events auto-delete after 24 hours. Pin to keep.
         </p>
       </div>
 
@@ -151,7 +151,7 @@ export default function ReturningUserBanner({ createdEvents }: ReturningUserBann
                   )}
                   {event.name}
                 </p>
-                <p className={`text-[11px] truncate ${event.finalizedTime ? 'text-green-600' : 'text-gray-400'}`}>
+                <p className={`text-xs truncate ${event.finalizedTime ? 'text-green-600' : 'text-gray-400'}`}>
                   {event.finalizedTime ? formatFinalizedDate(event.finalizedTime) : 'Awaiting responses'}
                 </p>
               </div>
@@ -227,7 +227,7 @@ export default function ReturningUserBanner({ createdEvents }: ReturningUserBann
           <button
             type="button"
             onClick={() => setExpanded((v) => !v)}
-            className="w-full text-center text-[11px] text-gray-400 hover:text-teal-600 py-1.5 transition-colors cursor-pointer"
+            className="w-full text-center text-xs text-gray-400 hover:text-teal-600 py-1.5 transition-colors cursor-pointer"
           >
             {expanded ? 'Show less' : `Show ${hiddenCount} more event${hiddenCount !== 1 ? 's' : ''}`}
           </button>

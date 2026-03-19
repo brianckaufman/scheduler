@@ -219,7 +219,7 @@ export default function ParticipantEntry({ event, onJoin }: ParticipantEntryProp
             </div>
 
             {/* Footer */}
-            <div className="mt-6 text-center text-[11px] text-gray-300">
+            <div className="mt-6 text-center text-xs text-gray-400">
               <p>{copy.onboarding.footer}</p>
             </div>
           </div>
