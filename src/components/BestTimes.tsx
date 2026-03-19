@@ -116,7 +116,7 @@ export default function BestTimes({ overlapMap, totalParticipants, durationMinut
               <button
                 type="button"
                 onClick={() => onFinalize(block.start)}
-                className="shrink-0 text-xs font-medium text-teal-600 hover:text-teal-800 bg-teal-50 hover:bg-teal-100 px-2 py-1 rounded-full transition-all duration-200 active:scale-95"
+                className="shrink-0 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-full shadow-sm hover:shadow-md transition-all duration-200 active:scale-95 cursor-pointer"
               >
                 Pick
               </button>
