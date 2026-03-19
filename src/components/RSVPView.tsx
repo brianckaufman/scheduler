@@ -214,7 +214,7 @@ export default function RSVPView({ event, participantId, isOrganizer, organizerT
                           <button
                             type="button"
                             onClick={() => handleDeleteParticipant(p.id)}
-                            className="ml-0.5 -mr-1 w-3.5 h-3.5 rounded-full flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors cursor-pointer opacity-0 group-hover:opacity-100"
+                            className="ml-0.5 -mr-1 w-3.5 h-3.5 rounded-full flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors cursor-pointer"
                             title="Remove participant"
                           >
                             <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
