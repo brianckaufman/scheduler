@@ -189,8 +189,8 @@ export default function EventView({ event: initialEvent }: EventViewProps) {
           </div>
         )}
 
-        {/* Bookmark prompt for organizers */}
-        {isOrganizer && <BookmarkPrompt eventSlug={event.slug} />}
+        {/* Bookmark prompt for organizers (hide once time is finalized) */}
+        {isOrganizer && !event.finalized_time && <BookmarkPrompt eventSlug={event.slug} />}
 
         <div className="mb-4">
           <ShareLink eventName={event.name} isOrganizer={isOrganizer} />
@@ -280,6 +280,7 @@ export default function EventView({ event: initialEvent }: EventViewProps) {
             onFinalize={(time) => {
               setEvent({ ...event, finalized_time: time });
               updateEvent(event.slug, { finalizedTime: time });
+              setShowCelebration(true);
             }}
             onMySlotCountChange={handleSlotCountChange}
           />
