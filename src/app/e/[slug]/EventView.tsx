@@ -44,6 +44,7 @@ export default function EventView({ event: initialEvent }: EventViewProps) {
   const [justJoined, setJustJoined] = useState(false);
   const [hasSelections, setHasSelections] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
+  const [bodyExpanded, setBodyExpanded] = useState(false);
 
   const isFixed = event.event_type === 'fixed';
 
@@ -225,6 +226,22 @@ export default function EventView({ event: initialEvent }: EventViewProps) {
             </div>
             {event.description && (
               <p className="text-sm text-gray-500 mt-1">{event.description}</p>
+            )}
+            {event.body && (
+              <div className="mt-2">
+                <p className={`text-sm text-gray-500 leading-relaxed whitespace-pre-wrap ${bodyExpanded ? '' : 'line-clamp-3'}`}>
+                  {event.body}
+                </p>
+                {event.body.length > 180 && (
+                  <button
+                    type="button"
+                    onClick={() => setBodyExpanded((v) => !v)}
+                    className="text-xs text-teal-600 hover:text-teal-700 font-medium mt-1 cursor-pointer"
+                  >
+                    {bodyExpanded ? 'Show less' : 'Read more'}
+                  </button>
+                )}
+              </div>
             )}
             <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2">
               {event.organizer_name && (

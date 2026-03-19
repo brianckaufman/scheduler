@@ -49,6 +49,15 @@ export interface CopySettings {
     submitting: string;
     footer: string;
     error_name: string;
+    // RSVP event onboarding
+    rsvp_greeting_subtitle: string;
+    rsvp_step1_title: string;
+    rsvp_step1_desc: string;
+    rsvp_step2_title: string;
+    rsvp_step2_desc: string;
+    rsvp_step3_title: string;
+    rsvp_step3_desc: string;
+    rsvp_submit: string;
   };
   event: {
     organized_by: string;
@@ -220,6 +229,14 @@ export const DEFAULT_COPY: CopySettings = {
     submitting: 'One sec...',
     footer: 'Free. No account. No nonsense.',
     error_name: 'Please enter a valid name.',
+    rsvp_greeting_subtitle: "Just let us know if you can make it — takes two seconds.",
+    rsvp_step1_title: 'RSVP with a single tap',
+    rsvp_step1_desc: "Going, Maybe, or Can't make it. Done in two seconds.",
+    rsvp_step2_title: 'See who else is coming',
+    rsvp_step2_desc: 'Watch the guest list fill up in real time.',
+    rsvp_step3_title: 'Change your mind? No problem',
+    rsvp_step3_desc: 'Update your RSVP anytime before the event.',
+    rsvp_submit: "See the Event",
   },
   event: {
     organized_by: 'Organized by {{name}}',

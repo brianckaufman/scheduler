@@ -3,6 +3,7 @@ export interface Event {
   slug: string;
   name: string;
   description: string | null;
+  body: string | null;
   organizer_name: string | null;
   location: string | null;
   duration_minutes: number;

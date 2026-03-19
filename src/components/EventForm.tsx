@@ -76,6 +76,7 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
   // Fixed-event fields
   const [fixedDate, setFixedDate] = useState('');
   const [fixedTime, setFixedTime] = useState('09:00');
+  const [body, setBody] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showOptional, setShowOptional] = useState(false);
@@ -217,6 +218,7 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
       const commonPayload = {
         name: name.trim(),
         description: description.trim() || null,
+        body: body.trim() || null,
         organizerName: organizerName.trim() || null,
         location: location.trim() || null,
         durationMinutes,
@@ -284,7 +286,7 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
           >
             <div className={`mt-0.5 w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${eventType === 'availability' ? 'bg-teal-100' : 'bg-gray-100'}`}>
               <svg className={`w-4 h-4 ${eventType === 'availability' ? 'text-teal-600' : 'text-gray-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
             </div>
             <div>
@@ -304,13 +306,12 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
           >
             <div className={`mt-0.5 w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${eventType === 'fixed' ? 'bg-blue-100' : 'bg-gray-100'}`}>
               <svg className={`w-4 h-4 ${eventType === 'fixed' ? 'text-blue-600' : 'text-gray-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
             </div>
             <div>
-              <p className={`text-xs font-semibold ${eventType === 'fixed' ? 'text-blue-700' : 'text-gray-600'}`}>Fixed time</p>
-              <p className="text-[11px] text-gray-400 mt-0.5 leading-tight">Already know when</p>
+              <p className={`text-xs font-semibold ${eventType === 'fixed' ? 'text-blue-700' : 'text-gray-600'}`}>Fixed date</p>
+              <p className="text-[11px] text-gray-400 mt-0.5 leading-tight">Invite others to RSVP</p>
             </div>
           </button>
         </div>
@@ -364,6 +365,24 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
             className={inputClass}
             maxLength={500}
           />
+        </div>
+
+        <div>
+          <label htmlFor="body" className="block text-sm font-medium text-gray-700 mb-1.5">
+            Details / body copy <span className="text-gray-400 font-normal">(optional)</span>
+          </label>
+          <textarea
+            id="body"
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+            placeholder="Add more context, agenda, directions, or any extra info guests should know..."
+            className={`${inputClass} resize-none`}
+            maxLength={5000}
+            rows={3}
+          />
+          {body.length > 0 && (
+            <p className="text-[11px] text-gray-400 mt-1 text-right">{body.length}/5000</p>
+          )}
         </div>
 
         <div>

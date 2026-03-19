@@ -22,7 +22,16 @@ export default function ParticipantEntry({ event, onJoin }: ParticipantEntryProp
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  const isFixed = event.event_type === 'fixed';
   const deadlinePassed = event.response_deadline && isPast(new Date(event.response_deadline));
+
+  const accentFrom = isFixed ? 'from-blue-500' : 'from-teal-500';
+  const accentTo = isFixed ? 'to-blue-600' : 'to-teal-600';
+  const accentRing = isFixed ? 'focus:ring-blue-400' : 'focus:ring-teal-400';
+  const accentBtn = isFixed
+    ? 'bg-blue-600 hover:bg-blue-700'
+    : 'bg-teal-500 hover:bg-teal-600';
+  const accentNum = isFixed ? 'bg-blue-50 text-blue-600' : 'bg-teal-50 text-teal-600';
 
   const handleJoin = async () => {
     if (!name.trim()) return;
@@ -80,6 +89,30 @@ export default function ParticipantEntry({ event, onJoin }: ParticipantEntryProp
     ? `${event.duration_minutes / 60} hour${event.duration_minutes > 60 ? 's' : ''}`
     : `${event.duration_minutes} min`;
 
+  // Step 2 content varies by event type
+  const step2Steps = isFixed
+    ? [
+        { title: copy.onboarding.rsvp_step1_title, desc: copy.onboarding.rsvp_step1_desc },
+        { title: copy.onboarding.rsvp_step2_title, desc: copy.onboarding.rsvp_step2_desc },
+        { title: copy.onboarding.rsvp_step3_title, desc: copy.onboarding.rsvp_step3_desc },
+      ]
+    : [
+        { title: copy.onboarding.step1_title, desc: copy.onboarding.step1_desc },
+        { title: copy.onboarding.step2_title, desc: copy.onboarding.step2_desc },
+        {
+          title: interpolate(copy.onboarding.step3_title, { organizer: firstName(event.organizer_name || 'The organizer') }),
+          desc: copy.onboarding.step3_desc,
+        },
+      ];
+
+  const step2Subtitle = isFixed
+    ? copy.onboarding.rsvp_greeting_subtitle
+    : copy.onboarding.greeting_subtitle;
+
+  const step2SubmitLabel = isFixed
+    ? copy.onboarding.rsvp_submit
+    : copy.onboarding.submit;
+
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
@@ -98,7 +131,7 @@ export default function ParticipantEntry({ event, onJoin }: ParticipantEntryProp
           <div className="animate-fade-in">
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
               {/* Event header */}
-              <div className="bg-gradient-to-br from-teal-500 to-teal-600 px-6 py-6 text-white">
+              <div className={`bg-gradient-to-br ${accentFrom} ${accentTo} px-6 py-6 text-white`}>
                 {branding.logo_url && (
                   <div className="mb-3">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -112,7 +145,9 @@ export default function ParticipantEntry({ event, onJoin }: ParticipantEntryProp
                 )}
                 <h1 className="text-2xl font-bold leading-tight">{event.name}</h1>
                 {event.description && (
-                  <p className="text-teal-100 text-base mt-2 leading-relaxed">{event.description}</p>
+                  <p className={`${isFixed ? 'text-blue-100' : 'text-teal-100'} text-base mt-2 leading-relaxed`}>
+                    {event.description}
+                  </p>
                 )}
               </div>
 
@@ -135,7 +170,7 @@ export default function ParticipantEntry({ event, onJoin }: ParticipantEntryProp
                     <span className="text-base text-gray-700">{event.location}</span>
                   </div>
                 )}
-                {event.duration_minutes && (
+                {event.duration_minutes && !isFixed && (
                   <div className="flex items-center gap-3">
                     <svg className="w-5 h-5 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -143,7 +178,7 @@ export default function ParticipantEntry({ event, onJoin }: ParticipantEntryProp
                     <span className="text-base text-gray-700">{interpolate(copy.event.duration_needed, { duration: durationLabel })}</span>
                   </div>
                 )}
-                {event.response_deadline && (
+                {event.response_deadline && !isFixed && (
                   <div className="flex items-center gap-3">
                     <svg className="w-5 h-5 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -168,7 +203,7 @@ export default function ParticipantEntry({ event, onJoin }: ParticipantEntryProp
                     placeholder={copy.onboarding.name_placeholder}
                     autoFocus
                     maxLength={50}
-                    className="w-full px-4 py-3.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-transparent text-base text-gray-900 placeholder-gray-400"
+                    className={`w-full px-4 py-3.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 ${accentRing} focus:border-transparent text-base text-gray-900 placeholder-gray-400`}
                     required
                   />
                 </div>
@@ -176,7 +211,7 @@ export default function ParticipantEntry({ event, onJoin }: ParticipantEntryProp
                 <button
                   type="submit"
                   disabled={!name.trim()}
-                  className="w-full py-3.5 px-4 bg-teal-500 text-white text-base font-semibold rounded-xl hover:bg-teal-600 transition-all duration-200 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                  className={`w-full py-3.5 px-4 ${accentBtn} text-white text-base font-semibold rounded-xl transition-all duration-200 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer`}
                 >
                   {copy.onboarding.next}
                 </button>
@@ -189,43 +224,50 @@ export default function ParticipantEntry({ event, onJoin }: ParticipantEntryProp
             </div>
           </div>
         ) : (
-          /* Screen 2: How it works + Pick Times */
+          /* Screen 2: How it works */
           <div className="animate-fade-in">
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
               <div className="text-center mb-6">
-                <div className="mx-auto w-14 h-14 rounded-full bg-teal-50 flex items-center justify-center mb-3">
-                  <svg className="w-7 h-7 text-teal-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                </div>
+                {/* Logo on step 2 */}
+                {branding.logo_url ? (
+                  <div className="flex justify-center mb-3">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={optimizedLogoUrl(branding.logo_url, branding.logo_height || 40)}
+                      alt={branding.site_name}
+                      style={{ height: `${branding.logo_height || 40}px` }}
+                      className="w-auto object-contain"
+                    />
+                  </div>
+                ) : (
+                  <div className={`mx-auto w-14 h-14 rounded-full ${isFixed ? 'bg-blue-50' : 'bg-teal-50'} flex items-center justify-center mb-3`}>
+                    {isFixed ? (
+                      <svg className="w-7 h-7 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                      </svg>
+                    ) : (
+                      <svg className="w-7 h-7 text-teal-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                    )}
+                  </div>
+                )}
                 <h2 className="text-xl font-bold text-gray-900">
                   {interpolate(copy.onboarding.greeting, { name: firstName(name.trim()) })}
                 </h2>
-                <p className="text-base text-gray-500 mt-1">{copy.onboarding.greeting_subtitle}</p>
+                <p className="text-base text-gray-500 mt-1">{step2Subtitle}</p>
               </div>
 
               <div className="space-y-5 mb-7">
-                <div className="flex items-start gap-3.5">
-                  <div className="shrink-0 w-8 h-8 rounded-full bg-teal-50 text-teal-600 flex items-center justify-center text-sm font-bold mt-0.5">1</div>
-                  <div>
-                    <p className="text-base font-medium text-gray-800">{copy.onboarding.step1_title}</p>
-                    <p className="text-sm text-gray-500 mt-0.5 leading-relaxed">{copy.onboarding.step1_desc}</p>
+                {step2Steps.map((s, i) => (
+                  <div key={i} className="flex items-start gap-3.5">
+                    <div className={`shrink-0 w-8 h-8 rounded-full ${accentNum} flex items-center justify-center text-sm font-bold mt-0.5`}>{i + 1}</div>
+                    <div>
+                      <p className="text-base font-medium text-gray-800">{s.title}</p>
+                      <p className="text-sm text-gray-500 mt-0.5 leading-relaxed">{s.desc}</p>
+                    </div>
                   </div>
-                </div>
-                <div className="flex items-start gap-3.5">
-                  <div className="shrink-0 w-8 h-8 rounded-full bg-teal-50 text-teal-600 flex items-center justify-center text-sm font-bold mt-0.5">2</div>
-                  <div>
-                    <p className="text-base font-medium text-gray-800">{copy.onboarding.step2_title}</p>
-                    <p className="text-sm text-gray-500 mt-0.5 leading-relaxed">{copy.onboarding.step2_desc}</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3.5">
-                  <div className="shrink-0 w-8 h-8 rounded-full bg-teal-50 text-teal-600 flex items-center justify-center text-sm font-bold mt-0.5">3</div>
-                  <div>
-                    <p className="text-base font-medium text-gray-800">{interpolate(copy.onboarding.step3_title, { organizer: firstName(event.organizer_name || 'The organizer') })}</p>
-                    <p className="text-sm text-gray-500 mt-0.5 leading-relaxed">{copy.onboarding.step3_desc}</p>
-                  </div>
-                </div>
+                ))}
               </div>
 
               {error && <p className="text-red-500 text-sm mb-3">{error}</p>}
@@ -234,9 +276,9 @@ export default function ParticipantEntry({ event, onJoin }: ParticipantEntryProp
                 type="button"
                 onClick={handleJoin}
                 disabled={loading}
-                className="w-full py-3.5 px-4 bg-teal-500 text-white text-base font-semibold rounded-xl hover:bg-teal-600 transition-all duration-200 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                className={`w-full py-3.5 px-4 ${accentBtn} text-white text-base font-semibold rounded-xl transition-all duration-200 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer`}
               >
-                {loading ? copy.onboarding.submitting : copy.onboarding.submit}
+                {loading ? copy.onboarding.submitting : step2SubmitLabel}
               </button>
 
               <button

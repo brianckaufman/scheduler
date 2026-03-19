@@ -89,3 +89,12 @@ CREATE POLICY "participants_update" ON participants FOR UPDATE USING (true);
 
 -- 4. Index for fast RSVP lookups by event
 CREATE INDEX IF NOT EXISTS idx_participants_event_rsvp ON participants(event_id, rsvp);
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- Migration: Long-form body copy field
+-- ─────────────────────────────────────────────────────────────────────────────
+
+-- 5. Add body column to events (long-form description, up to 5000 chars)
+ALTER TABLE events
+  ADD COLUMN IF NOT EXISTS body TEXT
+  CHECK (body IS NULL OR char_length(body) <= 5000);

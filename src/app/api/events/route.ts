@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
   }
 
   const {
-    name, description, organizerName, location, durationMinutes,
+    name, description, body: bodyText, organizerName, location, durationMinutes,
     responseDeadline, maxParticipants, timezone,
     // Availability-mode fields
     dates, timeStart, timeEnd,
@@ -135,6 +135,7 @@ export async function POST(request: NextRequest) {
   // --- Sanitize text inputs ---
   const safeName = sanitizeText(name, 100);
   const safeDescription = description ? sanitizeText(description, 500) : null;
+  const safeBody = bodyText ? sanitizeText(bodyText, 5000) : null;
   const safeOrganizerName = organizerName ? sanitizeName(organizerName) : null;
   const safeLocation = location ? sanitizeText(location, 100) : null;
 
@@ -152,6 +153,7 @@ export async function POST(request: NextRequest) {
       slug,
       name: safeName,
       description: safeDescription,
+      body: safeBody,
       organizer_name: safeOrganizerName,
       location: safeLocation,
       duration_minutes: safeDuration,
