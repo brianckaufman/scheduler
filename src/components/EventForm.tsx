@@ -354,7 +354,7 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
 
         <div>
           <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1.5">
-            {copy.form.description_label}
+            Description <span className="text-gray-400 font-normal">(optional)</span>
           </label>
           <input
             id="description"
@@ -368,26 +368,8 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
         </div>
 
         <div>
-          <label htmlFor="body" className="block text-sm font-medium text-gray-700 mb-1.5">
-            Details / body copy <span className="text-gray-400 font-normal">(optional)</span>
-          </label>
-          <textarea
-            id="body"
-            value={body}
-            onChange={(e) => setBody(e.target.value)}
-            placeholder="Add more context, agenda, directions, or any extra info guests should know..."
-            className={`${inputClass} resize-none`}
-            maxLength={5000}
-            rows={3}
-          />
-          {body.length > 0 && (
-            <p className="text-[11px] text-gray-400 mt-1 text-right">{body.length}/5000</p>
-          )}
-        </div>
-
-        <div>
           <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-1.5">
-            {copy.form.location_label}
+            Location <span className="text-gray-400 font-normal">(optional)</span>
           </label>
           <input
             id="location"
@@ -467,6 +449,48 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
                 <option value={timezone}>{getTimezoneLabel(timezone)}</option>
               )}
             </select>
+          </div>
+
+          {/* === More options (fixed) === */}
+          <div>
+            {!showOptional && (
+              <button
+                type="button"
+                onClick={() => setShowOptional(true)}
+                className="w-full flex items-center justify-center gap-1.5 py-2 text-xs font-medium text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+                More options
+              </button>
+            )}
+
+            {showOptional && (
+              <div className="space-y-4 animate-slide-down">
+                <div className="border-t border-gray-100 pt-4">
+                  <p className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-3">Additional options</p>
+                </div>
+
+                <div>
+                  <label htmlFor="bodyFixed" className="block text-sm font-medium text-gray-700 mb-1.5">
+                    Additional Details <span className="text-gray-400 font-normal">(optional)</span>
+                  </label>
+                  <textarea
+                    id="bodyFixed"
+                    value={body}
+                    onChange={(e) => setBody(e.target.value)}
+                    placeholder="Add more context, agenda, directions, or any extra info guests should know..."
+                    className={`${inputClass} resize-none`}
+                    maxLength={5000}
+                    rows={3}
+                  />
+                  {body.length > 0 && (
+                    <p className="text-[11px] text-gray-400 mt-1 text-right">{body.length}/5000</p>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -572,7 +596,7 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
 
                 <div>
                   <label htmlFor="deadline" className="block text-sm font-medium text-gray-700 mb-1.5">
-                    {copy.form.deadline_label}
+                    Respond by <span className="text-gray-400 font-normal">(optional)</span>
                   </label>
                   <input
                     id="deadline"
@@ -602,6 +626,24 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
                     <p className="text-xs text-gray-400 mt-1">
                       New participants will be blocked after {maxParticipants} have joined
                     </p>
+                  )}
+                </div>
+
+                <div>
+                  <label htmlFor="body" className="block text-sm font-medium text-gray-700 mb-1.5">
+                    Additional Details <span className="text-gray-400 font-normal">(optional)</span>
+                  </label>
+                  <textarea
+                    id="body"
+                    value={body}
+                    onChange={(e) => setBody(e.target.value)}
+                    placeholder="Add more context, agenda, directions, or any extra info guests should know..."
+                    className={`${inputClass} resize-none`}
+                    maxLength={5000}
+                    rows={3}
+                  />
+                  {body.length > 0 && (
+                    <p className="text-[11px] text-gray-400 mt-1 text-right">{body.length}/5000</p>
                   )}
                 </div>
               </div>
