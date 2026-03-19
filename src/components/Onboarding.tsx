@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useCopy } from '@/contexts/CopyContext';
+import { useBranding } from '@/contexts/BrandingContext';
+import { optimizedLogoUrl } from '@/lib/image';
 
 const STORAGE_KEY = 'onboarding_seen';
 
@@ -13,6 +15,7 @@ interface Step {
 
 export default function Onboarding() {
   const copy = useCopy();
+  const branding = useBranding();
   const [visible, setVisible] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [exiting, setExiting] = useState(false);
@@ -103,6 +106,18 @@ export default function Onboarding() {
       style={{ backgroundColor: 'rgba(255,255,255,0.97)', backdropFilter: 'blur(20px)' }}
     >
       <div className="max-w-sm w-full text-center">
+        {/* App logo */}
+        {branding.logo_url && (
+          <div className="flex justify-center mb-6">
+            <img
+              src={optimizedLogoUrl(branding.logo_url, branding.logo_height || 40)}
+              style={{ height: `${branding.logo_height || 40}px` }}
+              className="w-auto object-contain"
+              alt={branding.site_name || 'Logo'}
+            />
+          </div>
+        )}
+
         {/* Skip button */}
         <div className="flex justify-end mb-8">
           <button

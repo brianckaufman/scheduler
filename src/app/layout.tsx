@@ -40,20 +40,26 @@ export async function generateMetadata(): Promise<Metadata> {
   const ogTitle = settings.seo.og_title || siteName;
   const ogDesc = settings.seo.og_description || 'Find a time that works for everyone. No accounts needed.';
 
+  const appleIconUrl = settings.seo.apple_icon || '';
+
   // Build proper icon entries with type so browsers handle PNG/SVG/ICO correctly
-  const icons: Metadata['icons'] = faviconUrl
+  const icons: Metadata['icons'] = faviconUrl || appleIconUrl
     ? {
-        icon: [
-          {
-            url: faviconUrl,
-            type: getFaviconType(faviconUrl),
-          },
-        ],
-        apple: [
-          {
-            url: faviconUrl,
-          },
-        ],
+        ...(faviconUrl
+          ? {
+              icon: [
+                {
+                  url: faviconUrl,
+                  type: getFaviconType(faviconUrl),
+                },
+              ],
+            }
+          : {}),
+        apple: appleIconUrl
+          ? [{ url: appleIconUrl, sizes: '180x180', type: 'image/png' }]
+          : faviconUrl
+            ? [{ url: faviconUrl }]
+            : [],
       }
     : undefined;
 

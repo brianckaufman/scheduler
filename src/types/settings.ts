@@ -116,6 +116,8 @@ export interface SiteSettings {
     og_description: string;
     og_image: string;
     favicon: string;
+    apple_icon: string;
+    android_icon: string;
     site_name: string;
     site_url: string;
     fb_app_id: string;
@@ -212,7 +214,7 @@ export const DEFAULT_COPY: CopySettings = {
     respond_by: 'Respond by {{date}} ({{relative}})',
     tap_instruction: "Tap the times you're available",
     all_set_title: 'Done. That was easy.',
-    all_set_desc: '{{count}} time(s) selected. Change anytime by tapping the grid above.',
+    all_set_desc: 'Change anytime by tapping the grid above.',
     cta_prompt: 'Impressed? (You should be.)',
     cta_button: 'Schedule your own event',
     cta_footer: 'Still free. Still no sign-up. Still magic.',
@@ -280,6 +282,8 @@ export const DEFAULT_SETTINGS: SiteSettings = {
     og_description: 'Stop texting "does Tuesday work?" to 14 people. Free group scheduling, no sign-up required.',
     og_image: '',
     favicon: '',
+    apple_icon: '',
+    android_icon: '',
     site_name: 'Scheduler',
     site_url: '',
     fb_app_id: '',

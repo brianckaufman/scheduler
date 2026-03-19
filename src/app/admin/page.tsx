@@ -145,7 +145,7 @@ const COPY_GROUPS: CopyGroup[] = [
       { key: 'respond_by', label: 'Respond By', variables: ['date', 'relative'] },
       { key: 'tap_instruction', label: 'Tap Instruction' },
       { key: 'all_set_title', label: 'All Set Title' },
-      { key: 'all_set_desc', label: 'All Set Description', multiline: true, variables: ['count'] },
+      { key: 'all_set_desc', label: 'All Set Description', multiline: true },
       { key: 'cta_prompt', label: 'CTA Prompt' },
       { key: 'cta_button', label: 'CTA Button' },
       { key: 'cta_footer', label: 'CTA Footer' },
@@ -444,6 +444,26 @@ export default function AdminDashboard() {
         help="The small icon shown in browser tabs. Refresh the page after uploading to see changes."
         accept="image/png,image/x-icon,image/vnd.microsoft.icon,image/svg+xml"
         aspectHint="32 x 32px or 64 x 64px (ICO, PNG, or SVG)"
+      />
+      <ImageUpload
+        value={settings.seo.apple_icon || ''}
+        onChange={(url) => updateSection('seo', 'apple_icon', url)}
+        onUploadComplete={(url) => autoSaveImageField('seo', 'apple_icon', url)}
+        folder="icons"
+        label="Apple Touch Icon (iPhone/iPad)"
+        help="Shown on iOS home screens when users add your app. Must be a solid PNG with no transparency."
+        accept="image/png"
+        aspectHint="180 x 180px (PNG, no transparency, no rounded corners — iOS adds them)"
+      />
+      <ImageUpload
+        value={settings.seo.android_icon || ''}
+        onChange={(url) => updateSection('seo', 'android_icon', url)}
+        onUploadComplete={(url) => autoSaveImageField('seo', 'android_icon', url)}
+        folder="icons"
+        label="Android Icon (PWA)"
+        help="Shown on Android home screens and app launchers. Use a maskable PNG with safe zone padding."
+        accept="image/png"
+        aspectHint="512 x 512px (PNG, maskable safe zone: keep content within center 80%)"
       />
       <div>
         <label className={labelClass}>Facebook App ID</label>

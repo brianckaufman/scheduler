@@ -4,7 +4,6 @@ import { useRef } from 'react';
 import { useCopy, interpolate } from '@/contexts/CopyContext';
 
 interface TimeSavedCelebrationProps {
-  slotCount: number;
   participantCount: number;
 }
 
@@ -14,7 +13,6 @@ interface TimeSavedCelebrationProps {
  * picks a fun, rotating celebration message.
  */
 export default function TimeSavedCelebration({
-  slotCount,
   participantCount,
 }: TimeSavedCelebrationProps) {
   const copy = useCopy();
@@ -62,7 +60,7 @@ export default function TimeSavedCelebration({
       </div>
 
       <p className="text-xs text-teal-600">
-        {interpolate(copy.event.all_set_desc, { count: slotCount })}
+        {copy.event.all_set_desc}
       </p>
 
       {/* Time-saved quip */}
