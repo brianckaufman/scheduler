@@ -106,6 +106,19 @@ export interface CopySettings {
     your_events: string;
     new_event: string;
   };
+  rsvp: {
+    heading: string;
+    going: string;
+    maybe: string;
+    cant: string;
+    change: string;
+    attendees_title: string;
+    no_responses: string;
+    going_label: string;
+    maybe_label: string;
+    cant_label: string;
+    pending_label: string;
+  };
 }
 
 // ── Site Settings ───────────────────────────────────────────────
@@ -153,6 +166,7 @@ export interface SiteSettings {
     default_duration: number;
     max_participants: number;
     rate_limit_events_per_hour: number;
+    enable_fixed_events: boolean;
   };
   copy: CopySettings;
 }
@@ -274,6 +288,19 @@ export const DEFAULT_COPY: CopySettings = {
     your_events: 'Your events',
     new_event: 'New event',
   },
+  rsvp: {
+    heading: 'Can you make it?',
+    going: 'Going',
+    maybe: 'Maybe',
+    cant: "Can't make it",
+    change: 'Change response',
+    attendees_title: "Who's coming",
+    no_responses: 'No responses yet',
+    going_label: 'Going',
+    maybe_label: 'Maybe',
+    cant_label: "Can't make it",
+    pending_label: 'Awaiting response',
+  },
 };
 
 export const DEFAULT_SETTINGS: SiteSettings = {
@@ -319,6 +346,7 @@ export const DEFAULT_SETTINGS: SiteSettings = {
     default_duration: 60,
     max_participants: 100,
     rate_limit_events_per_hour: 10,
+    enable_fixed_events: true,
   },
   copy: DEFAULT_COPY,
 };

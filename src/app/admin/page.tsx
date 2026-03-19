@@ -215,6 +215,23 @@ const COPY_GROUPS: CopyGroup[] = [
       { key: 'new_event', label: 'New Event Link' },
     ],
   },
+  {
+    key: 'rsvp',
+    label: 'RSVP (Fixed-Time Events)',
+    fields: [
+      { key: 'heading', label: 'RSVP Prompt' },
+      { key: 'going', label: '"Going" Button' },
+      { key: 'maybe', label: '"Maybe" Button' },
+      { key: 'cant', label: '"Can\'t Make It" Button' },
+      { key: 'change', label: 'Change Response Label' },
+      { key: 'attendees_title', label: 'Attendees Section Title' },
+      { key: 'no_responses', label: 'No Responses Message' },
+      { key: 'going_label', label: '"Going" Group Label' },
+      { key: 'maybe_label', label: '"Maybe" Group Label' },
+      { key: 'cant_label', label: '"Can\'t Make It" Group Label' },
+      { key: 'pending_label', label: 'Awaiting Response Label' },
+    ],
+  },
 ];
 
 export default function AdminDashboard() {
@@ -811,6 +828,27 @@ export default function AdminDashboard() {
 
   const renderAppSettings = () => (
     <div className="space-y-5">
+      {/* Fixed-time events feature toggle */}
+      <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-3">
+        <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Features</p>
+        <label className="flex items-center gap-3 cursor-pointer">
+          <div className="relative">
+            <input
+              type="checkbox"
+              className="sr-only"
+              checked={settings.app.enable_fixed_events !== false}
+              onChange={(e) => updateSection('app', 'enable_fixed_events', e.target.checked)}
+            />
+            <div className={`w-10 h-6 rounded-full transition-colors duration-200 ${settings.app.enable_fixed_events !== false ? 'bg-teal-500' : 'bg-gray-300'}`} />
+            <div className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full shadow transition-transform duration-200 ${settings.app.enable_fixed_events !== false ? 'translate-x-4' : 'translate-x-0'}`} />
+          </div>
+          <div>
+            <p className="text-sm font-medium text-gray-700">Fixed-Time Events</p>
+            <p className={helpClass}>When enabled, organizers can create RSVP-style events with a set date and time instead of polling availability.</p>
+          </div>
+        </label>
+      </div>
+
       <div>
         <label className={labelClass}>Default Event Duration (minutes)</label>
         <select

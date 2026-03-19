@@ -51,7 +51,7 @@ export default async function Home() {
         <HomeTabs>
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 animate-fade-in">
             <Suspense>
-              <EventForm />
+              <EventForm enableFixedEvents={settings.app.enable_fixed_events !== false} />
             </Suspense>
           </div>
         </HomeTabs>

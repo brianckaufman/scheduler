@@ -12,6 +12,32 @@ function getClientIp(request: NextRequest): string {
   );
 }
 
+/**
+ * Convert a local date+time string in a given IANA timezone to a UTC Date.
+ * Uses the Intl.DateTimeFormat trick: format the naive-UTC date in the target
+ * timezone, measure the drift, then apply the inverse offset.
+ */
+function zonedToUtc(dateStr: string, timeStr: string, tz: string): Date {
+  const naiveUtc = new Date(`${dateStr}T${timeStr}:00.000Z`);
+  const localRepr = new Intl.DateTimeFormat('sv-SE', {
+    timeZone: tz,
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit',
+  }).format(naiveUtc);
+  const localDate = new Date(localRepr.replace(' ', 'T') + 'Z');
+  const offset = naiveUtc.getTime() - localDate.getTime();
+  return new Date(naiveUtc.getTime() + offset);
+}
+
+/** Add minutes to a HH:MM time string, wrapping at midnight. Returns HH:MM. */
+function addMinutesToTime(time: string, minutes: number): string {
+  const [h, m] = time.split(':').map(Number);
+  const total = h * 60 + m + minutes;
+  const endH = Math.floor(total / 60) % 24;
+  const endM = total % 60;
+  return `${endH.toString().padStart(2, '0')}:${endM.toString().padStart(2, '0')}`;
+}
+
 export async function POST(request: NextRequest) {
   // Rate limit: 10 events per IP per hour
   const ip = getClientIp(request);
@@ -37,29 +63,18 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
   }
 
-  const { name, description, organizerName, location, durationMinutes, responseDeadline, maxParticipants, dates, timeStart, timeEnd, timezone } = body;
+  const {
+    name, description, organizerName, location, durationMinutes,
+    responseDeadline, maxParticipants, timezone,
+    // Availability-mode fields
+    dates, timeStart, timeEnd,
+    // Fixed-mode fields
+    eventType, fixedDate, fixedTime,
+  } = body;
 
-  // --- Input validation ---
+  // --- Shared validation ---
   if (!name || typeof name !== 'string' || !name.trim()) {
     return NextResponse.json({ error: 'Event name is required' }, { status: 400 });
-  }
-
-  if (!Array.isArray(dates) || dates.length === 0 || dates.length > 31) {
-    return NextResponse.json({ error: 'Select between 1 and 31 dates' }, { status: 400 });
-  }
-
-  for (const d of dates) {
-    if (!isValidDate(d)) {
-      return NextResponse.json({ error: `Invalid date: ${d}` }, { status: 400 });
-    }
-  }
-
-  if (!timeStart || !timeEnd || !isValidTime(timeStart) || !isValidTime(timeEnd)) {
-    return NextResponse.json({ error: 'Valid start and end times are required' }, { status: 400 });
-  }
-
-  if (timeStart >= timeEnd) {
-    return NextResponse.json({ error: 'End time must be after start time' }, { status: 400 });
   }
 
   if (timezone && !isValidTimezone(timezone)) {
@@ -67,7 +82,46 @@ export async function POST(request: NextRequest) {
   }
 
   const validDurations = [10, 15, 30, 45, 60, 90, 120, 180, 240];
-  const safeDuration = validDurations.includes(durationMinutes) ? durationMinutes : 30;
+  const safeDuration = validDurations.includes(durationMinutes) ? durationMinutes : 60;
+
+  const safeEventType = eventType === 'fixed' ? 'fixed' : 'availability';
+
+  // --- Type-specific validation ---
+  let safeDates: string[];
+  let safeTimeStart: string;
+  let safeTimeEnd: string;
+  let finalizedTime: string | null = null;
+
+  if (safeEventType === 'fixed') {
+    if (!fixedDate || !isValidDate(fixedDate)) {
+      return NextResponse.json({ error: 'A valid event date is required' }, { status: 400 });
+    }
+    if (!fixedTime || !isValidTime(fixedTime)) {
+      return NextResponse.json({ error: 'A valid start time is required' }, { status: 400 });
+    }
+    safeDates = [fixedDate];
+    safeTimeStart = fixedTime;
+    safeTimeEnd = addMinutesToTime(fixedTime, safeDuration);
+    finalizedTime = zonedToUtc(fixedDate, fixedTime, timezone || 'UTC').toISOString();
+  } else {
+    if (!Array.isArray(dates) || dates.length === 0 || dates.length > 31) {
+      return NextResponse.json({ error: 'Select between 1 and 31 dates' }, { status: 400 });
+    }
+    for (const d of dates) {
+      if (!isValidDate(d)) {
+        return NextResponse.json({ error: `Invalid date: ${d}` }, { status: 400 });
+      }
+    }
+    if (!timeStart || !timeEnd || !isValidTime(timeStart) || !isValidTime(timeEnd)) {
+      return NextResponse.json({ error: 'Valid start and end times are required' }, { status: 400 });
+    }
+    if (timeStart >= timeEnd) {
+      return NextResponse.json({ error: 'End time must be after start time' }, { status: 400 });
+    }
+    safeDates = dates;
+    safeTimeStart = timeStart;
+    safeTimeEnd = timeEnd;
+  }
 
   // Validate max participants (optional)
   let safeMaxParticipants: number | null = null;
@@ -104,10 +158,12 @@ export async function POST(request: NextRequest) {
       response_deadline: responseDeadline || null,
       max_participants: safeMaxParticipants,
       organizer_token: organizerToken,
-      dates,
-      time_start: timeStart,
-      time_end: timeEnd,
+      dates: safeDates,
+      time_start: safeTimeStart,
+      time_end: safeTimeEnd,
       timezone: timezone || 'UTC',
+      event_type: safeEventType,
+      finalized_time: finalizedTime,
     })
     .select()
     .single();
@@ -116,12 +172,17 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  // Auto-add the organizer as a participant if they provided their name
+  // Auto-add the organizer as a participant if they provided their name.
+  // For fixed events, organizer's RSVP defaults to 'yes'.
   let organizerParticipantId: string | null = null;
   if (safeOrganizerName) {
     const { data: participant } = await supabase
       .from('participants')
-      .insert({ event_id: data.id, name: safeOrganizerName })
+      .insert({
+        event_id: data.id,
+        name: safeOrganizerName,
+        ...(safeEventType === 'fixed' ? { rsvp: 'yes' } : {}),
+      })
       .select('id')
       .single();
     if (participant) {

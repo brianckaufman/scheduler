@@ -14,13 +14,17 @@ export interface Event {
   time_end: string;
   timezone: string;
   created_at: string;
+  event_type: 'availability' | 'fixed';
 }
+
+export type RsvpValue = 'yes' | 'maybe' | 'no';
 
 export interface Participant {
   id: string;
   event_id: string;
   name: string;
   created_at: string;
+  rsvp: RsvpValue | null;
 }
 
 export interface AvailabilitySlot {

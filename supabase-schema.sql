@@ -67,3 +67,25 @@ CREATE POLICY "participants_delete" ON participants FOR DELETE USING (true);
 CREATE POLICY "slots_select" ON availability_slots FOR SELECT USING (true);
 CREATE POLICY "slots_insert" ON availability_slots FOR INSERT WITH CHECK (true);
 CREATE POLICY "slots_delete" ON availability_slots FOR DELETE USING (true);
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- Migration: Fixed-time events + RSVP
+-- Run in Supabase SQL Editor on existing databases.
+-- Safe to run on fresh databases too (IF NOT EXISTS guards).
+-- ─────────────────────────────────────────────────────────────────────────────
+
+-- 1. Add event_type column to events (defaults to 'availability' for existing rows)
+ALTER TABLE events
+  ADD COLUMN IF NOT EXISTS event_type TEXT NOT NULL DEFAULT 'availability'
+  CHECK (event_type IN ('availability', 'fixed'));
+
+-- 2. Add rsvp column to participants (NULL = no response yet)
+ALTER TABLE participants
+  ADD COLUMN IF NOT EXISTS rsvp TEXT
+  CHECK (rsvp IS NULL OR rsvp IN ('yes', 'maybe', 'no'));
+
+-- 3. Allow UPDATE on participants (needed for RSVP changes)
+CREATE POLICY "participants_update" ON participants FOR UPDATE USING (true);
+
+-- 4. Index for fast RSVP lookups by event
+CREATE INDEX IF NOT EXISTS idx_participants_event_rsvp ON participants(event_id, rsvp);

@@ -10,6 +10,7 @@ import { useParticipantSession } from '@/hooks/useParticipantSession';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import ParticipantEntry from '@/components/ParticipantEntry';
 import TimeGrid from '@/components/TimeGrid';
+import RSVPView from '@/components/RSVPView';
 import ShareLink from '@/components/ShareLink';
 import FinalizedBanner from '@/components/FinalizedBanner';
 import EditEventModal from '@/components/EditEventModal';
@@ -39,13 +40,12 @@ export default function EventView({ event: initialEvent }: EventViewProps) {
   const { supported: pushSupported, isSubscribed, subscribe } = usePushNotifications(event.id, participantId);
   const [pushDismissed, setPushDismissed] = useState(false);
 
-  // Ref for auto-scrolling to the grid after onboarding
   const gridRef = useRef<HTMLDivElement>(null);
   const [justJoined, setJustJoined] = useState(false);
-
-  // Track whether user has selected any slots (for donation banner)
   const [hasSelections, setHasSelections] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
+
+  const isFixed = event.event_type === 'fixed';
 
   const handleSlotCountChange = useCallback((count: number) => {
     if (count > 0) setHasSelections(true);
@@ -56,7 +56,6 @@ export default function EventView({ event: initialEvent }: EventViewProps) {
     setIsOrganizer(!!token);
   }, [event.slug]);
 
-  // Check if this is a fresh event creation — show celebration
   useEffect(() => {
     try {
       if (sessionStorage.getItem('just_created') === 'true') {
@@ -72,7 +71,6 @@ export default function EventView({ event: initialEvent }: EventViewProps) {
     setPushDismissed(localStorage.getItem(`push_dismissed_${event.id}`) === 'true');
   }, [event.id]);
 
-  // Auto-scroll to grid after joining
   useEffect(() => {
     if (justJoined && gridRef.current) {
       const timer = setTimeout(() => {
@@ -89,13 +87,10 @@ export default function EventView({ event: initialEvent }: EventViewProps) {
   };
 
   const handleDeleteEvent = () => {
-    // Clean up local storage
     localStorage.removeItem(`organizer_${event.slug}`);
     localStorage.removeItem(`participant_${event.slug}`);
     localStorage.removeItem(`push_dismissed_${event.id}`);
-    // Remove from created events list so it doesn't show on homepage
     removeEvent(event.slug);
-    // Redirect to home
     router.push('/');
   };
 
@@ -126,7 +121,8 @@ export default function EventView({ event: initialEvent }: EventViewProps) {
   }
 
   const deadlinePassed = event.response_deadline && isPast(new Date(event.response_deadline));
-  const showPushPrompt = pushSupported && !isSubscribed && !pushDismissed && !event.finalized_time && !isOrganizer;
+  // Only show push prompt for availability events (fixed events have no time to announce)
+  const showPushPrompt = !isFixed && pushSupported && !isSubscribed && !pushDismissed && !event.finalized_time && !isOrganizer;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -147,6 +143,7 @@ export default function EventView({ event: initialEvent }: EventViewProps) {
           </div>
         )}
 
+        {/* Finalized banner — always shown for fixed events, shown when picked for availability */}
         {event.finalized_time && (
           <FinalizedBanner
             event={event}
@@ -156,7 +153,7 @@ export default function EventView({ event: initialEvent }: EventViewProps) {
           />
         )}
 
-        {/* Push notification opt-in (participants only) */}
+        {/* Push notification opt-in (availability events only) */}
         {showPushPrompt && (
           <div className="animate-fade-in mb-4 bg-blue-50 border border-blue-100 rounded-2xl p-4 flex items-start gap-3">
             <div className="shrink-0 mt-0.5">
@@ -189,14 +186,14 @@ export default function EventView({ event: initialEvent }: EventViewProps) {
           </div>
         )}
 
-        {/* Bookmark prompt for organizers (hide once time is finalized) */}
-        {isOrganizer && !event.finalized_time && <BookmarkPrompt eventSlug={event.slug} />}
+        {/* Bookmark prompt — availability events only, organizer only, not yet finalized */}
+        {!isFixed && isOrganizer && !event.finalized_time && <BookmarkPrompt eventSlug={event.slug} />}
 
         <div className="mb-4">
           <ShareLink eventName={event.name} isOrganizer={isOrganizer} />
         </div>
 
-        {/* Main card: event details + grid */}
+        {/* Main card: event details + grid/RSVP */}
         <div ref={gridRef} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
           {/* Event details header */}
           <div className="mb-4 pb-4 border-b border-gray-100">
@@ -247,7 +244,7 @@ export default function EventView({ event: initialEvent }: EventViewProps) {
                   {event.location}
                 </span>
               )}
-              {event.duration_minutes && (
+              {event.duration_minutes && !isFixed && (
                 <span className="flex items-center gap-1 text-xs text-gray-400">
                   <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -258,36 +255,54 @@ export default function EventView({ event: initialEvent }: EventViewProps) {
                 </span>
               )}
             </div>
-            {event.response_deadline && (
+            {event.response_deadline && !isFixed && (
               <p className={`text-xs mt-1 ${deadlinePassed ? 'text-red-400' : 'text-amber-500'}`}>
                 {deadlinePassed
                   ? copy.event.deadline_passed
-                  : interpolate(copy.event.respond_by, { date: format(new Date(event.response_deadline), 'MMM d'), relative: formatDistanceToNow(new Date(event.response_deadline), { addSuffix: true }) })}
+                  : interpolate(copy.event.respond_by, {
+                      date: format(new Date(event.response_deadline), 'MMM d'),
+                      relative: formatDistanceToNow(new Date(event.response_deadline), { addSuffix: true }),
+                    })}
               </p>
             )}
-            {!event.finalized_time && (
+            {/* Instruction line — different for each mode */}
+            {!isFixed && !event.finalized_time && (
               <p className="text-sm text-gray-500 mt-2">
                 {copy.event.tap_instruction}
               </p>
             )}
+            {isFixed && !event.finalized_time && (
+              <p className="text-sm text-gray-500 mt-2">
+                {copy.rsvp?.heading ?? 'Can you make it?'}
+              </p>
+            )}
           </div>
 
-          <TimeGrid
-            event={event}
-            participantId={participantId}
-            isOrganizer={isOrganizer}
-            organizerToken={localStorage.getItem(`organizer_${event.slug}`)}
-            onFinalize={(time) => {
-              setEvent({ ...event, finalized_time: time });
-              updateEvent(event.slug, { finalizedTime: time });
-              setShowCelebration(true);
-            }}
-            onMySlotCountChange={handleSlotCountChange}
-          />
+          {/* Body: TimeGrid for availability, RSVPView for fixed */}
+          {isFixed ? (
+            <RSVPView
+              event={event}
+              participantId={participantId}
+              isOrganizer={isOrganizer}
+            />
+          ) : (
+            <TimeGrid
+              event={event}
+              participantId={participantId}
+              isOrganizer={isOrganizer}
+              organizerToken={localStorage.getItem(`organizer_${event.slug}`)}
+              onFinalize={(time) => {
+                setEvent({ ...event, finalized_time: time });
+                updateEvent(event.slug, { finalizedTime: time });
+                setShowCelebration(true);
+              }}
+              onMySlotCountChange={handleSlotCountChange}
+            />
+          )}
         </div>
 
-        {/* Donation banner — shown after user selects availability */}
-        {hasSelections && !event.finalized_time && monetization.buymeacoffee_url && monetization.show_on_success && (
+        {/* Donation banner — shown after selections for availability events */}
+        {!isFixed && hasSelections && !event.finalized_time && monetization.buymeacoffee_url && monetization.show_on_success && (
           <div className="mt-4">
             <SupportBanner
               url={monetization.buymeacoffee_url}
@@ -313,7 +328,6 @@ export default function EventView({ event: initialEvent }: EventViewProps) {
             </a>
             <p className="text-[10px] text-gray-300 mt-2">{copy.event.cta_footer}</p>
 
-            {/* Inline donation in footer */}
             {monetization.buymeacoffee_url && monetization.show_on_event && (
               <div className="mt-3">
                 <SupportBanner
@@ -327,7 +341,6 @@ export default function EventView({ event: initialEvent }: EventViewProps) {
         </div>
       </div>
 
-      {/* Edit Event Modal */}
       {showEditModal && (
         <EditEventModal
           event={event}

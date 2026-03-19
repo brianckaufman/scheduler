@@ -21,6 +21,10 @@ import {
 } from 'date-fns';
 import { POPULAR_TIMEZONES, detectUserTimezone, getTimezoneLabel } from '@/lib/timezones';
 
+interface EventFormProps {
+  enableFixedEvents?: boolean;
+}
+
 function generateTimeOptions() {
   const options: string[] = [];
   for (let h = 0; h < 24; h++) {
@@ -51,11 +55,12 @@ const DURATION_OPTIONS = [
   { value: 240, label: '4 hours' },
 ];
 
-export default function EventForm() {
+export default function EventForm({ enableFixedEvents = false }: EventFormProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const copy = useCopy();
   const { addEvent } = useCreatedEvents();
+  const [eventType, setEventType] = useState<'availability' | 'fixed'>('availability');
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [organizerName, setOrganizerName] = useState('');
@@ -68,6 +73,9 @@ export default function EventForm() {
   const [timeEnd, setTimeEnd] = useState('17:00');
   const [timezone, setTimezone] = useState(detectUserTimezone);
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  // Fixed-event fields
+  const [fixedDate, setFixedDate] = useState('');
+  const [fixedTime, setFixedTime] = useState('09:00');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showOptional, setShowOptional] = useState(false);
@@ -83,11 +91,12 @@ export default function EventForm() {
 
   const today = startOfDay(new Date());
   const minDeadline = format(addDays(new Date(), 1), 'yyyy-MM-dd');
+  const minFixedDate = format(new Date(), 'yyyy-MM-dd');
 
   // Progress tracking
   const hasName = name.trim().length > 0;
   const hasOrganizer = organizerName.trim().length > 0;
-  const hasDates = selectedDates.length > 0;
+  const hasDates = eventType === 'fixed' ? fixedDate.length > 0 : selectedDates.length > 0;
   const filledSteps = [hasName, hasOrganizer, hasDates].filter(Boolean).length;
   const isReady = hasName && hasOrganizer && hasDates;
 
@@ -189,34 +198,48 @@ export default function EventForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim() || !organizerName.trim() || selectedDates.length === 0) return;
-    if (timeStart >= timeEnd) {
-      setError(copy.form.error_time);
-      return;
+    if (!name.trim() || !organizerName.trim()) return;
+
+    if (eventType === 'availability') {
+      if (selectedDates.length === 0) return;
+      if (timeStart >= timeEnd) {
+        setError(copy.form.error_time);
+        return;
+      }
+    } else {
+      if (!fixedDate) return;
     }
 
     setLoading(true);
     setError('');
 
     try {
+      const commonPayload = {
+        name: name.trim(),
+        description: description.trim() || null,
+        organizerName: organizerName.trim() || null,
+        location: location.trim() || null,
+        durationMinutes,
+        timezone,
+        eventType,
+      };
+
+      const typePayload = eventType === 'fixed'
+        ? { fixedDate, fixedTime }
+        : {
+            dates: selectedDates.map((d) => format(d, 'yyyy-MM-dd')),
+            timeStart,
+            timeEnd,
+            maxParticipants: maxParticipants ? parseInt(maxParticipants, 10) : null,
+            responseDeadline: responseDeadline
+              ? new Date(responseDeadline + 'T23:59:59').toISOString()
+              : null,
+          };
+
       const res = await fetch('/api/events', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: name.trim(),
-          description: description.trim() || null,
-          organizerName: organizerName.trim() || null,
-          location: location.trim() || null,
-          durationMinutes,
-          maxParticipants: maxParticipants ? parseInt(maxParticipants, 10) : null,
-          responseDeadline: responseDeadline
-            ? new Date(responseDeadline + 'T23:59:59').toISOString()
-            : null,
-          dates: selectedDates.map((d) => format(d, 'yyyy-MM-dd')),
-          timeStart,
-          timeEnd,
-          timezone,
-        }),
+        body: JSON.stringify({ ...commonPayload, ...typePayload }),
       });
 
       if (!res.ok) {
@@ -232,7 +255,6 @@ export default function EventForm() {
           JSON.stringify({ id: organizerParticipantId, name: returnedName })
         );
       }
-      // Flag that this is a fresh creation for celebration animation
       sessionStorage.setItem('just_created', 'true');
       addEvent(slug, name.trim());
       saveUserDisplayName(organizerName.trim());
@@ -248,6 +270,52 @@ export default function EventForm() {
 
   return (
     <form ref={formRef} onSubmit={handleSubmit} className="space-y-5">
+      {/* === Event type toggle (only when fixed events are enabled) === */}
+      {enableFixedEvents && (
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={() => setEventType('availability')}
+            className={`flex items-start gap-2.5 p-3 rounded-xl border-2 text-left transition-all duration-200 cursor-pointer ${
+              eventType === 'availability'
+                ? 'border-teal-500 bg-teal-50'
+                : 'border-gray-200 bg-white hover:border-gray-300'
+            }`}
+          >
+            <div className={`mt-0.5 w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${eventType === 'availability' ? 'bg-teal-100' : 'bg-gray-100'}`}>
+              <svg className={`w-4 h-4 ${eventType === 'availability' ? 'text-teal-600' : 'text-gray-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <div>
+              <p className={`text-xs font-semibold ${eventType === 'availability' ? 'text-teal-700' : 'text-gray-600'}`}>Find a time</p>
+              <p className="text-[11px] text-gray-400 mt-0.5 leading-tight">Poll when everyone&apos;s free</p>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setEventType('fixed')}
+            className={`flex items-start gap-2.5 p-3 rounded-xl border-2 text-left transition-all duration-200 cursor-pointer ${
+              eventType === 'fixed'
+                ? 'border-blue-500 bg-blue-50'
+                : 'border-gray-200 bg-white hover:border-gray-300'
+            }`}
+          >
+            <div className={`mt-0.5 w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${eventType === 'fixed' ? 'bg-blue-100' : 'bg-gray-100'}`}>
+              <svg className={`w-4 h-4 ${eventType === 'fixed' ? 'text-blue-600' : 'text-gray-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+            </div>
+            <div>
+              <p className={`text-xs font-semibold ${eventType === 'fixed' ? 'text-blue-700' : 'text-gray-600'}`}>Fixed time</p>
+              <p className="text-[11px] text-gray-400 mt-0.5 leading-tight">Already know when</p>
+            </div>
+          </button>
+        </div>
+      )}
+
       {/* === Section 1: Event Details === */}
       <div className="space-y-4 stagger-children">
         <div>
@@ -317,142 +385,211 @@ export default function EventForm() {
       {/* Subtle divider */}
       <div className="border-t border-gray-100" />
 
-      {/* === Section 2: Scheduling === */}
-      <div className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            {copy.form.dates_label}
-          </label>
-          {renderCalendar()}
-          {selectedDates.length > 0 && (
-            <div className="mt-2 flex items-center gap-1.5 animate-fade-in">
-              <svg className="w-3.5 h-3.5 text-teal-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-              </svg>
-              <p className="text-sm text-teal-600 font-medium">
-                {selectedDates.length} day{selectedDates.length !== 1 ? 's' : ''} selected
-              </p>
-            </div>
-          )}
-        </div>
-
-        <div className="grid grid-cols-2 gap-3">
+      {/* === Section 2a: Fixed time scheduling === */}
+      {eventType === 'fixed' && (
+        <div className="space-y-4 animate-fade-in">
           <div>
-            <label htmlFor="timeStart" className="block text-sm font-medium text-gray-700 mb-1.5">
-              {copy.form.earliest_label}
+            <label htmlFor="fixedDate" className="block text-sm font-medium text-gray-700 mb-1.5">
+              Event date
             </label>
-            <select id="timeStart" value={timeStart} onChange={(e) => setTimeStart(e.target.value)} className={selectClass}>
-              {TIME_OPTIONS.map((t) => (
-                <option key={t} value={t}>{formatTimeLabel(t)}</option>
-              ))}
-            </select>
+            <input
+              id="fixedDate"
+              type="date"
+              value={fixedDate}
+              min={minFixedDate}
+              onChange={(e) => setFixedDate(e.target.value)}
+              className={selectClass}
+              required
+            />
           </div>
-          <div>
-            <label htmlFor="timeEnd" className="block text-sm font-medium text-gray-700 mb-1.5">
-              {copy.form.latest_label}
-            </label>
-            <select id="timeEnd" value={timeEnd} onChange={(e) => setTimeEnd(e.target.value)} className={selectClass}>
-              {TIME_OPTIONS.map((t) => (
-                <option key={t} value={t}>{formatTimeLabel(t)}</option>
-              ))}
-            </select>
-          </div>
-        </div>
 
-        <div>
-          <label htmlFor="timezone" className="block text-sm font-medium text-gray-700 mb-1.5">
-            Timezone
-          </label>
-          <select
-            id="timezone"
-            value={timezone}
-            onChange={(e) => setTimezone(e.target.value)}
-            className={selectClass}
-          >
-            {POPULAR_TIMEZONES.map((tz) => (
-              <option key={tz.value} value={tz.value}>{tz.label}</option>
-            ))}
-            {!POPULAR_TIMEZONES.find((t) => t.value === timezone) && (
-              <option value={timezone}>{getTimezoneLabel(timezone)}</option>
-            )}
-          </select>
-        </div>
-
-        <div>
-          <label htmlFor="duration" className="block text-sm font-medium text-gray-700 mb-1.5">
-            {copy.form.duration_label}
-          </label>
-          <select
-            id="duration"
-            value={durationMinutes}
-            onChange={(e) => setDurationMinutes(Number(e.target.value))}
-            className={selectClass}
-          >
-            {DURATION_OPTIONS.map((d) => (
-              <option key={d.value} value={d.value}>{d.label}</option>
-            ))}
-          </select>
-        </div>
-      </div>
-
-      {/* === Optional section (collapsed by default) === */}
-      <div>
-        {!showOptional && (
-          <button
-            type="button"
-            onClick={() => setShowOptional(true)}
-            className="w-full flex items-center justify-center gap-1.5 py-2 text-xs font-medium text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
-          >
-            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-            </svg>
-            More options
-          </button>
-        )}
-
-        {showOptional && (
-          <div className="space-y-4 animate-slide-down">
-            <div className="border-t border-gray-100 pt-4">
-              <p className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-3">Additional options</p>
-            </div>
-
+          <div className="grid grid-cols-2 gap-3">
             <div>
-              <label htmlFor="deadline" className="block text-sm font-medium text-gray-700 mb-1.5">
-                {copy.form.deadline_label}
+              <label htmlFor="fixedTime" className="block text-sm font-medium text-gray-700 mb-1.5">
+                Start time
               </label>
-              <input
-                id="deadline"
-                type="date"
-                value={responseDeadline}
-                min={minDeadline}
-                onChange={(e) => setResponseDeadline(e.target.value)}
+              <select id="fixedTime" value={fixedTime} onChange={(e) => setFixedTime(e.target.value)} className={selectClass}>
+                {TIME_OPTIONS.map((t) => (
+                  <option key={t} value={t}>{formatTimeLabel(t)}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label htmlFor="fixedDuration" className="block text-sm font-medium text-gray-700 mb-1.5">
+                {copy.form.duration_label}
+              </label>
+              <select
+                id="fixedDuration"
+                value={durationMinutes}
+                onChange={(e) => setDurationMinutes(Number(e.target.value))}
                 className={selectClass}
-              />
-            </div>
-
-            <div>
-              <label htmlFor="maxParticipants" className="block text-sm font-medium text-gray-700 mb-1.5">
-                Max participants <span className="text-gray-400 font-normal">(optional)</span>
-              </label>
-              <input
-                id="maxParticipants"
-                type="number"
-                value={maxParticipants}
-                onChange={(e) => setMaxParticipants(e.target.value)}
-                placeholder="No limit"
-                min={2}
-                max={1000}
-                className={inputClass}
-              />
-              {maxParticipants && parseInt(maxParticipants, 10) > 0 && (
-                <p className="text-xs text-gray-400 mt-1">
-                  New participants will be blocked after {maxParticipants} have joined
-                </p>
-              )}
+              >
+                {DURATION_OPTIONS.map((d) => (
+                  <option key={d.value} value={d.value}>{d.label}</option>
+                ))}
+              </select>
             </div>
           </div>
-        )}
-      </div>
+
+          <div>
+            <label htmlFor="fixedTimezone" className="block text-sm font-medium text-gray-700 mb-1.5">
+              Timezone
+            </label>
+            <select
+              id="fixedTimezone"
+              value={timezone}
+              onChange={(e) => setTimezone(e.target.value)}
+              className={selectClass}
+            >
+              {POPULAR_TIMEZONES.map((tz) => (
+                <option key={tz.value} value={tz.value}>{tz.label}</option>
+              ))}
+              {!POPULAR_TIMEZONES.find((t) => t.value === timezone) && (
+                <option value={timezone}>{getTimezoneLabel(timezone)}</option>
+              )}
+            </select>
+          </div>
+        </div>
+      )}
+
+      {/* === Section 2b: Availability scheduling === */}
+      {eventType === 'availability' && (
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              {copy.form.dates_label}
+            </label>
+            {renderCalendar()}
+            {selectedDates.length > 0 && (
+              <div className="mt-2 flex items-center gap-1.5 animate-fade-in">
+                <svg className="w-3.5 h-3.5 text-teal-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+                <p className="text-sm text-teal-600 font-medium">
+                  {selectedDates.length} day{selectedDates.length !== 1 ? 's' : ''} selected
+                </p>
+              </div>
+            )}
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label htmlFor="timeStart" className="block text-sm font-medium text-gray-700 mb-1.5">
+                {copy.form.earliest_label}
+              </label>
+              <select id="timeStart" value={timeStart} onChange={(e) => setTimeStart(e.target.value)} className={selectClass}>
+                {TIME_OPTIONS.map((t) => (
+                  <option key={t} value={t}>{formatTimeLabel(t)}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label htmlFor="timeEnd" className="block text-sm font-medium text-gray-700 mb-1.5">
+                {copy.form.latest_label}
+              </label>
+              <select id="timeEnd" value={timeEnd} onChange={(e) => setTimeEnd(e.target.value)} className={selectClass}>
+                {TIME_OPTIONS.map((t) => (
+                  <option key={t} value={t}>{formatTimeLabel(t)}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label htmlFor="timezone" className="block text-sm font-medium text-gray-700 mb-1.5">
+              Timezone
+            </label>
+            <select
+              id="timezone"
+              value={timezone}
+              onChange={(e) => setTimezone(e.target.value)}
+              className={selectClass}
+            >
+              {POPULAR_TIMEZONES.map((tz) => (
+                <option key={tz.value} value={tz.value}>{tz.label}</option>
+              ))}
+              {!POPULAR_TIMEZONES.find((t) => t.value === timezone) && (
+                <option value={timezone}>{getTimezoneLabel(timezone)}</option>
+              )}
+            </select>
+          </div>
+
+          <div>
+            <label htmlFor="duration" className="block text-sm font-medium text-gray-700 mb-1.5">
+              {copy.form.duration_label}
+            </label>
+            <select
+              id="duration"
+              value={durationMinutes}
+              onChange={(e) => setDurationMinutes(Number(e.target.value))}
+              className={selectClass}
+            >
+              {DURATION_OPTIONS.map((d) => (
+                <option key={d.value} value={d.value}>{d.label}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* === Optional section (availability only) === */}
+          <div>
+            {!showOptional && (
+              <button
+                type="button"
+                onClick={() => setShowOptional(true)}
+                className="w-full flex items-center justify-center gap-1.5 py-2 text-xs font-medium text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+                More options
+              </button>
+            )}
+
+            {showOptional && (
+              <div className="space-y-4 animate-slide-down">
+                <div className="border-t border-gray-100 pt-4">
+                  <p className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-3">Additional options</p>
+                </div>
+
+                <div>
+                  <label htmlFor="deadline" className="block text-sm font-medium text-gray-700 mb-1.5">
+                    {copy.form.deadline_label}
+                  </label>
+                  <input
+                    id="deadline"
+                    type="date"
+                    value={responseDeadline}
+                    min={minDeadline}
+                    onChange={(e) => setResponseDeadline(e.target.value)}
+                    className={selectClass}
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="maxParticipants" className="block text-sm font-medium text-gray-700 mb-1.5">
+                    Max participants <span className="text-gray-400 font-normal">(optional)</span>
+                  </label>
+                  <input
+                    id="maxParticipants"
+                    type="number"
+                    value={maxParticipants}
+                    onChange={(e) => setMaxParticipants(e.target.value)}
+                    placeholder="No limit"
+                    min={2}
+                    max={1000}
+                    className={inputClass}
+                  />
+                  {maxParticipants && parseInt(maxParticipants, 10) > 0 && (
+                    <p className="text-xs text-gray-400 mt-1">
+                      New participants will be blocked after {maxParticipants} have joined
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {error && (
         <p className="text-red-500 text-sm animate-fade-in">{error}</p>
@@ -460,13 +597,14 @@ export default function EventForm() {
 
       {/* Progress indicator + Submit */}
       <div className="space-y-3 pt-1">
-        {/* Mini progress */}
         <div className="flex items-center gap-2">
           {[0, 1, 2].map((i) => (
             <div
               key={i}
               className={`h-1 flex-1 rounded-full transition-all duration-500 ${
-                i < filledSteps ? 'bg-teal-400' : 'bg-gray-100'
+                i < filledSteps
+                  ? eventType === 'fixed' ? 'bg-blue-400' : 'bg-teal-400'
+                  : 'bg-gray-100'
               }`}
             />
           ))}
@@ -478,7 +616,9 @@ export default function EventForm() {
           className={`
             relative w-full py-3.5 px-4 font-semibold rounded-2xl transition-all duration-300
             ${isReady && !loading
-              ? 'bg-teal-500 text-white hover:bg-teal-600 shadow-lg shadow-teal-200/50 hover:shadow-xl hover:shadow-teal-200/60 active:scale-[0.97] cursor-pointer'
+              ? eventType === 'fixed'
+                ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-200/50 hover:shadow-xl hover:shadow-blue-200/60 active:scale-[0.97] cursor-pointer'
+                : 'bg-teal-500 text-white hover:bg-teal-600 shadow-lg shadow-teal-200/50 hover:shadow-xl hover:shadow-teal-200/60 active:scale-[0.97] cursor-pointer'
               : 'bg-gray-100 text-gray-400 cursor-not-allowed'
             }
           `}
@@ -491,6 +631,8 @@ export default function EventForm() {
               </svg>
               {copy.form.submitting}
             </span>
+          ) : eventType === 'fixed' ? (
+            'Create Event'
           ) : (
             copy.form.submit
           )}
