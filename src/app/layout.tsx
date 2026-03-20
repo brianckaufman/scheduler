@@ -146,8 +146,8 @@ export default async function RootLayout({
         {/* Analytics scripts must be in <body> — next/script strategy="afterInteractive"
             cannot be placed inside <head> or it is silently suppressed */}
         <AnalyticsScripts
-          gaId={settings.analytics.ga_id}
-          gtmId={settings.analytics.gtm_id}
+          gaId={settings.analytics.ga_id || process.env.NEXT_PUBLIC_GA_ID || ''}
+          gtmId={settings.analytics.gtm_id || process.env.NEXT_PUBLIC_GTM_ID || ''}
           customScripts={settings.analytics.custom_head_scripts}
         />
         {settings.analytics.gtm_id && (

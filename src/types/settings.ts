@@ -194,14 +194,14 @@ export interface SiteSettings {
 export const DEFAULT_COPY: CopySettings = {
   home: {
     title: 'Scheduler',
-    subtitle: 'Stop texting "does Tuesday work?" to 14 people.',
-    step1_title: 'Create an event',
-    step1_desc: 'Takes about 30 seconds',
-    step2_title: 'Share the link',
-    step2_desc: 'Watch people actually respond',
-    step3_title: 'Pick the best time',
-    step3_desc: 'Zero back-and-forth needed',
-    footer: 'Free forever. Zero accounts. Your group chat will thank you.',
+    subtitle: 'No sign-ups. No apps. No back-and-forth.',
+    step1_title: 'Create your event',
+    step1_desc: "Find a time that works for everyone, or set a date and let people RSVP. Either way, you're up and running in under a minute.",
+    step2_title: 'Copy the link and share it',
+    step2_desc: "No account needed — for you or anyone you invite. Send it however you share things: text, email, group chat, whatever.",
+    step3_title: 'See it come together',
+    step3_desc: "People mark when they're free or tap their RSVP. You see everything in real time, then lock in the time that works.",
+    footer: 'Free forever. No accounts. No downloads.',
   },
   form: {
     event_label: "What's the event?",
