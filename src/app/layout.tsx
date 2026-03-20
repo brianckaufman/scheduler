@@ -141,15 +141,15 @@ export default async function RootLayout({
       <head>
         {/* JSON-LD structured data for rich search results */}
         <JsonLd data={buildWebAppJsonLd({ name: siteName, description: ogDesc, url: siteUrl || undefined })} />
-      </head>
-      <body className={`${poppins.variable} font-sans antialiased`}>
-        {/* Analytics scripts must be in <body> — next/script strategy="afterInteractive"
-            cannot be placed inside <head> or it is silently suppressed */}
+        {/* Analytics — real <script> tags in <head> so Google's tag checker finds them
+            in the server-rendered HTML (next/script afterInteractive is client-only) */}
         <AnalyticsScripts
           gaId={settings.analytics.ga_id || process.env.NEXT_PUBLIC_GA_ID || ''}
           gtmId={settings.analytics.gtm_id || process.env.NEXT_PUBLIC_GTM_ID || ''}
           customScripts={settings.analytics.custom_head_scripts}
         />
+      </head>
+      <body className={`${poppins.variable} font-sans antialiased`}>
         {settings.analytics.gtm_id && (
           <noscript>
             <iframe
