@@ -308,7 +308,7 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-base font-bold text-gray-900">Find a time</p>
-            <p className="text-sm text-gray-500 mt-0.5 leading-snug">Everyone marks when they&apos;re free. You pick the best time to gather.</p>
+            <p className="text-sm text-gray-500 mt-0.5 leading-snug">Everyone marks when they&apos;re free. You pick the best time.</p>
           </div>
           <svg className="w-5 h-5 text-gray-300 group-hover:text-teal-500 shrink-0 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
@@ -327,7 +327,7 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-base font-bold text-gray-900">Fixed date</p>
-            <p className="text-sm text-gray-500 mt-0.5 leading-snug">Set the date and time and invite people to gather.</p>
+            <p className="text-sm text-gray-500 mt-0.5 leading-snug">Set the date and time and invite people to RSVP.</p>
           </div>
           <svg className="w-5 h-5 text-gray-300 group-hover:text-blue-500 shrink-0 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
