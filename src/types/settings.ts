@@ -374,9 +374,97 @@ export const DEFAULT_SETTINGS: SiteSettings = {
     enable_fixed_events: true,
   },
   legal: {
-    privacy_policy: '',
-    terms_of_use: '',
-    cookie_policy: '',
+    privacy_policy: `<h2>Privacy Policy</h2>
+<p>This Privacy Policy describes how this Service collects, uses, and handles information when you use our group scheduling application. By using the Service, you agree to the practices described here.</p>
+
+<h2>Information We Collect</h2>
+<p>We collect only the minimum information necessary to provide the scheduling service:</p>
+<ul>
+<li><strong>Event information:</strong> Event names, descriptions, dates, times, and locations you provide when creating an event.</li>
+<li><strong>Participant names:</strong> Names entered voluntarily by participants to identify themselves.</li>
+<li><strong>Availability data:</strong> Time slot selections and RSVP responses submitted by participants.</li>
+<li><strong>Device data:</strong> Basic browser and device information used for service functionality.</li>
+</ul>
+
+<h2>No Accounts Required</h2>
+<p>This Service does not require you to create an account. We do not collect email addresses, passwords, or other account credentials. Participant identity is managed through your browser's local storage, which remains on your device.</p>
+
+<h2>How We Use Your Information</h2>
+<p>Information collected is used solely to provide scheduling functionality — displaying event details, recording availability, and showing results. We do not use your information for advertising, marketing, or profiling.</p>
+
+<h2>Data Storage and Retention</h2>
+<p>Event and availability data is stored in a secure database. Events and associated data may be removed after a period of inactivity. We do not guarantee the permanent storage of any event data.</p>
+
+<h2>No Data Selling</h2>
+<p>We do not sell, rent, trade, or otherwise transfer your information to third parties.</p>
+
+<h2>Third-Party Services</h2>
+<p>This Service uses third-party infrastructure providers (such as hosting and database services) to operate. These providers are subject to their own privacy policies.</p>
+
+<h2>Children's Privacy</h2>
+<p>This Service is not directed to children under 13. We do not knowingly collect information from children.</p>
+
+<h2>Changes to This Policy</h2>
+<p>We may update this Privacy Policy at any time. Continued use of the Service after changes constitutes acceptance of the updated policy.</p>`,
+
+    terms_of_use: `<h2>Terms of Use</h2>
+<p>By accessing or using this Service, you agree to be bound by these Terms of Use. If you do not agree, do not use the Service.</p>
+
+<h2>Service Description</h2>
+<p>This Service provides a free, no-account group scheduling tool. Users can create events, share links, and collect availability or RSVPs from participants. The Service is provided free of charge.</p>
+
+<h2>Acceptable Use</h2>
+<p>You agree to use this Service only for lawful purposes and in a manner that does not infringe the rights of others. You agree not to use the Service to transmit harmful, offensive, or illegal content.</p>
+
+<h2>No Warranty</h2>
+<p>THIS SERVICE IS PROVIDED "AS IS" AND "AS AVAILABLE" WITHOUT ANY WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, OR NON-INFRINGEMENT. WE DO NOT WARRANT THAT THE SERVICE WILL BE UNINTERRUPTED, ERROR-FREE, OR SECURE.</p>
+
+<h2>Limitation of Liability</h2>
+<p>TO THE FULLEST EXTENT PERMITTED BY APPLICABLE LAW, THE OPERATOR OF THIS SERVICE SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES ARISING OUT OF OR RELATED TO YOUR USE OF, OR INABILITY TO USE, THIS SERVICE — INCLUDING BUT NOT LIMITED TO LOSS OF DATA, MISSED EVENTS, SCHEDULING ERRORS, OR BUSINESS INTERRUPTION — WHETHER BASED ON WARRANTY, CONTRACT, TORT, OR ANY OTHER LEGAL THEORY.</p>
+<p>IN NO EVENT SHALL TOTAL LIABILITY EXCEED THE AMOUNT YOU PAID TO USE THIS SERVICE. AS THIS IS A FREE SERVICE, THAT AMOUNT IS ZERO.</p>
+
+<h2>No Assumption of Liability</h2>
+<p>The operator of this Service assumes no liability, past, present, or future, arising from your use of the Service. This includes but is not limited to scheduling outcomes, missed events, data loss, or any reliance placed on information provided through the Service. Use of this Service is entirely at your own risk.</p>
+
+<h2>User Content</h2>
+<p>You retain ownership of any content you submit. By submitting content, you grant us a limited license to store and display it for the purpose of providing the Service. You are solely responsible for the content you create and share through this Service.</p>
+
+<h2>Event Data</h2>
+<p>Events and associated data may be deleted after a period of inactivity. We do not guarantee the availability or permanence of any event data. You are responsible for maintaining your own records.</p>
+
+<h2>Service Availability</h2>
+<p>We reserve the right to modify, suspend, or discontinue the Service at any time without notice or liability. We may remove any content that violates these Terms.</p>
+
+<h2>Indemnification</h2>
+<p>You agree to indemnify and hold harmless the operator of this Service from any claims, damages, losses, or expenses arising out of your use of the Service or violation of these Terms.</p>
+
+<h2>Governing Law</h2>
+<p>These Terms shall be governed by applicable law. Any disputes arising under these Terms shall be resolved in the jurisdiction where the Service operator is located.</p>
+
+<h2>Changes to These Terms</h2>
+<p>We reserve the right to update these Terms at any time. Continued use of the Service after changes constitutes acceptance of the revised Terms.</p>`,
+
+    cookie_policy: `<h2>Cookie Policy</h2>
+<p>This Cookie Policy explains how this Service uses browser storage on your device.</p>
+
+<h2>What We Use</h2>
+<p>This Service uses browser <strong>local storage</strong> — not traditional cookies — to store session information on your device. This includes:</p>
+<ul>
+<li>Your name and participant ID for events you have joined</li>
+<li>Organizer tokens for events you created</li>
+<li>UI preferences such as dismissed prompts</li>
+</ul>
+<p>This data stays on your device and is only used to provide Service functionality during your session.</p>
+
+<h2>What We Don't Use</h2>
+<p>We do not use tracking cookies, advertising cookies, or third-party analytics cookies that follow you across other websites. We do not build behavioral profiles.</p>
+
+<h2>Third-Party Services</h2>
+<p>If analytics tools are configured by the site operator, those services may set their own cookies subject to their respective privacy policies.</p>
+
+<h2>Managing Your Data</h2>
+<p>You can clear local storage data at any time through your browser settings. Doing so will remove your session for any events you have joined.</p>`,
+
     show_privacy: true,
     show_terms: true,
     show_cookies: false,

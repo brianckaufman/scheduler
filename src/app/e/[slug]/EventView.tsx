@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { format, formatDistanceToNow, isPast } from 'date-fns';
+import { format, formatDistanceToNow, isPast, addMinutes } from 'date-fns';
 import { useCopy, interpolate } from '@/contexts/CopyContext';
 import { useBranding } from '@/contexts/BrandingContext';
 import { useMonetization } from '@/contexts/MonetizationContext';
@@ -253,6 +253,8 @@ export default function EventView({ event: initialEvent }: EventViewProps) {
                     </svg>
                     <span className="text-sm font-semibold text-gray-900">
                       {format(new Date(event.finalized_time), 'h:mm a')}
+                      {' – '}
+                      {format(addMinutes(new Date(event.finalized_time), event.duration_minutes || 60), 'h:mm a')}
                     </span>
                   </div>
                   {event.location && (

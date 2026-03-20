@@ -5,7 +5,7 @@ import { format, parseISO } from 'date-fns';
 import { createClient } from '@/lib/supabase/client';
 import { useCopy, interpolate } from '@/contexts/CopyContext';
 import { formatDisplayName } from '@/lib/names';
-import { generateSlots } from '@/lib/slots';
+import { generateSlots, getSlotStep } from '@/lib/slots';
 import { computeOverlap, getFullOverlapSlots } from '@/lib/overlap';
 import { useRealtimeSlots } from '@/hooks/useRealtimeSlots';
 import { useRealtimeParticipants } from '@/hooks/useRealtimeParticipants';
@@ -75,10 +75,17 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
     return () => window.removeEventListener('resize', check);
   }, []);
 
+  const durationMinutes = event.duration_minutes || 30;
+
   const gridSlots = useMemo(
-    () => generateSlots(event.dates, event.time_start, event.time_end, event.timezone),
-    [event.dates, event.time_start, event.time_end, event.timezone]
+    () => generateSlots(event.dates, event.time_start, event.time_end, event.timezone, durationMinutes),
+    [event.dates, event.time_start, event.time_end, event.timezone, durationMinutes]
   );
+
+  // Step size and cell height adapt to event duration
+  const slotStep = getSlotStep(durationMinutes);
+  // Taller cells for longer slots so the visual weight matches the time commitment
+  const cellHeight = slotStep === 15 ? 24 : slotStep === 30 ? 32 : 48;
 
   const { dates, timeLabels, slotGrid } = useMemo(() => {
     const dateSet = new Set<string>();
@@ -358,6 +365,26 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
         </div>
       )}
 
+      {/* Block-size indicator — shown when slots represent blocks longer than 30 min */}
+      {durationMinutes > 30 && (
+        <div className="flex items-center gap-1.5 text-xs text-teal-700 bg-teal-50 border border-teal-100 rounded-lg px-3 py-2">
+          <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span>
+            Each slot = a{' '}
+            <strong>
+              {durationMinutes < 60
+                ? `${durationMinutes}-minute`
+                : durationMinutes % 60 === 0
+                  ? `${durationMinutes / 60}-hour`
+                  : `${Math.floor(durationMinutes / 60)}h ${durationMinutes % 60}m`}
+            </strong>
+            {' '}block. Select times when you&apos;re free for the full duration.
+          </span>
+        </div>
+      )}
+
       {/* Timezone indicator */}
       <div className="flex items-center gap-1.5 text-xs text-gray-400">
         <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -402,14 +429,32 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
           {/* Time rows */}
           {timeLabels.map((time) => {
             const [h, m] = time.split(':').map(Number);
-            const ampm = h >= 12 ? 'PM' : 'AM';
-            const hour = h === 0 ? 12 : h > 12 ? h - 12 : h;
-            const label = `${hour}:${m.toString().padStart(2, '0')} ${ampm}`;
+
+            // Compact time formatter — omits :00 for on-the-hour times
+            const fmtCompact = (hh: number, mm: number) => {
+              const ap = hh >= 12 ? 'PM' : 'AM';
+              const h12 = hh === 0 ? 12 : hh > 12 ? hh - 12 : hh;
+              return mm === 0 ? `${h12} ${ap}` : `${h12}:${mm.toString().padStart(2, '0')} ${ap}`;
+            };
+
+            const startLabel = fmtCompact(h, m);
+
+            // For events longer than 30 min, show the end time of the block
+            let label: string;
+            if (durationMinutes > 30) {
+              const endTotalMin = h * 60 + m + durationMinutes;
+              const endH = Math.floor(endTotalMin / 60) % 24;
+              const endM = endTotalMin % 60;
+              label = `${startLabel}–${fmtCompact(endH, endM)}`;
+            } else {
+              label = startLabel;
+            }
 
             return [
               <div
                 key={`label-${time}`}
-                className="text-xs text-gray-500 flex items-center justify-end pr-2 sticky left-0 bg-white z-10 whitespace-nowrap"
+                style={{ minHeight: `${cellHeight}px` }}
+                className="text-[10px] leading-tight text-gray-500 flex items-center justify-end pr-2 sticky left-0 bg-white z-10 whitespace-nowrap"
               >
                 {label}
               </div>,

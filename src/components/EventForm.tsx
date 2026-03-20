@@ -78,6 +78,7 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
   // Fixed-event fields
   const [fixedDate, setFixedDate] = useState('');
   const [fixedTime, setFixedTime] = useState('09:00');
+  const [fixedEndTime, setFixedEndTime] = useState('10:00');
   const [body, setBody] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -213,10 +214,25 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
       }
     } else {
       if (!fixedDate) return;
+      const [sh, sm] = fixedTime.split(':').map(Number);
+      const [eh, em] = fixedEndTime.split(':').map(Number);
+      if (eh * 60 + em <= sh * 60 + sm) {
+        setError('End time must be after start time');
+        return;
+      }
     }
 
     setLoading(true);
     setError('');
+
+    // For fixed events, derive duration from start/end times
+    const resolvedDuration = eventType === 'fixed'
+      ? (() => {
+          const [sh, sm] = fixedTime.split(':').map(Number);
+          const [eh, em] = fixedEndTime.split(':').map(Number);
+          return (eh * 60 + em) - (sh * 60 + sm);
+        })()
+      : durationMinutes;
 
     try {
       const commonPayload = {
@@ -225,7 +241,7 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
         body: body.trim() || null,
         organizerName: organizerName.trim() || null,
         location: location.trim() || null,
-        durationMinutes,
+        durationMinutes: resolvedDuration,
         timezone,
         eventType,
       };
@@ -442,24 +458,41 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
               <label htmlFor="fixedTime" className="block text-sm font-medium text-gray-700 mb-1.5">
                 Start time
               </label>
-              <select id="fixedTime" value={fixedTime} onChange={(e) => setFixedTime(e.target.value)} className={selectClass}>
+              <select
+                id="fixedTime"
+                value={fixedTime}
+                onChange={(e) => {
+                  const newStart = e.target.value;
+                  setFixedTime(newStart);
+                  // Auto-advance end time if it's no longer after start
+                  const [sh, sm] = newStart.split(':').map(Number);
+                  const [eh, em] = fixedEndTime.split(':').map(Number);
+                  if (eh * 60 + em <= sh * 60 + sm) {
+                    const next = sh * 60 + sm + 60;
+                    const nh = Math.floor(next / 60) % 24;
+                    const nm = next % 60;
+                    setFixedEndTime(`${nh.toString().padStart(2, '0')}:${nm.toString().padStart(2, '0')}`);
+                  }
+                }}
+                className={selectClass}
+              >
                 {TIME_OPTIONS.map((t) => (
                   <option key={t} value={t}>{formatTimeLabel(t)}</option>
                 ))}
               </select>
             </div>
             <div>
-              <label htmlFor="fixedDuration" className="block text-sm font-medium text-gray-700 mb-1.5">
-                {copy.form.duration_label}
+              <label htmlFor="fixedEndTime" className="block text-sm font-medium text-gray-700 mb-1.5">
+                End time
               </label>
               <select
-                id="fixedDuration"
-                value={durationMinutes}
-                onChange={(e) => setDurationMinutes(Number(e.target.value))}
+                id="fixedEndTime"
+                value={fixedEndTime}
+                onChange={(e) => setFixedEndTime(e.target.value)}
                 className={selectClass}
               >
-                {DURATION_OPTIONS.map((d) => (
-                  <option key={d.value} value={d.value}>{d.label}</option>
+                {TIME_OPTIONS.filter((t) => t > fixedTime).map((t) => (
+                  <option key={t} value={t}>{formatTimeLabel(t)}</option>
                 ))}
               </select>
             </div>
