@@ -153,8 +153,8 @@ export default function EventView({ event: initialEvent }: EventViewProps) {
           </div>
         )}
 
-        {/* Finalized banner — always shown for fixed events, shown when picked for availability */}
-        {event.finalized_time && (
+        {/* Finalized banner — availability events only, when a time has been picked */}
+        {event.finalized_time && !isFixed && (
           <FinalizedBanner
             event={event}
             isOrganizer={isOrganizer}
@@ -208,7 +208,7 @@ export default function EventView({ event: initialEvent }: EventViewProps) {
         <div ref={gridRef} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
           {/* Event details header */}
           <div className="mb-4 pb-4 border-b border-gray-100">
-            <div className="flex items-start justify-between gap-2">
+            <div className="flex items-start justify-between gap-2 mb-3">
               <div className="flex items-center gap-1.5 min-w-0">
                 <a
                   href="/"
@@ -234,74 +234,132 @@ export default function EventView({ event: initialEvent }: EventViewProps) {
                 </button>
               )}
             </div>
-            {event.description && (
-              <p className="text-sm text-gray-500 mt-1">{event.description}</p>
-            )}
-            {event.body && (
-              <div className="mt-2">
-                <p className={`text-sm text-gray-500 leading-relaxed whitespace-pre-wrap ${bodyExpanded ? '' : 'line-clamp-3'}`}>
-                  {event.body}
-                </p>
-                {event.body.length > 180 && (
-                  <button
-                    type="button"
-                    onClick={() => setBodyExpanded((v) => !v)}
-                    className="text-xs text-teal-600 hover:text-teal-700 font-medium mt-1 cursor-pointer"
-                  >
-                    {bodyExpanded ? 'Show less' : 'Read more'}
-                  </button>
+
+            {isFixed && event.finalized_time ? (
+              <>
+                {/* Fixed event: prominent date/time/location block */}
+                <div className="bg-teal-50 border border-teal-100 rounded-xl p-3 space-y-2">
+                  <div className="flex items-center gap-2.5">
+                    <svg className="w-4 h-4 text-teal-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
+                    </svg>
+                    <span className="text-sm font-semibold text-gray-900">
+                      {format(new Date(event.finalized_time), 'EEEE, MMMM d, yyyy')}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2.5">
+                    <svg className="w-4 h-4 text-teal-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span className="text-sm font-semibold text-gray-900">
+                      {format(new Date(event.finalized_time), 'h:mm a')}
+                    </span>
+                  </div>
+                  {event.location && (
+                    <div className="flex items-center gap-2.5">
+                      <svg className="w-4 h-4 text-teal-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                      <span className="text-sm text-gray-700">{event.location}</span>
+                    </div>
+                  )}
+                </div>
+                {event.organizer_name && (
+                  <p className="text-xs text-gray-400 mt-2 flex items-center gap-1">
+                    <svg className="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                    {interpolate(copy.event.organized_by, { name: formatDisplayName(event.organizer_name) })}
+                  </p>
                 )}
-              </div>
-            )}
-            <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2">
-              {event.organizer_name && (
-                <span className="flex items-center gap-1 text-xs text-gray-400">
-                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                  </svg>
-                  {interpolate(copy.event.organized_by, { name: formatDisplayName(event.organizer_name) })}
-                </span>
-              )}
-              {event.location && (
-                <span className="flex items-center gap-1 text-xs text-gray-400">
-                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                  {event.location}
-                </span>
-              )}
-              {event.duration_minutes && !isFixed && (
-                <span className="flex items-center gap-1 text-xs text-gray-400">
-                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  {interpolate(copy.event.duration_needed, { duration: event.duration_minutes >= 60
-                    ? `${event.duration_minutes / 60}h`
-                    : `${event.duration_minutes}min` })}
-                </span>
-              )}
-            </div>
-            {event.response_deadline && !isFixed && (
-              <p className={`text-xs mt-1 ${deadlinePassed ? 'text-red-400' : 'text-amber-500'}`}>
-                {deadlinePassed
-                  ? copy.event.deadline_passed
-                  : interpolate(copy.event.respond_by, {
-                      date: format(new Date(event.response_deadline), 'MMM d'),
-                      relative: formatDistanceToNow(new Date(event.response_deadline), { addSuffix: true }),
-                    })}
-              </p>
-            )}
-            {/* Instruction line — different for each mode */}
-            {!isFixed && !event.finalized_time && (
-              <p className="text-sm text-gray-500 mt-2">
-                {copy.event.tap_instruction}
-              </p>
-            )}
-            {isFixed && !event.finalized_time && (
-              <p className="text-sm text-gray-500 mt-2">
-                {copy.rsvp?.heading ?? 'Can you make it?'}
-              </p>
+                {event.description && (
+                  <p className="text-sm text-gray-500 mt-2 leading-relaxed">{event.description}</p>
+                )}
+                {event.body && (
+                  <div className="mt-2">
+                    <p className={`text-sm text-gray-500 leading-relaxed whitespace-pre-wrap ${bodyExpanded ? '' : 'line-clamp-3'}`}>
+                      {event.body}
+                    </p>
+                    {event.body.length > 180 && (
+                      <button
+                        type="button"
+                        onClick={() => setBodyExpanded((v) => !v)}
+                        className="text-xs text-teal-600 hover:text-teal-700 font-medium mt-1 cursor-pointer"
+                      >
+                        {bodyExpanded ? 'Show less' : 'Read more'}
+                      </button>
+                    )}
+                  </div>
+                )}
+              </>
+            ) : (
+              <>
+                {/* Availability event: existing details layout */}
+                {event.description && (
+                  <p className="text-sm text-gray-500 mt-1">{event.description}</p>
+                )}
+                {event.body && (
+                  <div className="mt-2">
+                    <p className={`text-sm text-gray-500 leading-relaxed whitespace-pre-wrap ${bodyExpanded ? '' : 'line-clamp-3'}`}>
+                      {event.body}
+                    </p>
+                    {event.body.length > 180 && (
+                      <button
+                        type="button"
+                        onClick={() => setBodyExpanded((v) => !v)}
+                        className="text-xs text-teal-600 hover:text-teal-700 font-medium mt-1 cursor-pointer"
+                      >
+                        {bodyExpanded ? 'Show less' : 'Read more'}
+                      </button>
+                    )}
+                  </div>
+                )}
+                <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2">
+                  {event.organizer_name && (
+                    <span className="flex items-center gap-1 text-xs text-gray-400">
+                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      </svg>
+                      {interpolate(copy.event.organized_by, { name: formatDisplayName(event.organizer_name) })}
+                    </span>
+                  )}
+                  {event.location && (
+                    <span className="flex items-center gap-1 text-xs text-gray-400">
+                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                      {event.location}
+                    </span>
+                  )}
+                  {event.duration_minutes && (
+                    <span className="flex items-center gap-1 text-xs text-gray-400">
+                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      {interpolate(copy.event.duration_needed, { duration: event.duration_minutes >= 60
+                        ? `${event.duration_minutes / 60}h`
+                        : `${event.duration_minutes}min` })}
+                    </span>
+                  )}
+                </div>
+                {event.response_deadline && (
+                  <p className={`text-xs mt-1 ${deadlinePassed ? 'text-red-400' : 'text-amber-500'}`}>
+                    {deadlinePassed
+                      ? copy.event.deadline_passed
+                      : interpolate(copy.event.respond_by, {
+                          date: format(new Date(event.response_deadline), 'MMM d'),
+                          relative: formatDistanceToNow(new Date(event.response_deadline), { addSuffix: true }),
+                        })}
+                  </p>
+                )}
+                {!event.finalized_time && (
+                  <p className="text-sm text-gray-500 mt-2">
+                    {copy.event.tap_instruction}
+                  </p>
+                )}
+              </>
             )}
           </div>
 

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import { format, addMinutes } from 'date-fns';
 import { useCopy } from '@/contexts/CopyContext';
 import { useRealtimeParticipants } from '@/hooks/useRealtimeParticipants';
 import { formatDisplayName } from '@/lib/names';
@@ -46,6 +47,24 @@ const RSVP_CONFIG = {
   },
 } as const;
 
+function generateICS(event: Event): string {
+  const start = new Date(event.finalized_time!);
+  const end = addMinutes(start, event.duration_minutes || 60);
+  const fmt = (d: Date) => d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+  return [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'BEGIN:VEVENT',
+    `DTSTART:${fmt(start)}`,
+    `DTEND:${fmt(end)}`,
+    `SUMMARY:${event.name}`,
+    event.description ? `DESCRIPTION:${event.description}` : '',
+    event.location ? `LOCATION:${event.location}` : '',
+    'END:VEVENT',
+    'END:VCALENDAR',
+  ].filter(Boolean).join('\r\n');
+}
+
 export default function RSVPView({ event, participantId, isOrganizer, organizerToken }: RSVPViewProps) {
   const copy = useCopy();
   const rsvpCopy = copy.rsvp;
@@ -53,6 +72,7 @@ export default function RSVPView({ event, participantId, isOrganizer, organizerT
   const [saving, setSaving] = useState(false);
   // Optimistic state — highlights the tapped button immediately before real-time confirms
   const [optimisticRsvp, setOptimisticRsvp] = useState<RsvpValue | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const me = participants.find((p) => p.id === participantId);
   const myRsvp: RsvpValue | null = optimisticRsvp ?? me?.rsvp ?? null;
@@ -84,6 +104,43 @@ export default function RSVPView({ event, participantId, isOrganizer, organizerT
     );
   }, [event.id, organizerToken, removeParticipant]);
 
+  const handleDownloadICS = useCallback(() => {
+    const ics = generateICS(event);
+    const blob = new Blob([ics], { type: 'text/calendar' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${event.name.replace(/\s+/g, '-').toLowerCase()}.ics`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [event]);
+
+  const handleCopyDetails = useCallback(async () => {
+    const start = new Date(event.finalized_time!);
+    const end = addMinutes(start, event.duration_minutes || 60);
+    const lines = [
+      event.name,
+      '',
+      format(start, 'EEEE, MMMM d, yyyy'),
+      `${format(start, 'h:mm a')} - ${format(end, 'h:mm a')}`,
+      ...(event.location ? [event.location] : []),
+    ];
+    const text = lines.join('\n');
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.cssText = 'position:fixed;opacity:0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+    }
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }, [event]);
+
   // Group participants by RSVP status
   const going = participants.filter((p) => p.rsvp === 'yes');
   const maybe = participants.filter((p) => p.rsvp === 'maybe');
@@ -97,6 +154,8 @@ export default function RSVPView({ event, participantId, isOrganizer, organizerT
     { value: 'maybe', label: rsvpCopy?.maybe ?? 'Maybe' },
     { value: 'no', label: rsvpCopy?.cant ?? "Can't make it" },
   ];
+
+  const showCalendarActions = event.finalized_time && (myRsvp === 'yes' || myRsvp === 'maybe');
 
   return (
     <div className="space-y-5">
@@ -134,6 +193,47 @@ export default function RSVPView({ event, participantId, isOrganizer, organizerT
           })}
         </div>
       </div>
+
+      {/* Calendar actions — appear once user says they're going or maybe */}
+      {showCalendarActions && (
+        <div className="space-y-2 animate-fade-in">
+          <button
+            type="button"
+            onClick={handleDownloadICS}
+            className="w-full py-2.5 px-4 bg-teal-600 text-white text-sm font-semibold rounded-xl hover:bg-teal-700 shadow-sm transition-all duration-200 active:scale-[0.97] cursor-pointer flex items-center justify-center gap-2"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
+            </svg>
+            Add to Calendar
+          </button>
+          <button
+            type="button"
+            onClick={handleCopyDetails}
+            className={`w-full py-2 px-4 border text-sm font-medium rounded-xl transition-all duration-200 active:scale-[0.97] cursor-pointer flex items-center justify-center gap-2 ${
+              copied
+                ? 'bg-teal-600 border-teal-600 text-white'
+                : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+            }`}
+          >
+            {copied ? (
+              <>
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                </svg>
+                Copied!
+              </>
+            ) : (
+              <>
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.666 3.888A2.25 2.25 0 0013.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 01-.75.75H9.75a.75.75 0 01-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 01-2.25 2.25H6.75A2.25 2.25 0 014.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 011.927-.184" />
+                </svg>
+                Copy event details
+              </>
+            )}
+          </button>
+        </div>
+      )}
 
       {/* Live summary counts */}
       {totalResponded > 0 && (
