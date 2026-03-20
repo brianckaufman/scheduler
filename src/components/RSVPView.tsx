@@ -101,10 +101,11 @@ export default function RSVPView({ event, participantId, isOrganizer, organizerT
   const handleDeleteParticipant = useCallback(async (pid: string) => {
     if (!organizerToken) return;
     removeParticipant(pid);
-    await fetch(
-      `/api/events/${event.id}?organizer_token=${encodeURIComponent(organizerToken)}&participant_id=${encodeURIComponent(pid)}`,
-      { method: 'DELETE' }
-    );
+    await fetch(`/api/events/${event.id}`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ organizer_token: organizerToken, participant_id: pid }),
+    });
   }, [event.id, organizerToken, removeParticipant]);
 
   const handleDownloadICS = useCallback(() => {

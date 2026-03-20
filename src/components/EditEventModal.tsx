@@ -97,10 +97,11 @@ export default function EditEventModal({ event, organizerToken, onClose, onSave,
     setError('');
 
     try {
-      const res = await fetch(
-        `/api/events/${event.id}?organizer_token=${encodeURIComponent(organizerToken)}&delete_event=true`,
-        { method: 'DELETE' }
-      );
+      const res = await fetch(`/api/events/${event.id}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ organizer_token: organizerToken, delete_event: true }),
+      });
 
       if (!res.ok) {
         const data = await res.json();

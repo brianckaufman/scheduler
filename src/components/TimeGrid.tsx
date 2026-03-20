@@ -50,6 +50,11 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
   const [activeDay, setActiveDay] = useState<number>(0);
   const [isMobile, setIsMobile] = useState(false);
 
+  // "Availability saved" one-time confirmation
+  const [showSavedToast, setShowSavedToast] = useState(false);
+  const savedToastTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const hasShownSavedToast = useRef(false);
+
   // Time picker modal (organizer only)
   const [showTimePicker, setShowTimePicker] = useState(false);
 
@@ -66,6 +71,9 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
     window.addEventListener('resize', check);
     return () => window.removeEventListener('resize', check);
   }, []);
+
+  // Clean up toast timer on unmount
+  useEffect(() => () => clearTimeout(savedToastTimer.current), []);
 
   const durationMinutes = event.duration_minutes || 30;
 
@@ -186,7 +194,14 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
         const { error } = await supabase.from('availability_slots').insert({
           event_id: event.id, participant_id: participantId, slot_start: slotKey,
         });
-        if (error) setPendingAdds((prev) => { const n = new Set(prev); n.delete(slotKey); return n; });
+        if (error) {
+          setPendingAdds((prev) => { const n = new Set(prev); n.delete(slotKey); return n; });
+        } else if (!hasShownSavedToast.current) {
+          hasShownSavedToast.current = true;
+          setShowSavedToast(true);
+          clearTimeout(savedToastTimer.current);
+          savedToastTimer.current = setTimeout(() => setShowSavedToast(false), 3000);
+        }
       }
     },
     [mySlots, allSlots, participantId, event.id]
@@ -257,10 +272,11 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
     removeParticipant(pid);
     removeSlotsForParticipant(pid);
 
-    const res = await fetch(
-      `/api/events/${event.id}?organizer_token=${encodeURIComponent(organizerToken)}&participant_id=${encodeURIComponent(pid)}`,
-      { method: 'DELETE' }
-    );
+    const res = await fetch(`/api/events/${event.id}`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ organizer_token: organizerToken, participant_id: pid }),
+    });
     if (!res.ok) {
       console.error('Failed to delete participant');
     }
@@ -286,7 +302,8 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
     <div className="space-y-6" onMouseUp={handleDragEnd} onMouseLeave={handleDragEnd}>
       {/* Always-visible status notice */}
       {overlapStatus === 'waiting' && !event.finalized_time && (
-        <div className="animate-fade-in bg-gray-50 rounded-xl px-4 py-3 flex items-center justify-center gap-3 text-sm text-gray-500">
+        <div className="animate-fade-in bg-gray-50 rounded-xl px-4 py-3 space-y-2">
+        <div className="flex items-center justify-center gap-3 text-sm text-gray-500">
           <style>{`
             @keyframes person-arrive {
               0%, 15%  { opacity: 0.15; transform: translateY(2px) scale(0.85); }
@@ -312,10 +329,19 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
           </div>
           {copy.grid.waiting}
         </div>
+        {isOrganizer && (
+          <p className="text-center text-xs text-gray-400">
+            Share the link above so everyone can mark their availability.
+          </p>
+        )}
+        </div>
       )}
       {overlapStatus === 'none' && !event.finalized_time && (
         <div className="animate-fade-in bg-amber-50 rounded-xl p-4 text-center text-sm text-amber-700">
           {copy.grid.no_overlap}
+          {isOrganizer && (
+            <p className="text-xs text-amber-600 mt-1">Consider expanding the date range or time window.</p>
+          )}
         </div>
       )}
       {overlapStatus === 'found' && !event.finalized_time && (
@@ -360,7 +386,7 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
       )}
 
       {/* Timezone indicator */}
-      <div className="flex items-center justify-center gap-1.5 text-xs text-gray-400">
+      <div className="flex items-center justify-center gap-1.5 text-xs font-medium text-gray-500 bg-gray-50 rounded-lg px-3 py-1.5 self-center mx-auto">
         <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
@@ -392,7 +418,7 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
                 <button
                   type="button"
                   onClick={() => handleDayToggle(date)}
-                  className="mt-1 text-xs text-teal-500 hover:text-teal-700 font-medium cursor-pointer"
+                  className="mt-1 min-h-[32px] min-w-[44px] text-xs text-teal-500 hover:text-teal-700 font-medium cursor-pointer flex items-center justify-center mx-auto"
                 >
                   {allSelected ? copy.grid.clear : copy.grid.all}
                 </button>
@@ -579,7 +605,7 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
                       handleDeleteParticipant(p.id);
                     }
                   }}
-                  className="ml-0.5 text-gray-300 hover:text-red-500 transition-colors cursor-pointer"
+                  className="ml-0.5 text-gray-400 hover:text-red-500 transition-colors cursor-pointer"
                   title={`Remove ${formatDisplayName(p.name)}`}
                 >
                   <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -636,6 +662,18 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
           </button>
         )}
       </div>
+
+      {/* "Availability saved" floating toast — shows once on first slot selection */}
+      {showSavedToast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 pointer-events-none animate-fade-in-scale">
+          <div className="flex items-center gap-2 px-4 py-2.5 bg-gray-900 text-white text-sm font-medium rounded-full shadow-lg whitespace-nowrap">
+            <svg className="w-4 h-4 text-teal-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+            </svg>
+            Availability saved
+          </div>
+        </div>
+      )}
     </div>
   );
 }

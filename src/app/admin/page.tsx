@@ -746,6 +746,15 @@ export default function AdminDashboard() {
             />
             <span className="text-sm text-gray-700">Show after availability submitted (&quot;all set&quot; moment)</span>
           </label>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={settings.monetization.show_on_rsvp !== false}
+              onChange={(e) => updateSection('monetization', 'show_on_rsvp', e.target.checked)}
+              className="w-4 h-4 rounded border-gray-300 text-teal-500 focus:ring-teal-400"
+            />
+            <span className="text-sm text-gray-700">Show after RSVP submitted (fixed-date events)</span>
+          </label>
           <p className={helpClass}>Control where donation prompts appear. The &quot;all set&quot; moment is the highest-conversion placement — users just got value and feel grateful.</p>
         </div>
       )}

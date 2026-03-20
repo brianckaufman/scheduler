@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /api/
+
+# Event pages are intentionally accessible but not indexed
+# (they're shared via private links, not meant to be discovered)
+Disallow: /e/

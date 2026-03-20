@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { format, formatDistanceToNow, isPast } from 'date-fns';
-import { createClient } from '@/lib/supabase/client';
 import { useCopy, interpolate } from '@/contexts/CopyContext';
 import { useBranding } from '@/contexts/BrandingContext';
 import { optimizedLogoUrl } from '@/lib/image';
@@ -39,38 +38,23 @@ export default function ParticipantEntry({ event, onJoin }: ParticipantEntryProp
     setLoading(true);
     setError('');
 
-    // Sanitize: strip any HTML tags, limit length
-    const safeName = name.trim().replace(/<[^>]*>/g, '').slice(0, 50);
-    if (!safeName) {
+    const trimmed = name.trim();
+    if (!trimmed) {
       setError(copy.onboarding.error_name);
       setLoading(false);
       return;
     }
 
-    const supabase = createClient();
+    const res = await fetch('/api/participants', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ event_id: event.id, name: trimmed }),
+    });
 
-    // Check participant limit before joining
-    if (event.max_participants) {
-      const { count } = await supabase
-        .from('participants')
-        .select('*', { count: 'exact', head: true })
-        .eq('event_id', event.id);
+    const data = await res.json();
 
-      if (count !== null && count >= event.max_participants) {
-        setError(`This event is full (max ${event.max_participants} participants).`);
-        setLoading(false);
-        return;
-      }
-    }
-
-    const { data, error: err } = await supabase
-      .from('participants')
-      .insert({ event_id: event.id, name: safeName })
-      .select()
-      .single();
-
-    if (err || !data) {
-      setError('Failed to join. Please try again.');
+    if (!res.ok) {
+      setError(data.error || 'Failed to join. Please try again.');
       setLoading(false);
       return;
     }

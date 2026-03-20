@@ -71,7 +71,7 @@ export function useRealtimeSlots(eventId: string) {
       )
       .subscribe((status: string, err?: Error) => {
         if (status === 'SUBSCRIBED') {
-          console.log('[RealtimeSlots] subscribed to', eventId);
+          // connected
         } else if (status === 'CHANNEL_ERROR') {
           console.error('[RealtimeSlots] channel error:', err);
           // Attempt to refetch on error

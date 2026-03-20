@@ -1,7 +1,14 @@
 /**
  * Simple in-memory rate limiter for API routes.
  * Tracks requests by IP address with a sliding window.
- * Resets on server restart (fine for Vercel serverless — each cold start clears).
+ *
+ * Limitation: Vercel runs multiple serverless function instances in parallel,
+ * so this store is not shared across instances — each instance has its own counter.
+ * This catches burst abuse within a single instance but not distributed abuse.
+ *
+ * To upgrade for production scale, replace this store with Vercel KV (Redis):
+ *   https://vercel.com/docs/storage/vercel-kv
+ * Use `kv.incr` + `kv.expire` for atomic, cross-instance rate limiting.
  */
 
 interface RateLimitEntry {

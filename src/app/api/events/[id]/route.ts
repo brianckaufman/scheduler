@@ -149,12 +149,16 @@ export async function DELETE(
     return NextResponse.json({ error: 'Invalid event ID' }, { status: 400 });
   }
 
-  const { searchParams } = new URL(request.url);
-  const organizer_token = searchParams.get('organizer_token');
-  const participant_id = searchParams.get('participant_id');
-  const delete_event = searchParams.get('delete_event');
+  let body: { organizer_token?: string; participant_id?: string; delete_event?: boolean | string } = {};
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
+  }
 
-  if (!organizer_token) {
+  const { organizer_token, participant_id, delete_event } = body;
+
+  if (!organizer_token || typeof organizer_token !== 'string') {
     return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 });
   }
 
@@ -172,7 +176,7 @@ export async function DELETE(
   }
 
   // Delete entire event
-  if (delete_event === 'true') {
+  if (delete_event === true || delete_event === 'true') {
     // Delete availability_slots, then participants, then event
     await supabase.from('availability_slots').delete().eq('event_id', id);
     await supabase.from('participants').delete().eq('event_id', id);

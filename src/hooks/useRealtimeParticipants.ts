@@ -64,7 +64,7 @@ export function useRealtimeParticipants(eventId: string) {
       )
       .subscribe((status: string, err?: Error) => {
         if (status === 'SUBSCRIBED') {
-          console.log('[RealtimeParticipants] subscribed to', eventId);
+          // connected
         } else if (status === 'CHANNEL_ERROR') {
           console.error('[RealtimeParticipants] channel error:', err);
           fetchParticipants();

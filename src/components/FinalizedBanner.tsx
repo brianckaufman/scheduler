@@ -48,17 +48,26 @@ function getGoogleCalendarUrl(event: Event): string {
   return `https://calendar.google.com/calendar/render?${params}`;
 }
 
-function buildConfirmationText(event: Event): string {
+function buildConfirmationText(event: Event, forOrganizer: boolean): string {
   const start = new Date(event.finalized_time!);
   const end = addMinutes(start, event.duration_minutes || 60);
 
   const lines: string[] = [];
-  lines.push(`${event.name} is confirmed!`);
-  lines.push('');
-  lines.push(`Date: ${format(start, 'EEEE, MMMM d, yyyy')}`);
-  lines.push(`Time: ${format(start, 'h:mm a')} - ${format(end, 'h:mm a')}`);
+  if (forOrganizer) {
+    lines.push(`Hey everyone! We've locked in a time for ${event.name}.`);
+    lines.push('');
+  } else {
+    lines.push(`${event.name} is confirmed!`);
+    lines.push('');
+  }
+  lines.push(`📅 ${format(start, 'EEEE, MMMM d, yyyy')}`);
+  lines.push(`🕐 ${format(start, 'h:mm a')} – ${format(end, 'h:mm a')}`);
   if (event.location) {
-    lines.push(`Location: ${event.location}`);
+    lines.push(`📍 ${event.location}`);
+  }
+  if (forOrganizer) {
+    lines.push('');
+    lines.push('Add it to your calendar and I\'ll see you there!');
   }
 
   return lines.join('\n');
@@ -80,7 +89,7 @@ export default function FinalizedBanner({ event, isOrganizer, organizerToken, on
   };
 
   const handleCopyDetails = async () => {
-    const text = buildConfirmationText(event);
+    const text = buildConfirmationText(event, isOrganizer);
     try {
       await navigator.clipboard.writeText(text);
       setCopied(true);
@@ -161,7 +170,7 @@ export default function FinalizedBanner({ event, isOrganizer, organizerToken, on
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M15.666 3.888A2.25 2.25 0 0013.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 01-.75.75H9.75a.75.75 0 01-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 01-2.25 2.25H6.75A2.25 2.25 0 014.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 011.927-.184" />
             </svg>
-            Copy event details
+            {isOrganizer ? 'Copy message to share with group' : 'Copy event details'}
           </>
         )}
       </button>
