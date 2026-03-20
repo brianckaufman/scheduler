@@ -12,7 +12,6 @@ import { useRealtimeParticipants } from '@/hooks/useRealtimeParticipants';
 import TimeGridSlot, { PARTICIPANT_COLORS } from './TimeGridSlot';
 import BestTimes from './BestTimes';
 import SlotTooltip from './SlotTooltip';
-import UndoToast from './UndoToast';
 import { getTimezoneLabel } from '@/lib/timezones';
 import type { Event } from '@/types';
 
@@ -46,13 +45,6 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
   const [isDragging, setIsDragging] = useState(false);
   const [dragMode, setDragMode] = useState<'add' | 'remove'>('add');
   const draggedSlots = useRef<Set<string>>(new Set());
-
-  // Undo toast for drag operations
-  const [undoToast, setUndoToast] = useState<{
-    message: string;
-    slots: string[];
-    mode: 'add' | 'remove';
-  } | null>(null);
 
   // Mobile day tabs
   const [activeDay, setActiveDay] = useState<number>(0);
@@ -223,30 +215,9 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
   }, [isDragging, dragMode, toggleSlot]);
 
   const handleDragEnd = useCallback(() => {
-    // Show undo toast if multiple slots were dragged
-    if (isDragging && draggedSlots.current.size > 1) {
-      const count = draggedSlots.current.size;
-      const slotsArray = Array.from(draggedSlots.current);
-      const mode = dragMode;
-      setUndoToast({
-        message: `${count} time${count !== 1 ? 's' : ''} ${mode === 'add' ? 'selected' : 'deselected'}`,
-        slots: slotsArray,
-        mode,
-      });
-    }
     setIsDragging(false);
     draggedSlots.current = new Set();
-  }, [isDragging, dragMode]);
-
-  // Undo handler
-  const handleUndo = useCallback(() => {
-    if (!undoToast) return;
-    const reverseMode = undoToast.mode === 'add' ? 'remove' : 'add';
-    for (const slotKey of undoToast.slots) {
-      toggleSlot(slotKey, reverseMode);
-    }
-    setUndoToast(null);
-  }, [undoToast, toggleSlot]);
+  }, [isDragging]);
 
   const gridRef = useRef<HTMLDivElement>(null);
 
@@ -388,33 +359,8 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
         </div>
       )}
 
-      {/* Tap instruction + optional block-size note */}
-      {!event.finalized_time && (
-        <div className="flex items-start gap-1.5 text-xs text-teal-700 bg-teal-50 border border-teal-100 rounded-lg px-3 py-2">
-          <svg className="w-3.5 h-3.5 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15.042 21.672L13.684 16.6m0 0l-2.51 2.225.569-9.47 5.227 7.917-3.286-.672zM12 2.25V4.5m5.834.166l-1.591 1.591M20.25 10.5H18M7.757 14.743l-1.59 1.59M6 10.5H3.75m4.007-4.243l-1.59-1.59" />
-          </svg>
-          <span>
-            {copy.event.tap_instruction}
-            {durationMinutes > 30 && (
-              <>
-                {' '}Each slot is a{' '}
-                <strong>
-                  {durationMinutes < 60
-                    ? `${durationMinutes}-minute`
-                    : durationMinutes % 60 === 0
-                      ? `${durationMinutes / 60}-hour`
-                      : `${Math.floor(durationMinutes / 60)}h ${durationMinutes % 60}m`}
-                </strong>
-                {' '}block.
-              </>
-            )}
-          </span>
-        </div>
-      )}
-
       {/* Timezone indicator */}
-      <div className="flex items-center gap-1.5 text-xs text-gray-400">
+      <div className="flex items-center justify-center gap-1.5 text-xs text-gray-400">
         <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
@@ -428,7 +374,7 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
         <div
           className="grid gap-1 pb-1"
           style={{
-            gridTemplateColumns: `auto repeat(${visibleDates.length}, minmax(60px, 1fr))`,
+            gridTemplateColumns: `56px repeat(${visibleDates.length}, minmax(60px, 1fr))`,
           }}
         >
           {/* Sticky header row */}
@@ -465,15 +411,22 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
               return mm === 0 ? `${h12} ${ap}` : `${h12}:${mm.toString().padStart(2, '0')} ${ap}`;
             };
 
-            const label = fmtCompact(h, m);
+            const startLabel = fmtCompact(h, m);
+            const endTotalMin = h * 60 + m + durationMinutes;
+            const endH = Math.floor(endTotalMin / 60) % 24;
+            const endM = endTotalMin % 60;
+            const endLabel = fmtCompact(endH, endM);
 
             return [
               <div
                 key={`label-${time}`}
                 style={{ minHeight: `${cellHeight}px` }}
-                className="text-xs leading-tight text-gray-500 flex items-center justify-end pr-2 sticky left-0 bg-white z-10 whitespace-nowrap"
+                className="flex flex-col items-center justify-center sticky left-0 bg-white z-10"
               >
-                {label}
+                <span className="text-xs font-medium text-gray-600 leading-tight">{startLabel}</span>
+                {slotStep > 15 && (
+                  <span className="text-xs text-gray-400 leading-tight">{endLabel}</span>
+                )}
               </div>,
               ...visibleDates.map((date) => {
                 const slotKey = slotGrid.get(`${date}|${time}`);
@@ -531,15 +484,6 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
           overlapMap={overlapMap}
           participants={participants}
           onClose={() => setTooltipSlot(null)}
-        />
-      )}
-
-      {/* Undo toast */}
-      {undoToast && (
-        <UndoToast
-          message={undoToast.message}
-          onUndo={handleUndo}
-          onDismiss={() => setUndoToast(null)}
         />
       )}
 
