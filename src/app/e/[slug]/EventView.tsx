@@ -356,11 +356,6 @@ export default function EventView({ event: initialEvent }: EventViewProps) {
                         })}
                   </p>
                 )}
-                {!event.finalized_time && (
-                  <p className="text-sm text-gray-500 mt-2">
-                    {copy.event.tap_instruction}
-                  </p>
-                )}
               </>
             )}
           </div>
