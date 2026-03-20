@@ -491,9 +491,19 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
                 onChange={(e) => setFixedEndTime(e.target.value)}
                 className={selectClass}
               >
-                {TIME_OPTIONS.filter((t) => t > fixedTime).map((t) => (
-                  <option key={t} value={t}>{formatTimeLabel(t)}</option>
-                ))}
+                {TIME_OPTIONS.filter((t) => t > fixedTime).map((t) => {
+                  const [sh, sm] = fixedTime.split(':').map(Number);
+                  const [eh, em] = t.split(':').map(Number);
+                  const mins = (eh * 60 + em) - (sh * 60 + sm);
+                  const durLabel = mins < 60
+                    ? `${mins} min`
+                    : mins % 60 === 0
+                      ? `${mins / 60} hr`
+                      : `${Math.floor(mins / 60)}.5 hr`;
+                  return (
+                    <option key={t} value={t}>{formatTimeLabel(t)} ({durLabel})</option>
+                  );
+                })}
               </select>
             </div>
           </div>
