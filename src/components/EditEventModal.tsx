@@ -161,12 +161,7 @@ export default function EditEventModal({ event, organizerToken, onClose, onSave,
                 onChange={setBody}
                 placeholder="Agenda, directions, what to bring, dress code…"
                 minHeight={90}
-                eventContext={{
-                  name,
-                  eventType: event.event_type,
-                  location,
-                  description,
-                }}
+
               />
             </Suspense>
           </div>

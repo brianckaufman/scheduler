@@ -559,7 +559,6 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
                       onChange={setBody}
                       placeholder="Add more context, agenda, directions, or anything guests should know…"
                       minHeight={100}
-                      eventContext={{ name, eventType: 'fixed', location, description }}
                     />
                   </Suspense>
                 </div>
@@ -713,7 +712,6 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
                       onChange={setBody}
                       placeholder="Add more context, agenda, directions, or anything guests should know…"
                       minHeight={100}
-                      eventContext={{ name, eventType: 'availability', location, description }}
                     />
                   </Suspense>
                 </div>
