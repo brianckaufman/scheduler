@@ -91,10 +91,18 @@ CREATE POLICY "participants_update" ON participants FOR UPDATE USING (true);
 CREATE INDEX IF NOT EXISTS idx_participants_event_rsvp ON participants(event_id, rsvp);
 
 -- ─────────────────────────────────────────────────────────────────────────────
--- Migration: Long-form body copy field
+-- Migration: Long-form body copy field + flexible duration
 -- ─────────────────────────────────────────────────────────────────────────────
 
 -- 5. Add body column to events (long-form description, up to 5000 chars)
 ALTER TABLE events
   ADD COLUMN IF NOT EXISTS body TEXT
   CHECK (body IS NULL OR char_length(body) <= 5000);
+
+-- 6. Widen duration_minutes constraint to allow any value 1–1440 min (24 h).
+--    Previously restricted to a fixed set; now start/end time drives duration.
+ALTER TABLE events
+  DROP CONSTRAINT IF EXISTS events_duration_minutes_check;
+ALTER TABLE events
+  ADD CONSTRAINT events_duration_minutes_check
+  CHECK (duration_minutes > 0 AND duration_minutes <= 1440);
