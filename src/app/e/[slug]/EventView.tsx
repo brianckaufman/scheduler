@@ -392,6 +392,7 @@ export default function EventView({ event: initialEvent }: EventViewProps) {
               cta={monetization.donation_cta}
               message={monetization.donation_message}
               variant="banner"
+              sessionKey="support_nudge_avail"
             />
           </div>
         )}

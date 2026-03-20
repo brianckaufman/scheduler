@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { useBranding } from '@/contexts/BrandingContext';
 
 interface SupportBannerProps {
@@ -11,6 +12,8 @@ interface SupportBannerProps {
   message?: string;
   /** Visual variant */
   variant?: 'inline' | 'banner' | 'compact';
+  /** sessionStorage key — if set, banner shows only once per session */
+  sessionKey?: string;
 }
 
 /**
@@ -25,10 +28,22 @@ export default function SupportBanner({
   cta,
   message,
   variant = 'inline',
+  sessionKey,
 }: SupportBannerProps) {
   const branding = useBranding();
+  const [visible, setVisible] = useState(!sessionKey);
 
-  if (!url) return null;
+  useEffect(() => {
+    if (!sessionKey) return;
+    if (sessionStorage.getItem(sessionKey)) {
+      setVisible(false);
+    } else {
+      sessionStorage.setItem(sessionKey, '1');
+      setVisible(true);
+    }
+  }, [sessionKey]);
+
+  if (!url || !visible) return null;
 
   // ── Compact pill ──────────────────────────────────────────────
   if (variant === 'compact') {

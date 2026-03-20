@@ -159,6 +159,7 @@ export interface SiteSettings {
     show_on_home: boolean;
     show_on_event: boolean;
     show_on_success: boolean;
+    show_on_rsvp: boolean;
   };
   analytics: {
     ga_id: string;
@@ -351,10 +352,11 @@ export const DEFAULT_SETTINGS: SiteSettings = {
   monetization: {
     buymeacoffee_url: '',
     donation_cta: 'Buy me a coffee ☕',
-    donation_message: 'Love this app? Help keep it free!',
+    donation_message: 'If this saved you some back-and-forth, consider supporting the app!',
     show_on_home: true,
     show_on_event: true,
     show_on_success: true,
+    show_on_rsvp: true,
   },
   analytics: {
     ga_id: '',

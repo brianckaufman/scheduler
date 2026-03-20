@@ -173,10 +173,11 @@ export default async function RootLayout({
             monetization={{
               buymeacoffee_url: settings.monetization.buymeacoffee_url || '',
               donation_cta: settings.monetization.donation_cta || 'Buy me a coffee ☕',
-              donation_message: settings.monetization.donation_message || 'Love this app? Help keep it free!',
+              donation_message: settings.monetization.donation_message || 'If this saved you some back-and-forth, consider supporting the app!',
               show_on_home: settings.monetization.show_on_home !== false,
               show_on_event: settings.monetization.show_on_event !== false,
               show_on_success: settings.monetization.show_on_success !== false,
+              show_on_rsvp: settings.monetization.show_on_rsvp !== false,
             }}
           >
             <CopyProvider copy={settings.copy}>

@@ -3,6 +3,8 @@
 import { useState, useCallback } from 'react';
 import { format, addMinutes } from 'date-fns';
 import { useCopy } from '@/contexts/CopyContext';
+import { useMonetization } from '@/contexts/MonetizationContext';
+import SupportBanner from './SupportBanner';
 import { useRealtimeParticipants } from '@/hooks/useRealtimeParticipants';
 import { formatDisplayName } from '@/lib/names';
 import type { Event, RsvpValue } from '@/types';
@@ -67,6 +69,7 @@ function generateICS(event: Event): string {
 
 export default function RSVPView({ event, participantId, isOrganizer, organizerToken }: RSVPViewProps) {
   const copy = useCopy();
+  const monetization = useMonetization();
   const rsvpCopy = copy.rsvp;
   const { participants, removeParticipant } = useRealtimeParticipants(event.id);
   const [saving, setSaving] = useState(false);
@@ -331,6 +334,17 @@ export default function RSVPView({ event, participantId, isOrganizer, organizerT
           </div>
         )}
       </div>
+
+      {/* Support nudge — shown once per session after user responds */}
+      {myRsvp && monetization.buymeacoffee_url && monetization.show_on_rsvp && (
+        <SupportBanner
+          url={monetization.buymeacoffee_url}
+          cta={monetization.donation_cta}
+          message={monetization.donation_message}
+          variant="banner"
+          sessionKey="support_nudge_rsvp"
+        />
+      )}
     </div>
   );
 }
