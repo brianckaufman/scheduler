@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { generateSlug, generateToken } from '@/lib/nanoid';
 import { checkRateLimit } from '@/lib/rate-limit';
-import { sanitizeText, sanitizeName, isValidTime, isValidDate, isValidTimezone } from '@/lib/sanitize';
+import { sanitizeText, sanitizeName, sanitizeHtml, isValidTime, isValidDate, isValidTimezone } from '@/lib/sanitize';
 
 function getClientIp(request: NextRequest): string {
   return (
@@ -137,7 +137,7 @@ export async function POST(request: NextRequest) {
   // --- Sanitize text inputs ---
   const safeName = sanitizeText(name, 100);
   const safeDescription = description ? sanitizeText(description, 500) : null;
-  const safeBody = bodyText ? sanitizeText(bodyText, 5000) : null;
+  const safeBody = bodyText ? sanitizeHtml(bodyText) : null;
   const safeOrganizerName = organizerName ? sanitizeName(organizerName) : null;
   const safeLocation = location ? sanitizeText(location, 100) : null;
 

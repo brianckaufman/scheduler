@@ -8,6 +8,30 @@ export function stripHtml(input: string): string {
   return input.replace(/<[^>]*>/g, '');
 }
 
+/**
+ * Sanitize rich-text HTML for safe storage and display.
+ * Allows only the tags Tiptap generates; strips scripts, event handlers,
+ * javascript: hrefs, and any other potentially dangerous content.
+ * Max 50 000 characters (well beyond any reasonable event description).
+ */
+export function sanitizeHtml(input: string): string {
+  return input
+    // Remove script / iframe / object / form / style blocks entirely
+    .replace(/<script[\s\S]*?<\/script>/gi, '')
+    .replace(/<iframe[\s\S]*?<\/iframe>/gi, '')
+    .replace(/<object[\s\S]*?<\/object>/gi, '')
+    .replace(/<form[\s\S]*?<\/form>/gi, '')
+    .replace(/<style[\s\S]*?<\/style>/gi, '')
+    // Strip inline event handlers (onclick, onerror, etc.)
+    .replace(/\s+on\w+\s*=\s*"[^"]*"/gi, '')
+    .replace(/\s+on\w+\s*=\s*'[^']*'/gi, '')
+    // Neutralize javascript: in href/src
+    .replace(/(href|src)\s*=\s*["']?\s*javascript:[^"'\s>]*/gi, '$1="#"')
+    // Enforce max length
+    .trim()
+    .slice(0, 50_000);
+}
+
 /** Sanitize a text field: trim, strip HTML, enforce max length */
 export function sanitizeText(input: string, maxLength: number = 200): string {
   return stripHtml(input).trim().slice(0, maxLength);

@@ -242,3 +242,31 @@
 .confetti-particle {
   animation: confetti-fall 1.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
 }
+
+/* === Tiptap / RichText styles === */
+
+/* Editor writing area */
+.prose-editor p { margin: 0.35rem 0; }
+.prose-editor ul { list-style: disc; padding-left: 1.25rem; margin: 0.35rem 0; }
+.prose-editor ol { list-style: decimal; padding-left: 1.25rem; margin: 0.35rem 0; }
+.prose-editor li { margin: 0.1rem 0; }
+.prose-editor strong { font-weight: 600; }
+.prose-editor em { font-style: italic; }
+.prose-editor a { color: #0d9488; text-decoration: underline; }
+.prose-editor p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  color: #9ca3af;
+  pointer-events: none;
+  float: left;
+  height: 0;
+}
+
+/* Rich text display (read-only) */
+.rich-text-display p   { margin: 0.3rem 0; }
+.rich-text-display ul  { list-style: disc; padding-left: 1.25rem; margin: 0.3rem 0; }
+.rich-text-display ol  { list-style: decimal; padding-left: 1.25rem; margin: 0.3rem 0; }
+.rich-text-display li  { margin: 0.1rem 0; }
+.rich-text-display strong { font-weight: 600; }
+.rich-text-display em  { font-style: italic; }
+.rich-text-display a   { color: #0d9488; text-decoration: underline; }
+.rich-text-display a:hover { color: #0f766e; }

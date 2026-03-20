@@ -20,6 +20,7 @@ import BookmarkPrompt from '@/components/BookmarkPrompt';
 import ConfettiCelebration from '@/components/ConfettiCelebration';
 import { useCreatedEvents } from '@/hooks/useCreatedEvents';
 import { optimizedLogoUrl } from '@/lib/image';
+import RichTextDisplay from '@/components/RichTextDisplay';
 import { formatDisplayName, firstName } from '@/lib/names';
 import type { Event } from '@/types';
 
@@ -44,7 +45,6 @@ export default function EventView({ event: initialEvent }: EventViewProps) {
   const [justJoined, setJustJoined] = useState(false);
   const [hasSelections, setHasSelections] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
-  const [bodyExpanded, setBodyExpanded] = useState(false);
   const [participantName, setParticipantName] = useState(() => {
     try {
       const stored = typeof window !== 'undefined'
@@ -278,45 +278,15 @@ export default function EventView({ event: initialEvent }: EventViewProps) {
                 {event.description && (
                   <p className="text-sm text-gray-500 mt-2 leading-relaxed">{event.description}</p>
                 )}
-                {event.body && (
-                  <div className="mt-2">
-                    <p className={`text-sm text-gray-500 leading-relaxed whitespace-pre-wrap ${bodyExpanded ? '' : 'line-clamp-3'}`}>
-                      {event.body}
-                    </p>
-                    {event.body.length > 180 && (
-                      <button
-                        type="button"
-                        onClick={() => setBodyExpanded((v) => !v)}
-                        className="text-xs text-teal-600 hover:text-teal-700 font-medium mt-1 cursor-pointer"
-                      >
-                        {bodyExpanded ? 'Show less' : 'Read more'}
-                      </button>
-                    )}
-                  </div>
-                )}
+                {event.body && <RichTextDisplay html={event.body} />}
               </>
             ) : (
               <>
-                {/* Availability event: existing details layout */}
+                {/* Availability event */}
                 {event.description && (
                   <p className="text-sm text-gray-500 mt-1">{event.description}</p>
                 )}
-                {event.body && (
-                  <div className="mt-2">
-                    <p className={`text-sm text-gray-500 leading-relaxed whitespace-pre-wrap ${bodyExpanded ? '' : 'line-clamp-3'}`}>
-                      {event.body}
-                    </p>
-                    {event.body.length > 180 && (
-                      <button
-                        type="button"
-                        onClick={() => setBodyExpanded((v) => !v)}
-                        className="text-xs text-teal-600 hover:text-teal-700 font-medium mt-1 cursor-pointer"
-                      >
-                        {bodyExpanded ? 'Show less' : 'Read more'}
-                      </button>
-                    )}
-                  </div>
-                )}
+                {event.body && <RichTextDisplay html={event.body} />}
                 <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2">
                   {event.organizer_name && (
                     <span className="flex items-center gap-1 text-xs text-gray-400">

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { sendPushNotifications } from '@/lib/push';
-import { sanitizeText, sanitizeName } from '@/lib/sanitize';
+import { sanitizeText, sanitizeName, sanitizeHtml } from '@/lib/sanitize';
 
 function getClientIp(request: NextRequest): string {
   return (
@@ -106,6 +106,9 @@ export async function PATCH(
     } else if (typeof val === 'number' && val >= 2 && val <= 1000) {
       safeUpdate.max_participants = val;
     }
+  }
+  if ('body' in updates) {
+    safeUpdate.body = updates.body ? sanitizeHtml(String(updates.body)) : null;
   }
 
   if (Object.keys(safeUpdate).length === 0) {

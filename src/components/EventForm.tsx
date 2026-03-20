@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, lazy, Suspense } from 'react';
+const RichTextEditor = lazy(() => import('@/components/RichTextEditor'));
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useCopy } from '@/contexts/CopyContext';
 import { useCreatedEvents, saveUserDisplayName, getUserDisplayName } from '@/hooks/useCreatedEvents';
@@ -549,21 +550,18 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
                 </div>
 
                 <div>
-                  <label htmlFor="bodyFixed" className="block text-sm font-medium text-gray-700 mb-1.5">
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
                     Additional Details <span className="text-gray-400 font-normal">(optional)</span>
                   </label>
-                  <textarea
-                    id="bodyFixed"
-                    value={body}
-                    onChange={(e) => setBody(e.target.value)}
-                    placeholder="Add more context, agenda, directions, or any extra info guests should know..."
-                    className={`${inputClass} resize-none`}
-                    maxLength={5000}
-                    rows={3}
-                  />
-                  {body.length > 0 && (
-                    <p className="text-[11px] text-gray-400 mt-1 text-right">{body.length}/5000</p>
-                  )}
+                  <Suspense fallback={<div className="h-32 rounded-xl border border-gray-300 bg-gray-50 animate-pulse" />}>
+                    <RichTextEditor
+                      value={body}
+                      onChange={setBody}
+                      placeholder="Add more context, agenda, directions, or anything guests should know…"
+                      minHeight={100}
+                      eventContext={{ name, eventType: 'fixed', location, description }}
+                    />
+                  </Suspense>
                 </div>
               </div>
             )}
@@ -706,21 +704,18 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
                 </div>
 
                 <div>
-                  <label htmlFor="body" className="block text-sm font-medium text-gray-700 mb-1.5">
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
                     Additional Details <span className="text-gray-400 font-normal">(optional)</span>
                   </label>
-                  <textarea
-                    id="body"
-                    value={body}
-                    onChange={(e) => setBody(e.target.value)}
-                    placeholder="Add more context, agenda, directions, or any extra info guests should know..."
-                    className={`${inputClass} resize-none`}
-                    maxLength={5000}
-                    rows={3}
-                  />
-                  {body.length > 0 && (
-                    <p className="text-[11px] text-gray-400 mt-1 text-right">{body.length}/5000</p>
-                  )}
+                  <Suspense fallback={<div className="h-32 rounded-xl border border-gray-300 bg-gray-50 animate-pulse" />}>
+                    <RichTextEditor
+                      value={body}
+                      onChange={setBody}
+                      placeholder="Add more context, agenda, directions, or anything guests should know…"
+                      minHeight={100}
+                      eventContext={{ name, eventType: 'availability', location, description }}
+                    />
+                  </Suspense>
                 </div>
               </div>
             )}

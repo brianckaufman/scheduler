@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, lazy, Suspense } from 'react';
 import { format, addDays } from 'date-fns';
 import type { Event } from '@/types';
+const RichTextEditor = lazy(() => import('@/components/RichTextEditor'));
 
 const DURATION_OPTIONS = [
   { value: 10, label: '10 min' },
@@ -29,6 +30,7 @@ type DeleteStep = 'idle' | 'confirm' | 'typing';
 export default function EditEventModal({ event, organizerToken, onClose, onSave, onDelete }: EditEventModalProps) {
   const [name, setName] = useState(event.name);
   const [description, setDescription] = useState(event.description || '');
+  const [body, setBody] = useState(event.body || '');
   const [organizerName, setOrganizerName] = useState(event.organizer_name || '');
   const [location, setLocation] = useState(event.location || '');
   const [durationMinutes, setDurationMinutes] = useState(event.duration_minutes);
@@ -68,6 +70,7 @@ export default function EditEventModal({ event, organizerToken, onClose, onSave,
           organizer_token: organizerToken,
           name: name.trim(),
           description: description.trim() || null,
+          body: body.trim() || null,
           organizer_name: organizerName.trim(),
           location: location.trim() || null,
           duration_minutes: durationMinutes,
@@ -143,9 +146,29 @@ export default function EditEventModal({ event, organizerToken, onClose, onSave,
               className={inputClass} maxLength={100} required />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Description</label>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Short description</label>
             <input type="text" value={description} onChange={(e) => setDescription(e.target.value)}
-              className={inputClass} maxLength={500} placeholder="Optional" />
+              className={inputClass} maxLength={500} placeholder="Optional — shown as a subtitle" />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1.5">
+              Full details{' '}
+              <span className="text-gray-400 font-normal">(optional — hidden behind "Read more")</span>
+            </label>
+            <Suspense fallback={<div className="h-28 rounded-xl border border-gray-300 bg-gray-50 animate-pulse" />}>
+              <RichTextEditor
+                value={body}
+                onChange={setBody}
+                placeholder="Agenda, directions, what to bring, dress code…"
+                minHeight={90}
+                eventContext={{
+                  name,
+                  eventType: event.event_type,
+                  location,
+                  description,
+                }}
+              />
+            </Suspense>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
