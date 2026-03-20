@@ -149,26 +149,30 @@ export async function POST(request: NextRequest) {
   const slug = generateSlug();
   const organizerToken = generateToken();
 
+  // Only include optional nullable columns when they have values — avoids
+  // "column not found in schema cache" errors if migrations haven't been run yet.
+  const insertPayload = {
+    slug,
+    name: safeName,
+    organizer_token: organizerToken,
+    dates: safeDates,
+    time_start: safeTimeStart,
+    time_end: safeTimeEnd,
+    timezone: timezone || 'UTC',
+    duration_minutes: safeDuration,
+    event_type: safeEventType,
+    ...(finalizedTime && { finalized_time: finalizedTime }),
+    ...(safeDescription && { description: safeDescription }),
+    ...(safeOrganizerName && { organizer_name: safeOrganizerName }),
+    ...(safeLocation && { location: safeLocation }),
+    ...(safeBody && { body: safeBody }),
+    ...(responseDeadline && { response_deadline: responseDeadline }),
+    ...(safeMaxParticipants && { max_participants: safeMaxParticipants }),
+  };
+
   const { data, error } = await supabase
     .from('events')
-    .insert({
-      slug,
-      name: safeName,
-      description: safeDescription,
-      body: safeBody,
-      organizer_name: safeOrganizerName,
-      location: safeLocation,
-      duration_minutes: safeDuration,
-      response_deadline: responseDeadline || null,
-      max_participants: safeMaxParticipants,
-      organizer_token: organizerToken,
-      dates: safeDates,
-      time_start: safeTimeStart,
-      time_end: safeTimeEnd,
-      timezone: timezone || 'UTC',
-      event_type: safeEventType,
-      finalized_time: finalizedTime,
-    })
+    .insert(insertPayload)
     .select()
     .single();
 
