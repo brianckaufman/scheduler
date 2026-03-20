@@ -315,7 +315,30 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
     <div className="space-y-6" onMouseUp={handleDragEnd} onMouseLeave={handleDragEnd}>
       {/* Always-visible status notice */}
       {overlapStatus === 'waiting' && !event.finalized_time && (
-        <div className="animate-fade-in bg-gray-50 rounded-xl p-4 text-center text-sm text-gray-500">
+        <div className="animate-fade-in bg-gray-50 rounded-xl p-5 text-center text-sm text-gray-500">
+          <style>{`
+            @keyframes person-arrive {
+              0%, 15%  { opacity: 0.15; transform: translateY(3px) scale(0.85); }
+              40%, 70% { opacity: 1;    transform: translateY(0)   scale(1);    }
+              90%, 100%{ opacity: 0.15; transform: translateY(3px) scale(0.85); }
+            }
+          `}</style>
+          <div className="flex justify-center gap-3 mb-3">
+            {[0, 1, 2].map((i) => (
+              <div
+                key={i}
+                style={{
+                  animation: `person-arrive 2.7s ease-in-out ${i * 0.6}s infinite`,
+                  opacity: 0.15,
+                }}
+              >
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="12" cy="7" r="4" fill="#9ca3af" />
+                  <path d="M4 20c0-4 3.582-7 8-7s8 3 8 7" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" fill="none" />
+                </svg>
+              </div>
+            ))}
+          </div>
           {copy.grid.waiting}
         </div>
       )}
@@ -437,24 +460,13 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
               return mm === 0 ? `${h12} ${ap}` : `${h12}:${mm.toString().padStart(2, '0')} ${ap}`;
             };
 
-            const startLabel = fmtCompact(h, m);
-
-            // For events longer than 30 min, show the end time of the block
-            let label: string;
-            if (durationMinutes > 30) {
-              const endTotalMin = h * 60 + m + durationMinutes;
-              const endH = Math.floor(endTotalMin / 60) % 24;
-              const endM = endTotalMin % 60;
-              label = `${startLabel}–${fmtCompact(endH, endM)}`;
-            } else {
-              label = startLabel;
-            }
+            const label = fmtCompact(h, m);
 
             return [
               <div
                 key={`label-${time}`}
                 style={{ minHeight: `${cellHeight}px` }}
-                className="text-[10px] leading-tight text-gray-500 flex items-center justify-end pr-2 sticky left-0 bg-white z-10 whitespace-nowrap"
+                className="text-xs leading-tight text-gray-500 flex items-center justify-end pr-2 sticky left-0 bg-white z-10 whitespace-nowrap"
               >
                 {label}
               </div>,
