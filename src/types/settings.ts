@@ -346,7 +346,7 @@ export const DEFAULT_SETTINGS: SiteSettings = {
     logo_height: 40,
     hide_home_title: false,
     hide_home_subtitle: false,
-    accent_color: '#0d9488',
+    accent_color: '#7c3aed',
     footer_text: 'Free forever. Zero accounts. Your group chat will thank you.',
   },
   monetization: {

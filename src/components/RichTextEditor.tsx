@@ -79,7 +79,7 @@ export default function RichTextEditor({
       }),
       Link.configure({
         openOnClick: false,
-        HTMLAttributes: { class: 'text-teal-600 underline hover:text-teal-700', target: '_blank', rel: 'noopener noreferrer' },
+        HTMLAttributes: { class: 'text-violet-600 underline hover:text-violet-700', target: '_blank', rel: 'noopener noreferrer' },
       }),
       Placeholder.configure({ placeholder }),
     ],
@@ -112,7 +112,7 @@ export default function RichTextEditor({
   if (!editor) return null;
 
   return (
-    <div className="border border-gray-300 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-teal-400 focus-within:border-teal-400 transition-shadow bg-white">
+    <div className="border border-gray-300 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-violet-400 focus-within:border-violet-400 transition-shadow bg-white">
 
       {/* ── Toolbar ── */}
       <div className="flex items-center gap-0.5 px-2 py-1.5 border-b border-gray-100 bg-gray-50">

@@ -6,7 +6,7 @@
    Tailwind `teal-*` class automatically uses the custom color. */
 
 :root {
-  --accent-base: #0d9488; /* default teal-500, overridden by admin branding */
+  --accent-base: #7c3aed; /* default violet-600, overridden by admin branding */
   --accent-50:  color-mix(in oklch, var(--accent-base)  5%, white);
   --accent-100: color-mix(in oklch, var(--accent-base) 12%, white);
   --accent-200: color-mix(in oklch, var(--accent-base) 25%, white);
@@ -252,7 +252,7 @@
 .prose-editor li { margin: 0.1rem 0; }
 .prose-editor strong { font-weight: 600; }
 .prose-editor em { font-style: italic; }
-.prose-editor a { color: #0d9488; text-decoration: underline; }
+.prose-editor a { color: #7c3aed; text-decoration: underline; }
 .prose-editor p.is-editor-empty:first-child::before {
   content: attr(data-placeholder);
   color: #9ca3af;
@@ -268,5 +268,5 @@
 .rich-text-display li  { margin: 0.1rem 0; }
 .rich-text-display strong { font-weight: 600; }
 .rich-text-display em  { font-style: italic; }
-.rich-text-display a   { color: #0d9488; text-decoration: underline; }
-.rich-text-display a:hover { color: #0f766e; }
+.rich-text-display a   { color: #7c3aed; text-decoration: underline; }
+.rich-text-display a:hover { color: #6d28d9; }

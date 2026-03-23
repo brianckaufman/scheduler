@@ -16,7 +16,7 @@ export default function OGImage() {
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          background: 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 50%, #f0fdfa 100%)',
+          background: 'linear-gradient(135deg, #faf5ff 0%, #ede9fe 50%, #f5f3ff 100%)',
           fontFamily: 'system-ui, sans-serif',
         }}
       >
@@ -26,12 +26,12 @@ export default function OGImage() {
             width: 120,
             height: 120,
             borderRadius: 28,
-            background: 'linear-gradient(135deg, #14b8a6, #0d9488)',
+            background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             marginBottom: 32,
-            boxShadow: '0 20px 60px rgba(20,184,166,0.3)',
+            boxShadow: '0 20px 60px rgba(124,58,237,0.3)',
           }}
         >
           <svg width="64" height="64" viewBox="0 0 24 24" fill="none">

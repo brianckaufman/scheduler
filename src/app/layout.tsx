@@ -128,7 +128,7 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const settings = await getSettings();
-  const accentColor = settings.branding.accent_color || '#0d9488';
+  const accentColor = settings.branding.accent_color || '#7c3aed';
   const siteName = settings.seo.site_name || 'Scheduler';
   const siteUrl = settings.seo.site_url || process.env.NEXT_PUBLIC_SITE_URL || '';
   const ogDesc = settings.seo.og_description || 'Find a time that works for everyone. No accounts needed.';

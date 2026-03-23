@@ -25,7 +25,7 @@ const RSVP_CONFIG = {
     ),
     activeClass: 'bg-green-500 text-white border-green-500 shadow-md shadow-green-200',
     hoverClass: 'hover:border-green-400 hover:bg-green-50 hover:text-green-700',
-    badgeClass: 'bg-green-100 text-green-700',
+    dotClass: 'bg-green-400',
   },
   maybe: {
     icon: (
@@ -35,7 +35,7 @@ const RSVP_CONFIG = {
     ),
     activeClass: 'bg-amber-400 text-white border-amber-400 shadow-md shadow-amber-200',
     hoverClass: 'hover:border-amber-300 hover:bg-amber-50 hover:text-amber-700',
-    badgeClass: 'bg-amber-100 text-amber-700',
+    dotClass: 'bg-amber-400',
   },
   no: {
     icon: (
@@ -45,7 +45,7 @@ const RSVP_CONFIG = {
     ),
     activeClass: 'bg-red-400 text-white border-red-400 shadow-md shadow-red-200',
     hoverClass: 'hover:border-red-300 hover:bg-red-50 hover:text-red-500',
-    badgeClass: 'bg-red-100 text-red-600',
+    dotClass: 'bg-red-400',
   },
 } as const;
 
@@ -67,22 +67,84 @@ function generateICS(event: Event): string {
   ].filter(Boolean).join('\r\n');
 }
 
+type SectionKey = 'yes' | 'maybe' | 'no' | 'pending';
+
+interface AccordionSectionProps {
+  label: string;
+  count: number;
+  isOpen: boolean;
+  onToggle: () => void;
+  dotClass?: string;
+  dimWhenEmpty?: boolean;
+  children: React.ReactNode;
+}
+
+function AccordionSection({ label, count, isOpen, onToggle, dotClass, dimWhenEmpty, children }: AccordionSectionProps) {
+  const isEmpty = count === 0;
+  return (
+    <div className="border-b border-gray-100 last:border-b-0">
+      <button
+        type="button"
+        onClick={onToggle}
+        className={`w-full flex items-center justify-between py-2.5 text-left transition-colors cursor-pointer ${
+          isEmpty && dimWhenEmpty ? 'opacity-40' : 'hover:bg-gray-50 -mx-1 px-1 rounded-lg'
+        }`}
+      >
+        <div className="flex items-center gap-2">
+          {dotClass && !isEmpty && (
+            <span className={`w-2 h-2 rounded-full shrink-0 ${dotClass}`} />
+          )}
+          {(isEmpty || !dotClass) && (
+            <span className="w-2 h-2 rounded-full shrink-0 bg-gray-200" />
+          )}
+          <span className={`text-sm font-medium ${isEmpty && dimWhenEmpty ? 'text-gray-400' : 'text-gray-700'}`}>
+            {label}
+          </span>
+          <span className={`text-xs font-semibold tabular-nums ${isEmpty && dimWhenEmpty ? 'text-gray-300' : 'text-gray-400'}`}>
+            {count}
+          </span>
+        </div>
+        <svg
+          className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+          fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+      {isOpen && count > 0 && (
+        <div className="pb-2.5 animate-fade-in">
+          {children}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function RSVPView({ event, participantId, isOrganizer, organizerToken }: RSVPViewProps) {
   const copy = useCopy();
   const monetization = useMonetization();
   const rsvpCopy = copy.rsvp;
   const { participants, removeParticipant } = useRealtimeParticipants(event.id);
   const [saving, setSaving] = useState(false);
-  // Optimistic state — highlights the tapped button immediately before real-time confirms
   const [optimisticRsvp, setOptimisticRsvp] = useState<RsvpValue | null>(null);
   const [copied, setCopied] = useState(false);
+  const [openSections, setOpenSections] = useState<Set<SectionKey>>(new Set(['yes']));
 
   const me = participants.find((p) => p.id === participantId);
   const myRsvp: RsvpValue | null = optimisticRsvp ?? me?.rsvp ?? null;
 
+  const toggleSection = (key: SectionKey) => {
+    setOpenSections((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
+
   const handleRsvp = useCallback(async (value: RsvpValue) => {
     if (saving) return;
-    setOptimisticRsvp(value); // Immediate highlight on tap
+    setOptimisticRsvp(value);
     setSaving(true);
     try {
       await fetch(`/api/participants/${participantId}`, {
@@ -90,9 +152,9 @@ export default function RSVPView({ event, participantId, isOrganizer, organizerT
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ rsvp: value, event_id: event.id }),
       });
-      setOptimisticRsvp(null); // Real-time will confirm; clear optimistic
+      setOptimisticRsvp(null);
     } catch {
-      setOptimisticRsvp(null); // Revert on error
+      setOptimisticRsvp(null);
     } finally {
       setSaving(false);
     }
@@ -145,13 +207,14 @@ export default function RSVPView({ event, participantId, isOrganizer, organizerT
     setTimeout(() => setCopied(false), 2000);
   }, [event]);
 
-  // Group participants by RSVP status
-  const going = participants.filter((p) => p.rsvp === 'yes');
-  const maybe = participants.filter((p) => p.rsvp === 'maybe');
-  const cant = participants.filter((p) => p.rsvp === 'no');
-  const pending = participants.filter((p) => !p.rsvp);
+  // Sort helpers
+  const sortByName = <T extends { name: string }>(arr: T[]) =>
+    [...arr].sort((a, b) => a.name.localeCompare(b.name));
 
-  const totalResponded = going.length + maybe.length + cant.length;
+  const going = sortByName(participants.filter((p) => p.rsvp === 'yes'));
+  const maybe = sortByName(participants.filter((p) => p.rsvp === 'maybe'));
+  const cant = sortByName(participants.filter((p) => p.rsvp === 'no'));
+  const pending = sortByName(participants.filter((p) => !p.rsvp));
 
   const rsvpOptions: { value: RsvpValue; label: string }[] = [
     { value: 'yes', label: rsvpCopy?.going ?? 'Going' },
@@ -160,6 +223,31 @@ export default function RSVPView({ event, participantId, isOrganizer, organizerT
   ];
 
   const showCalendarActions = event.finalized_time && (myRsvp === 'yes' || myRsvp === 'maybe');
+
+  const renderNameList = (list: typeof going) => (
+    <ul className="space-y-1 mt-0.5">
+      {list.map((p) => (
+        <li key={p.id} className="flex items-center justify-between group">
+          <span className={`text-sm ${p.id === participantId ? 'font-semibold text-gray-800' : 'text-gray-600'}`}>
+            {formatDisplayName(p.name)}
+            {p.id === participantId && (
+              <span className="ml-1 text-xs text-gray-400 font-normal">you</span>
+            )}
+          </span>
+          {isOrganizer && p.id !== participantId && (
+            <button
+              type="button"
+              onClick={() => handleDeleteParticipant(p.id)}
+              className="text-xs text-gray-300 hover:text-red-400 transition-colors cursor-pointer opacity-0 group-hover:opacity-100 focus:opacity-100 ml-2 shrink-0"
+              title="Remove"
+            >
+              Remove
+            </button>
+          )}
+        </li>
+      ))}
+    </ul>
+  );
 
   return (
     <div className="space-y-5">
@@ -239,102 +327,60 @@ export default function RSVPView({ event, participantId, isOrganizer, organizerT
         </div>
       )}
 
-      {/* Live summary counts */}
-      {totalResponded > 0 && (
-        <div className="flex items-center gap-3 text-xs font-medium animate-fade-in flex-wrap">
-          {going.length > 0 && (
-            <span className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-green-50 text-green-700">
-              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-              </svg>
-              {going.length} {rsvpCopy?.going_label ?? 'Going'}
-            </span>
-          )}
-          {maybe.length > 0 && (
-            <span className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-50 text-amber-700">
-              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              {maybe.length} {rsvpCopy?.maybe_label ?? 'Maybe'}
-            </span>
-          )}
-          {cant.length > 0 && (
-            <span className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-red-50 text-red-600">
-              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-              {cant.length} {rsvpCopy?.cant_label ?? "Can't make it"}
-            </span>
+      {/* Accordion RSVP list */}
+      {participants.length > 0 && (
+        <div className="border-t border-gray-100 pt-1 animate-fade-in">
+          <AccordionSection
+            label={rsvpCopy?.going_label ?? 'Going'}
+            count={going.length}
+            isOpen={openSections.has('yes')}
+            onToggle={() => toggleSection('yes')}
+            dotClass={RSVP_CONFIG.yes.dotClass}
+            dimWhenEmpty
+          >
+            {renderNameList(going)}
+          </AccordionSection>
+
+          <AccordionSection
+            label={rsvpCopy?.maybe_label ?? 'Maybe'}
+            count={maybe.length}
+            isOpen={openSections.has('maybe')}
+            onToggle={() => toggleSection('maybe')}
+            dotClass={RSVP_CONFIG.maybe.dotClass}
+            dimWhenEmpty
+          >
+            {renderNameList(maybe)}
+          </AccordionSection>
+
+          <AccordionSection
+            label={rsvpCopy?.cant_label ?? "Can't make it"}
+            count={cant.length}
+            isOpen={openSections.has('no')}
+            onToggle={() => toggleSection('no')}
+            dotClass={RSVP_CONFIG.no.dotClass}
+            dimWhenEmpty
+          >
+            {renderNameList(cant)}
+          </AccordionSection>
+
+          {pending.length > 0 && (
+            <AccordionSection
+              label={rsvpCopy?.pending_label ?? 'No response yet'}
+              count={pending.length}
+              isOpen={openSections.has('pending')}
+              onToggle={() => toggleSection('pending')}
+            >
+              {renderNameList(pending)}
+            </AccordionSection>
           )}
         </div>
       )}
 
-      {/* Attendee list — visible to everyone */}
-      <div>
-        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-          {rsvpCopy?.attendees_title ?? "Who's coming"}
+      {participants.length === 0 && (
+        <p className="text-sm text-gray-400 italic pt-1 border-t border-gray-100">
+          {rsvpCopy?.no_responses ?? 'No responses yet'}
         </p>
-
-        {participants.length === 0 ? (
-          <p className="text-sm text-gray-400 italic">
-            {rsvpCopy?.no_responses ?? 'No responses yet'}
-          </p>
-        ) : (
-          <div className="space-y-3">
-            {[
-              { list: going, label: rsvpCopy?.going_label ?? 'Going', cfg: RSVP_CONFIG.yes },
-              { list: maybe, label: rsvpCopy?.maybe_label ?? 'Maybe', cfg: RSVP_CONFIG.maybe },
-              { list: cant, label: rsvpCopy?.cant_label ?? "Can't make it", cfg: RSVP_CONFIG.no },
-              { list: pending, label: rsvpCopy?.pending_label ?? 'Awaiting response', cfg: null },
-            ].map(({ list, label, cfg }) =>
-              list.length > 0 ? (
-                <div key={label} className="animate-fade-in">
-                  <div className="flex items-center gap-1.5 mb-1.5">
-                    {cfg ? (
-                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${cfg.badgeClass}`}>
-                        {label}
-                      </span>
-                    ) : (
-                      <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">
-                        {label}
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {list.map((p) => (
-                      <span
-                        key={p.id}
-                        className={`
-                          group relative flex items-center gap-1 text-xs px-2.5 py-1 rounded-full font-medium border
-                          ${p.id === participantId
-                            ? 'bg-gray-800 text-white border-gray-800'
-                            : 'bg-gray-50 text-gray-600 border-gray-200'
-                          }
-                        `}
-                      >
-                        {formatDisplayName(p.name)}
-                        {p.id === participantId && ' (you)'}
-                        {isOrganizer && p.id !== participantId && (
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteParticipant(p.id)}
-                            className="ml-0.5 -mr-1 w-3.5 h-3.5 rounded-full flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors cursor-pointer"
-                            title="Remove participant"
-                          >
-                            <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                          </button>
-                        )}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              ) : null
-            )}
-          </div>
-        )}
-      </div>
+      )}
 
       {/* Support nudge — shown once per session after user responds */}
       {myRsvp && monetization.buymeacoffee_url && monetization.show_on_rsvp && (
