@@ -383,8 +383,10 @@ export const DEFAULT_SETTINGS: SiteSettings = {
 <p>We collect only the minimum information necessary to provide the scheduling service:</p>
 <ul>
 <li><strong>Event information:</strong> Event names, descriptions, dates, times, and locations you provide when creating an event.</li>
+<li><strong>Location data:</strong> Addresses, Google Maps URLs, virtual meeting links (such as Zoom or Google Meet), and any secondary location details (room, suite, floor) entered when creating or editing an event.</li>
 <li><strong>Participant names:</strong> Names entered voluntarily by participants to identify themselves.</li>
 <li><strong>Availability data:</strong> Time slot selections and RSVP responses submitted by participants.</li>
+<li><strong>Push notification tokens:</strong> If you opt in to notifications, we store a browser push subscription token to deliver event updates to your device.</li>
 <li><strong>Device data:</strong> Basic browser and device information used for service functionality.</li>
 </ul>
 
@@ -397,11 +399,15 @@ export const DEFAULT_SETTINGS: SiteSettings = {
 <h2>Data Storage and Retention</h2>
 <p>Event and availability data is stored in a secure database. Events and associated data may be removed after a period of inactivity. We do not guarantee the permanent storage of any event data.</p>
 
+<h2>Push Notifications</h2>
+<p>If you choose to enable notifications, we store a browser push subscription token on our servers to send you updates about events you have joined (such as when a final time is selected). You can revoke this permission at any time through your browser or device settings. We will never use push notifications for marketing or promotional purposes.</p>
+
 <h2>No Data Selling</h2>
 <p>We do not sell, rent, trade, or otherwise transfer your information to third parties.</p>
 
 <h2>Third-Party Services</h2>
 <p>This Service uses third-party infrastructure providers (such as hosting and database services) to operate. These providers are subject to their own privacy policies.</p>
+<p><strong>Google Places API:</strong> When you type a location while creating or editing an event, your input may be sent to Google's Places API to provide address autocomplete suggestions. This data is transmitted to Google's servers and is subject to <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">Google's Privacy Policy</a>. We do not store the raw autocomplete queries — only the final location value you select or enter.</p>
 
 <h2>Children's Privacy</h2>
 <p>This Service is not directed to children under 13. We do not knowingly collect information from children.</p>
@@ -429,7 +435,13 @@ export const DEFAULT_SETTINGS: SiteSettings = {
 <p>The operator of this Service assumes no liability, past, present, or future, arising from your use of the Service. This includes but is not limited to scheduling outcomes, missed events, data loss, or any reliance placed on information provided through the Service. Use of this Service is entirely at your own risk.</p>
 
 <h2>User Content</h2>
-<p>You retain ownership of any content you submit. By submitting content, you grant us a limited license to store and display it for the purpose of providing the Service. You are solely responsible for the content you create and share through this Service.</p>
+<p>You retain ownership of any content you submit, including event names, descriptions, locations, and meeting links. By submitting content, you grant us a limited license to store and display it for the purpose of providing the Service. You are solely responsible for the content you create and share through this Service. Do not share sensitive, private, or confidential information through event descriptions or location fields.</p>
+
+<h2>Location and Meeting Link Data</h2>
+<p>When you provide a location for an event — whether a physical address, virtual meeting link, or plain text description — that information is stored and displayed to all participants who access the event link. You are responsible for ensuring you have the right to share any meeting links or addresses you enter. Do not enter confidential meeting credentials that should not be publicly accessible via a shared link.</p>
+
+<h2>RSVP and Availability Responses</h2>
+<p>Availability selections and RSVP responses (Going, Maybe, Can't make it) are visible to all participants with access to the event link. Do not submit false or misleading responses.</p>
 
 <h2>Event Data</h2>
 <p>Events and associated data may be deleted after a period of inactivity. We do not guarantee the availability or permanence of any event data. You are responsible for maintaining your own records.</p>
@@ -456,16 +468,19 @@ export const DEFAULT_SETTINGS: SiteSettings = {
 <li>Organizer tokens for events you created</li>
 <li>UI preferences such as dismissed prompts</li>
 </ul>
-<p>This data stays on your device and is only used to provide Service functionality during your session.</p>
+<p>This data stays on your device and is only used to provide Service functionality.</p>
+
+<h2>Push Notification Storage</h2>
+<p>If you opt in to push notifications, your browser generates a push subscription token that is stored on our servers (not just on your device). This token is used solely to deliver event updates — such as when a final meeting time is confirmed. It is never used for advertising or marketing. You can revoke this permission at any time in your browser or device notification settings, and your subscription will no longer be used to send notifications.</p>
 
 <h2>What We Don't Use</h2>
 <p>We do not use tracking cookies, advertising cookies, or third-party analytics cookies that follow you across other websites. We do not build behavioral profiles.</p>
 
 <h2>Third-Party Services</h2>
-<p>If analytics tools are configured by the site operator, those services may set their own cookies subject to their respective privacy policies.</p>
+<p>If analytics tools are configured by the site operator, those services may set their own cookies subject to their respective privacy policies. When address autocomplete is used, input is sent to Google's servers and may be subject to Google's own storage practices as described in their <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</a>.</p>
 
 <h2>Managing Your Data</h2>
-<p>You can clear local storage data at any time through your browser settings. Doing so will remove your session for any events you have joined.</p>`,
+<p>You can clear local storage data at any time through your browser settings. Doing so will remove your session for any events you have joined. To remove your push notification subscription, disable notifications for this site in your browser or device settings.</p>`,
 
     show_privacy: true,
     show_terms: true,
