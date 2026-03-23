@@ -46,15 +46,16 @@ function formatTimeLabel(time: string) {
 
 const TIME_OPTIONS = generateTimeOptions();
 const DURATION_OPTIONS = [
-  { value: 10, label: '10 minutes' },
-  { value: 15, label: '15 minutes' },
-  { value: 30, label: '30 minutes' },
-  { value: 45, label: '45 minutes' },
-  { value: 60, label: '1 hour' },
-  { value: 90, label: '1.5 hours' },
+  { value: 10,  label: '10 minutes' },
+  { value: 15,  label: '15 minutes' },
+  { value: 30,  label: '30 minutes' },
+  { value: 45,  label: '45 minutes' },
+  { value: 60,  label: '1 hour' },
+  { value: 90,  label: '1.5 hours' },
   { value: 120, label: '2 hours' },
   { value: 180, label: '3 hours' },
   { value: 240, label: '4 hours' },
+  { value: 0,   label: 'All day' },
 ];
 
 export default function EventForm({ enableFixedEvents = false }: EventFormProps) {
@@ -227,14 +228,21 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
     setLoading(true);
     setError('');
 
-    // For fixed events, derive duration from start/end times
+    // Resolve duration: fixed events use start/end times; availability events
+    // use the selected duration, or span the full time window for "All day" (value 0).
     const resolvedDuration = eventType === 'fixed'
       ? (() => {
           const [sh, sm] = fixedTime.split(':').map(Number);
           const [eh, em] = fixedEndTime.split(':').map(Number);
           return (eh * 60 + em) - (sh * 60 + sm);
         })()
-      : durationMinutes;
+      : durationMinutes === 0
+        ? (() => {
+            const [sh, sm] = timeStart.split(':').map(Number);
+            const [eh, em] = timeEnd.split(':').map(Number);
+            return (eh * 60 + em) - (sh * 60 + sm);
+          })()
+        : durationMinutes;
 
     try {
       const commonPayload = {

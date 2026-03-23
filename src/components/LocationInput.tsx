@@ -151,9 +151,10 @@ export default function LocationInput({ value, onChange, inputClassName = '' }: 
         </button>
         <button type="button" onClick={() => handleTypeChange('virtual')}
           className={`${tabBase} ${locType === 'virtual' ? tabActive : tabIdle}`}>
+          {/* Monitor screen — virtual/online meeting */}
           <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-            <path d="M15 10l4.553-2.276A1 1 0 0121 8.723v6.554a1 1 0 01-1.447.894L15 14" />
-            <rect x="3" y="8" width="12" height="8" rx="2" />
+            <rect x="2" y="3" width="20" height="14" rx="2" />
+            <path d="M8 21h8M12 17v4" />
           </svg>
           Virtual
         </button>
