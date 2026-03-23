@@ -119,8 +119,8 @@ export default function EditEventModal({ event, organizerToken, onClose, onSave,
     }
   };
 
-  const inputClass = "w-full px-3 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-transparent text-gray-900 text-sm";
-  const selectClass = "w-full px-3 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-teal-400 text-gray-900 bg-white text-sm";
+  const inputClass = "w-full px-3 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-transparent text-gray-900 text-sm";
+  const selectClass = "w-full px-3 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-violet-400 text-gray-900 bg-white text-sm";
 
   return (
     <div
@@ -223,7 +223,7 @@ export default function EditEventModal({ event, organizerToken, onClose, onSave,
             type="button"
             onClick={handleSave}
             disabled={saving || !name.trim() || !organizerName.trim()}
-            className="w-full py-2.5 bg-teal-500 text-white font-semibold rounded-xl hover:bg-teal-600 transition-all duration-200 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            className="w-full py-2.5 bg-violet-600 text-white font-semibold rounded-xl hover:bg-violet-700 transition-all duration-200 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
           >
             {saving ? 'Saving...' : 'Save Changes'}
           </button>

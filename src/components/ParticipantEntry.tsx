@@ -26,11 +26,11 @@ export default function ParticipantEntry({ event, onJoin }: ParticipantEntryProp
   const deadlinePassed = event.response_deadline && isPast(new Date(event.response_deadline));
 
   // Fixed events use indigo/blue; availability events use the app accent (teal CSS var → violet)
-  const headerGradient = isFixed ? 'from-indigo-500 to-indigo-700' : 'from-teal-500 to-teal-700';
-  const accentRing   = isFixed ? 'focus:ring-indigo-400' : 'focus:ring-teal-400';
-  const accentBtn    = isFixed ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-teal-600 hover:bg-teal-700';
-  const accentNum    = isFixed ? 'bg-indigo-50 text-indigo-600' : 'bg-teal-50 text-teal-600';
-  const accentSubtleText = isFixed ? 'text-indigo-100' : 'text-teal-100';
+  const headerGradient = isFixed ? 'from-indigo-500 to-indigo-700' : 'from-violet-500 to-violet-700';
+  const accentRing   = isFixed ? 'focus:ring-indigo-400' : 'focus:ring-violet-400';
+  const accentBtn    = isFixed ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-violet-600 hover:bg-violet-700';
+  const accentNum    = isFixed ? 'bg-indigo-50 text-indigo-600' : 'bg-violet-50 text-violet-600';
+  const accentSubtleText = isFixed ? 'text-indigo-100' : 'text-violet-100';
 
   const handleJoin = async () => {
     if (!name.trim()) return;
@@ -251,13 +251,13 @@ export default function ParticipantEntry({ event, onJoin }: ParticipantEntryProp
                     />
                   </div>
                 ) : (
-                  <div className={`mx-auto w-14 h-14 rounded-2xl ${isFixed ? 'bg-indigo-50' : 'bg-teal-50'} flex items-center justify-center mb-3`}>
+                  <div className={`mx-auto w-14 h-14 rounded-2xl ${isFixed ? 'bg-indigo-50' : 'bg-violet-50'} flex items-center justify-center mb-3`}>
                     {isFixed ? (
                       <svg className="w-7 h-7 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                       </svg>
                     ) : (
-                      <svg className="w-7 h-7 text-teal-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                      <svg className="w-7 h-7 text-violet-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
                         <circle cx="10.5" cy="10.5" r="6.5" />
                         <path d="M19.5 19.5L15.5 15.5" />
                         <path d="M10.5 8v3l2 1.5" />

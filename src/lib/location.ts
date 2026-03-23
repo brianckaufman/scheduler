@@ -16,7 +16,7 @@
 const SEP = '@@';
 
 export type ParsedLocation =
-  | { type: 'place';   label: string; url: string }
+  | { type: 'place';   label: string; url: string; secondary?: string }
   | { type: 'virtual'; label: string; url: string }
   | { type: 'text';    text: string };
 
@@ -26,13 +26,21 @@ export function parseLocation(raw: string | null | undefined): ParsedLocation {
 
   const sepIdx = raw.indexOf(SEP);
   if (sepIdx > 0) {
-    const label = raw.slice(0, sepIdx).trim();
-    const url   = raw.slice(sepIdx + SEP.length).trim();
-    if (url) {
-      const isGoogle = url.includes('google.com/maps') || url.includes('maps.google.com');
-      return isGoogle
-        ? { type: 'place',   label, url }
-        : { type: 'virtual', label, url };
+    const label     = raw.slice(0, sepIdx).trim();
+    const remainder = raw.slice(sepIdx + SEP.length).trim();
+    if (remainder) {
+      const isGoogle = remainder.includes('google.com/maps') || remainder.includes('maps.google.com');
+      if (isGoogle) {
+        // Support optional secondary location: "Label@@MapsURL@@Secondary"
+        const secIdx = remainder.indexOf(SEP);
+        if (secIdx >= 0) {
+          const url       = remainder.slice(0, secIdx).trim();
+          const secondary = remainder.slice(secIdx + SEP.length).trim();
+          return { type: 'place', label, url, secondary: secondary || undefined };
+        }
+        return { type: 'place', label, url: remainder };
+      }
+      return { type: 'virtual', label, url: remainder };
     }
   }
 
@@ -57,18 +65,20 @@ export function buildMapsPlaceUrl(placeId: string): string {
 /**
  * Encode back into the DB string format.
  *   type='text'    → raw text
- *   type='place'   → "address@@maps_url"
+ *   type='place'   → "address@@maps_url" or "address@@maps_url@@secondary"
  *   type='virtual' → "label@@url"  (or bare url if label empty / equals url)
  */
 export function encodeLocation(
   type: 'text' | 'place' | 'virtual',
   label: string,
   url?: string,
+  secondary?: string,
 ): string {
   if (type === 'text' || !url?.trim()) return label;
   const l = label.trim();
   const u = url.trim();
+  const s = secondary?.trim();
   // If label is empty or identical to url, store bare url for cleanliness
   if (!l || l === u) return u;
-  return `${l}${SEP}${u}`;
+  return s ? `${l}${SEP}${u}${SEP}${s}` : `${l}${SEP}${u}`;
 }

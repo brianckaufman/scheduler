@@ -25,7 +25,7 @@ export default function ParticipantList({
             className={`
               inline-flex items-center px-3 py-1 rounded-full text-sm
               ${p.id === currentParticipantId
-                ? 'bg-teal-100 text-teal-700 font-medium'
+                ? 'bg-violet-100 text-violet-700 font-medium'
                 : 'bg-gray-100 text-gray-600'
               }
             `}

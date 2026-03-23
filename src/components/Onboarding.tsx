@@ -62,8 +62,8 @@ export default function Onboarding() {
   const steps: Step[] = [
     {
       icon: (
-        <div className="w-16 h-16 rounded-2xl bg-teal-50 flex items-center justify-center">
-          <svg className="w-8 h-8 text-teal-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <div className="w-16 h-16 rounded-2xl bg-violet-50 flex items-center justify-center">
+          <svg className="w-8 h-8 text-violet-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
           </svg>
         </div>
@@ -138,7 +138,7 @@ export default function Onboarding() {
           </div>
 
           {/* Step number */}
-          <p className="text-xs font-semibold text-teal-500 uppercase tracking-widest mb-2">
+          <p className="text-xs font-semibold text-violet-500 uppercase tracking-widest mb-2">
             Step {currentStep + 1} of {steps.length}
           </p>
 
@@ -158,9 +158,9 @@ export default function Onboarding() {
               key={i}
               className={`h-1.5 rounded-full transition-all duration-300 ${
                 i === currentStep
-                  ? 'w-6 bg-teal-500'
+                  ? 'w-6 bg-violet-500'
                   : i < currentStep
-                    ? 'w-1.5 bg-teal-300'
+                    ? 'w-1.5 bg-violet-300'
                     : 'w-1.5 bg-gray-200'
               }`}
             />
@@ -179,7 +179,7 @@ export default function Onboarding() {
           )}
           <button
             onClick={goNext}
-            className="flex-1 py-3.5 px-6 text-sm font-semibold text-white bg-teal-500 rounded-2xl hover:bg-teal-600 shadow-lg shadow-teal-200/50 transition-all duration-200 active:scale-[0.97] cursor-pointer"
+            className="flex-1 py-3.5 px-6 text-sm font-semibold text-white bg-violet-600 rounded-2xl hover:bg-violet-700 shadow-lg shadow-violet-200/50 transition-all duration-200 active:scale-[0.97] cursor-pointer"
           >
             {isLast ? "Let's go" : 'Next'}
           </button>

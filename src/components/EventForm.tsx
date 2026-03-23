@@ -188,9 +188,9 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
                   py-2 rounded-lg text-sm font-medium transition-all duration-150
                   ${!inMonth ? 'invisible' : ''}
                   ${past ? 'text-gray-300 cursor-not-allowed' : 'cursor-pointer active:scale-90'}
-                  ${selected ? 'bg-teal-500 text-white shadow-sm shadow-teal-200 animate-pop' : ''}
+                  ${selected ? 'bg-violet-500 text-white shadow-sm shadow-violet-200 animate-pop' : ''}
                   ${!selected && !past && inMonth ? 'text-gray-700 hover:bg-gray-100' : ''}
-                  ${isToday(day) && !selected ? 'ring-1 ring-teal-400' : ''}
+                  ${isToday(day) && !selected ? 'ring-1 ring-violet-400' : ''}
                 `}
               >
                 {format(day, 'd')}
@@ -301,10 +301,10 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
         <button
           type="button"
           onClick={() => setEventType('availability')}
-          className="w-full flex items-center gap-4 p-5 rounded-2xl border-2 border-gray-200 bg-white hover:border-teal-400 hover:bg-teal-50 text-left transition-all duration-200 active:scale-[0.98] cursor-pointer group"
+          className="w-full flex items-center gap-4 p-5 rounded-2xl border-2 border-gray-200 bg-white hover:border-violet-400 hover:bg-violet-50 text-left transition-all duration-200 active:scale-[0.98] cursor-pointer group"
         >
-          <div className="w-12 h-12 rounded-xl bg-teal-100 flex items-center justify-center shrink-0 group-hover:bg-teal-200 transition-colors">
-            <svg className="w-6 h-6 text-teal-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+          <div className="w-12 h-12 rounded-xl bg-violet-100 flex items-center justify-center shrink-0 group-hover:bg-violet-200 transition-colors">
+            <svg className="w-6 h-6 text-violet-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
               <circle cx="10.5" cy="10.5" r="6.5" />
               <path d="M19.5 19.5L15.5 15.5" />
               <path d="M10.5 8v3l2 1.5" />
@@ -314,7 +314,7 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
             <p className="text-base font-bold text-gray-900">Find a time</p>
             <p className="text-sm text-gray-500 mt-0.5 leading-snug">Everyone marks when they&apos;re free. You pick the best time.</p>
           </div>
-          <svg className="w-5 h-5 text-gray-300 group-hover:text-teal-500 shrink-0 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <svg className="w-5 h-5 text-gray-300 group-hover:text-violet-500 shrink-0 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
           </svg>
         </button>
@@ -347,7 +347,7 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
       {enableFixedEvents && (
         <div className="flex items-center justify-between">
           <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold ${
-            eventType === 'fixed' ? 'bg-blue-100 text-blue-700' : 'bg-teal-100 text-teal-700'
+            eventType === 'fixed' ? 'bg-blue-100 text-blue-700' : 'bg-violet-100 text-violet-700'
           }`}>
             {eventType === 'fixed' ? (
               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -575,10 +575,10 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
             {renderCalendar()}
             {selectedDates.length > 0 && (
               <div className="mt-2 flex items-center gap-1.5 animate-fade-in">
-                <svg className="w-3.5 h-3.5 text-teal-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <svg className="w-3.5 h-3.5 text-violet-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                 </svg>
-                <p className="text-sm text-teal-600 font-medium">
+                <p className="text-sm text-violet-600 font-medium">
                   {selectedDates.length} day{selectedDates.length !== 1 ? 's' : ''} selected
                 </p>
               </div>
@@ -730,7 +730,7 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
               key={i}
               className={`h-1 flex-1 rounded-full transition-all duration-500 ${
                 i < filledSteps
-                  ? eventType === 'fixed' ? 'bg-blue-400' : 'bg-teal-400'
+                  ? eventType === 'fixed' ? 'bg-blue-400' : 'bg-violet-400'
                   : 'bg-gray-100'
               }`}
             />
@@ -745,7 +745,7 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
             ${isReady && !loading
               ? eventType === 'fixed'
                 ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-200/50 hover:shadow-xl hover:shadow-blue-200/60 active:scale-[0.97] cursor-pointer'
-                : 'bg-teal-500 text-white hover:bg-teal-600 shadow-lg shadow-teal-200/50 hover:shadow-xl hover:shadow-teal-200/60 active:scale-[0.97] cursor-pointer'
+                : 'bg-violet-600 text-white hover:bg-violet-700 shadow-lg shadow-violet-200/50 hover:shadow-xl hover:shadow-violet-200/60 active:scale-[0.97] cursor-pointer'
               : 'bg-gray-100 text-gray-400 cursor-not-allowed'
             }
           `}

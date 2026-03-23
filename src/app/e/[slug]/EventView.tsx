@@ -213,7 +213,7 @@ export default function EventView({ event: initialEvent }: EventViewProps) {
               <div className="flex items-center gap-1.5 min-w-0">
                 <a
                   href="/"
-                  className="shrink-0 p-1 -ml-1 text-gray-300 hover:text-teal-600 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+                  className="shrink-0 p-1 -ml-1 text-gray-300 hover:text-violet-600 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
                   title="Back to home"
                 >
                   <svg className="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -226,7 +226,7 @@ export default function EventView({ event: initialEvent }: EventViewProps) {
                 <button
                   type="button"
                   onClick={() => setShowEditModal(true)}
-                  className="shrink-0 p-1.5 text-gray-400 hover:text-teal-600 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+                  className="shrink-0 p-1.5 text-gray-400 hover:text-violet-600 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
                   title="Edit event"
                 >
                   <svg className="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

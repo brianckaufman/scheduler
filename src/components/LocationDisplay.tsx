@@ -40,16 +40,21 @@ export default function LocationDisplay({
 
   if (parsed.type === 'place') {
     return (
-      <a
-        href={parsed.url}
-        target="_blank"
-        rel="noopener noreferrer"
-        className={`inline-flex items-center gap-1 underline decoration-dotted underline-offset-2 hover:decoration-solid transition-all ${textClassName} ${className}`}
-        title="Open in Google Maps"
-      >
-        {parsed.label}
-        <ExternalIcon size={3} />
-      </a>
+      <span className={`inline-flex flex-col gap-0.5 ${className}`}>
+        <a
+          href={parsed.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={`inline-flex items-center gap-1 underline decoration-dotted underline-offset-2 hover:decoration-solid transition-all ${textClassName}`}
+          title="Open in Google Maps"
+        >
+          {parsed.label}
+          <ExternalIcon size={3} />
+        </a>
+        {parsed.secondary && (
+          <span className={`${textClassName} no-underline opacity-75`}>{parsed.secondary}</span>
+        )}
+      </span>
     );
   }
 

@@ -187,12 +187,12 @@ function RsvpModal({
         aria-hidden="true"
       />
 
-      {/* Bottom sheet */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 flex justify-center animate-slide-up">
-        <div className="w-full max-w-lg bg-white rounded-t-3xl shadow-2xl pb-safe">
+      {/* Mobile: bottom sheet. Desktop: centered dialog */}
+      <div className="fixed inset-0 z-50 flex items-end justify-center md:items-center animate-slide-up">
+        <div className="relative w-full max-w-md bg-white shadow-2xl pb-safe md:pb-0 rounded-t-3xl md:rounded-3xl md:max-h-[90vh] md:overflow-y-auto">
 
-          {/* Drag handle */}
-          <div className="flex justify-center pt-3 pb-1">
+          {/* Drag handle — mobile only */}
+          <div className="flex justify-center pt-3 pb-1 md:hidden">
             <div className="w-10 h-1 rounded-full bg-gray-200" />
           </div>
 
@@ -200,14 +200,14 @@ function RsvpModal({
           <button
             type="button"
             onClick={onClose}
-            className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 text-gray-400 hover:bg-gray-200 hover:text-gray-600 transition-colors cursor-pointer"
+            className="absolute top-3 right-3 md:top-4 md:right-4 w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 text-gray-400 hover:bg-gray-200 hover:text-gray-600 transition-colors cursor-pointer z-10"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
 
-          <div className="px-6 pt-2 pb-8 space-y-5">
+          <div className="px-6 pt-4 md:pt-6 pb-8 space-y-5">
 
             {/* Confirmation message */}
             <div className="text-center py-2">
@@ -222,7 +222,7 @@ function RsvpModal({
                   <button
                     type="button"
                     onClick={() => { onDownloadICS(); onClose(); }}
-                    className="w-full py-3 px-4 bg-teal-600 text-white text-sm font-semibold rounded-xl hover:bg-teal-700 transition-all duration-200 active:scale-[0.97] cursor-pointer flex items-center justify-center gap-2"
+                    className="w-full py-3 px-4 bg-violet-600 text-white text-sm font-semibold rounded-xl hover:bg-violet-700 transition-all duration-200 active:scale-[0.97] cursor-pointer flex items-center justify-center gap-2"
                   >
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
@@ -329,9 +329,9 @@ export default function RSVPView({ event, participantId, isOrganizer, organizerT
     setOptimisticRsvp(value);
     setSaving(true);
 
-    // Show confirmation modal + confetti immediately
+    // Show confirmation modal + confetti for Going only
     setModalRsvp(value);
-    if (value === 'yes' || value === 'maybe') {
+    if (value === 'yes') {
       setShowConfetti(true);
     }
 
@@ -472,7 +472,7 @@ export default function RSVPView({ event, participantId, isOrganizer, organizerT
         {myRsvp === 'yes' && event.finalized_time && (
           <div className="space-y-2 animate-fade-in">
             <button type="button" onClick={handleDownloadICS}
-              className="w-full py-2.5 px-4 bg-teal-600 text-white text-sm font-semibold rounded-xl hover:bg-teal-700 shadow-sm transition-all duration-200 active:scale-[0.97] cursor-pointer flex items-center justify-center gap-2">
+              className="w-full py-2.5 px-4 bg-violet-600 text-white text-sm font-semibold rounded-xl hover:bg-violet-700 shadow-sm transition-all duration-200 active:scale-[0.97] cursor-pointer flex items-center justify-center gap-2">
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
               </svg>
@@ -480,7 +480,7 @@ export default function RSVPView({ event, participantId, isOrganizer, organizerT
             </button>
             <button type="button" onClick={handleCopyDetails}
               className={`w-full py-2 px-4 border text-sm font-medium rounded-xl transition-all duration-200 active:scale-[0.97] cursor-pointer flex items-center justify-center gap-2 ${
-                copied ? 'bg-teal-600 border-teal-600 text-white' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+                copied ? 'bg-violet-600 border-violet-600 text-white' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
               }`}>
               {copied ? (
                 <><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>Copied!</>

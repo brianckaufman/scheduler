@@ -130,20 +130,20 @@ export default function ReturningUserBanner({ createdEvents }: ReturningUserBann
               <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-colors shrink-0 ${
                 event.finalizedTime
                   ? 'bg-green-50 group-hover:bg-green-100'
-                  : 'bg-teal-50 group-hover:bg-teal-100'
+                  : 'bg-violet-50 group-hover:bg-violet-100'
               }`}>
                 {event.finalizedTime ? (
                   <svg className="w-3.5 h-3.5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                   </svg>
                 ) : (
-                  <svg className="w-3.5 h-3.5 text-teal-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <svg className="w-3.5 h-3.5 text-violet-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
                 )}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-800 truncate group-hover:text-teal-700 transition-colors">
+                <p className="text-sm font-medium text-gray-800 truncate group-hover:text-violet-700 transition-colors">
                   {event.pinned && (
                     <svg className="w-3 h-3 text-amber-400 inline mr-1 -mt-0.5" fill="currentColor" viewBox="0 0 24 24">
                       <path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z" />
@@ -155,7 +155,7 @@ export default function ReturningUserBanner({ createdEvents }: ReturningUserBann
                   {event.finalizedTime ? formatFinalizedDate(event.finalizedTime) : 'Awaiting responses'}
                 </p>
               </div>
-              <svg className="w-4 h-4 text-gray-300 group-hover:text-teal-500 transition-colors shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <svg className="w-4 h-4 text-gray-300 group-hover:text-violet-500 transition-colors shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
               </svg>
             </a>
@@ -168,7 +168,7 @@ export default function ReturningUserBanner({ createdEvents }: ReturningUserBann
                   e.stopPropagation();
                   setMenuSlug(menuSlug === event.slug ? null : event.slug);
                 }}
-                className="p-1.5 mr-1 text-gray-400 hover:text-teal-600 rounded-lg hover:bg-gray-100 transition-all duration-150 cursor-pointer"
+                className="p-1.5 mr-1 text-gray-400 hover:text-violet-600 rounded-lg hover:bg-gray-100 transition-all duration-150 cursor-pointer"
                 title="More actions"
               >
                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
@@ -227,7 +227,7 @@ export default function ReturningUserBanner({ createdEvents }: ReturningUserBann
           <button
             type="button"
             onClick={() => setExpanded((v) => !v)}
-            className="w-full text-center text-xs text-gray-400 hover:text-teal-600 py-1.5 transition-colors cursor-pointer"
+            className="w-full text-center text-xs text-gray-400 hover:text-violet-600 py-1.5 transition-colors cursor-pointer"
           >
             {expanded ? 'Show less' : `Show ${hiddenCount} more event${hiddenCount !== 1 ? 's' : ''}`}
           </button>

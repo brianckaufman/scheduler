@@ -21,11 +21,11 @@ function detectType(raw: string): LocType {
 }
 
 /** Extract sub-fields from an existing stored value. */
-function extractFields(raw: string): { address: string; virtualLabel: string; virtualUrl: string; text: string } {
+function extractFields(raw: string): { address: string; secondary: string; virtualLabel: string; virtualUrl: string; text: string } {
   const parsed = parseLocation(raw);
-  if (parsed.type === 'place')   return { address: parsed.label, virtualLabel: '', virtualUrl: '', text: '' };
-  if (parsed.type === 'virtual') return { address: '', virtualLabel: parsed.label === parsed.url ? '' : parsed.label, virtualUrl: parsed.url, text: '' };
-  return { address: '', virtualLabel: '', virtualUrl: '', text: (parsed as { text: string }).text };
+  if (parsed.type === 'place')   return { address: parsed.label, secondary: parsed.secondary ?? '', virtualLabel: '', virtualUrl: '', text: '' };
+  if (parsed.type === 'virtual') return { address: '', secondary: '', virtualLabel: parsed.label === parsed.url ? '' : parsed.label, virtualUrl: parsed.url, text: '' };
+  return { address: '', secondary: '', virtualLabel: '', virtualUrl: '', text: (parsed as { text: string }).text };
 }
 
 // Declare google on window for Places API
@@ -64,6 +64,7 @@ export default function LocationInput({ value, onChange, inputClassName = '' }: 
   const [locType, setLocType] = useState<LocType>(() => detectType(value));
   const fields = extractFields(value);
   const [address, setAddress]           = useState(fields.address);
+  const [secondary, setSecondary]       = useState(fields.secondary);
   const [virtualLabel, setVirtualLabel] = useState(fields.virtualLabel);
   const [virtualUrl, setVirtualUrl]     = useState(fields.virtualUrl);
   const [text, setText]                 = useState(fields.text);
@@ -73,10 +74,10 @@ export default function LocationInput({ value, onChange, inputClassName = '' }: 
   const mapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
   // Emit the encoded value whenever sub-fields change
-  const emit = useCallback((type: LocType, a: string, vl: string, vu: string, t: string) => {
+  const emit = useCallback((type: LocType, a: string, sec: string, vl: string, vu: string, t: string) => {
     switch (type) {
       case 'place':
-        onChange(a ? encodeLocation('place', a, buildMapsUrl(a)) : '');
+        onChange(a ? encodeLocation('place', a, buildMapsUrl(a), sec || undefined) : '');
         break;
       case 'virtual':
         onChange(vu ? encodeLocation('virtual', vl, vu) : '');
@@ -101,8 +102,11 @@ export default function LocationInput({ value, onChange, inputClassName = '' }: 
       const label = place.name || place.formatted_address || addressInputRef.current?.value || '';
       const url = place.place_id ? buildMapsPlaceUrl(place.place_id) : buildMapsUrl(label);
       setAddress(label);
-      onChange(encodeLocation('place', label, url));
+      // Use current secondary value from state via closure — secondary captured at attach time;
+      // we re-read from the input to stay current
+      onChange(encodeLocation('place', label, url, secondary || undefined));
     });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [onChange]);
 
   // Lazily load Maps API when user focuses the address input
@@ -125,7 +129,7 @@ export default function LocationInput({ value, onChange, inputClassName = '' }: 
 
   const handleTypeChange = (t: LocType) => {
     setLocType(t);
-    emit(t, address, virtualLabel, virtualUrl, text);
+    emit(t, address, secondary, virtualLabel, virtualUrl, text);
   };
 
   const tabBase   = 'flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer';
@@ -152,14 +156,14 @@ export default function LocationInput({ value, onChange, inputClassName = '' }: 
 
       {/* Place / address */}
       {locType === 'place' && (
-        <div className="relative">
+        <div className="space-y-2">
           <input
             ref={addressInputRef}
             type="text"
             value={address}
             onChange={(e) => {
               setAddress(e.target.value);
-              emit('place', e.target.value, virtualLabel, virtualUrl, text);
+              emit('place', e.target.value, secondary, virtualLabel, virtualUrl, text);
             }}
             onFocus={handleAddressFocus}
             placeholder={mapsApiKey ? 'Start typing an address or place name…' : 'Enter address or place name'}
@@ -168,12 +172,25 @@ export default function LocationInput({ value, onChange, inputClassName = '' }: 
             autoComplete="off"
           />
           {address && (
-            <p className="mt-1 flex items-center gap-1 text-xs text-gray-400">
-              <svg className="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-              </svg>
-              Opens in Google Maps when tapped
-            </p>
+            <>
+              <input
+                type="text"
+                value={secondary}
+                onChange={(e) => {
+                  setSecondary(e.target.value);
+                  emit('place', address, e.target.value, virtualLabel, virtualUrl, text);
+                }}
+                placeholder="Room, suite, floor, or directions once there (optional)"
+                maxLength={150}
+                className={inputClassName}
+              />
+              <p className="flex items-center gap-1 text-xs text-gray-400">
+                <svg className="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+                Primary address opens in Google Maps when tapped
+              </p>
+            </>
           )}
         </div>
       )}
@@ -186,7 +203,7 @@ export default function LocationInput({ value, onChange, inputClassName = '' }: 
             value={virtualUrl}
             onChange={(e) => {
               setVirtualUrl(e.target.value);
-              emit('virtual', virtualLabel, e.target.value, e.target.value, text);
+              emit('virtual', address, secondary, virtualLabel, e.target.value, text);
             }}
             placeholder="https://zoom.us/j/… or any meeting URL"
             maxLength={500}
@@ -197,7 +214,7 @@ export default function LocationInput({ value, onChange, inputClassName = '' }: 
             value={virtualLabel}
             onChange={(e) => {
               setVirtualLabel(e.target.value);
-              emit('virtual', e.target.value, virtualUrl, virtualUrl, text);
+              emit('virtual', address, secondary, e.target.value, virtualUrl, text);
             }}
             placeholder="Label (optional) — e.g. Zoom Meeting, Google Meet"
             maxLength={100}
@@ -221,7 +238,7 @@ export default function LocationInput({ value, onChange, inputClassName = '' }: 
           value={text}
           onChange={(e) => {
             setText(e.target.value);
-            emit('text', address, virtualLabel, virtualUrl, e.target.value);
+            emit('text', address, secondary, virtualLabel, virtualUrl, e.target.value);
           }}
           placeholder="e.g. Dave's backyard, Building C Room 204…"
           maxLength={200}
