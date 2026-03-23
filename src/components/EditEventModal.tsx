@@ -166,16 +166,14 @@ export default function EditEventModal({ event, organizerToken, onClose, onSave,
               />
             </Suspense>
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Your name</label>
-              <input type="text" value={organizerName} onChange={(e) => setOrganizerName(e.target.value)}
-                className={inputClass} maxLength={50} required />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Location</label>
-              <LocationInput value={location} onChange={setLocation} inputClassName={inputClass} />
-            </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Your name</label>
+            <input type="text" value={organizerName} onChange={(e) => setOrganizerName(e.target.value)}
+              className={inputClass} maxLength={50} required />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Location</label>
+            <LocationInput value={location} onChange={setLocation} inputClassName={inputClass} />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
