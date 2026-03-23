@@ -24,6 +24,25 @@ const ExternalIcon = ({ size = 3 }: { size?: number }) => (
 );
 
 /**
+ * Normalizes a stored place label for display:
+ *  - Business name (no leading digit): show just the name (before first comma)
+ *  - Street address (leading digit): show "street, city" (before second comma)
+ * This handles legacy labels stored as full Google Places descriptions.
+ */
+function normalizePlaceLabel(label: string): string {
+  const firstComma = label.indexOf(',');
+  if (firstComma === -1) return label;
+  const firstPart = label.slice(0, firstComma).trim();
+  if (/^\d/.test(firstPart)) {
+    // Street address — include city (up to second comma)
+    const secondComma = label.indexOf(',', firstComma + 1);
+    return secondComma === -1 ? firstPart : label.slice(0, secondComma).trim();
+  }
+  // Business name — just the name
+  return firstPart;
+}
+
+/**
  * Renders a location field with smart link behaviour:
  *  - Google Maps address  → opens Google Maps in a new tab, shows map-pin indicator
  *  - Virtual URL (Zoom, Meet, etc.) → opens in new tab, shows external link icon
@@ -39,6 +58,7 @@ export default function LocationDisplay({
   if (!location?.trim() || (parsed.type === 'text' && !parsed.text)) return null;
 
   if (parsed.type === 'place') {
+    const displayLabel = normalizePlaceLabel(parsed.label);
     return (
       <span className={`inline-flex flex-col gap-0.5 ${className}`}>
         <a
@@ -48,7 +68,7 @@ export default function LocationDisplay({
           className={`inline-flex items-center gap-1 underline decoration-dotted underline-offset-2 hover:decoration-solid transition-all ${textClassName}`}
           title="Open in Google Maps"
         >
-          {parsed.label}
+          {displayLabel}
           <ExternalIcon size={3} />
         </a>
         {parsed.secondary && (

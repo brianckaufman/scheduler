@@ -9,6 +9,7 @@ type LocType = 'place' | 'virtual' | 'text';
 interface Prediction {
   description: string;
   place_id: string;
+  types?: string[];
   structured_formatting?: { main_text: string; secondary_text?: string };
 }
 
@@ -128,7 +129,14 @@ export default function LocationInput({ value, onChange, inputClassName = '' }: 
   };
 
   const handleSelectPrediction = (p: Prediction) => {
-    const label = p.structured_formatting?.main_text ?? p.description;
+    const mainText = p.structured_formatting?.main_text ?? p.description;
+    const secondaryText = p.structured_formatting?.secondary_text ?? '';
+    const isEstablishment = p.types?.some(t =>
+      ['establishment', 'point_of_interest', 'food', 'restaurant', 'bar', 'store', 'lodging'].includes(t)
+    );
+    // For businesses: just the name. For addresses: name + city (first segment of secondary).
+    const city = secondaryText.split(',')[0]?.trim() ?? '';
+    const label = isEstablishment || !city ? mainText : `${mainText}, ${city}`;
     const url   = buildMapsPlaceUrl(p.place_id);
     setAddress(label);
     onChange(encodeLocation('place', label, url, secondary || undefined));
