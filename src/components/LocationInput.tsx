@@ -88,7 +88,8 @@ export default function LocationInput({ value, onChange, inputClassName = '' }: 
     }
   }, [onChange]);
 
-  // If a Places autocomplete selection is made, update the stored Maps URL to use place_id
+  // Attach Places Autocomplete to the address input.
+  // Safe to call multiple times — guards against double-attachment internally.
   const attachAutocomplete = useCallback(() => {
     if (!addressInputRef.current || autocompleteRef.current || !window.google?.maps?.places) return;
     const ac = new window.google.maps.places.Autocomplete(addressInputRef.current, {
@@ -102,30 +103,54 @@ export default function LocationInput({ value, onChange, inputClassName = '' }: 
       const label = place.name || place.formatted_address || addressInputRef.current?.value || '';
       const url = place.place_id ? buildMapsPlaceUrl(place.place_id) : buildMapsUrl(label);
       setAddress(label);
-      // Use current secondary value from state via closure — secondary captured at attach time;
-      // we re-read from the input to stay current
-      onChange(encodeLocation('place', label, url, secondary || undefined));
+      // Read secondary from the DOM directly so we always get the current value,
+      // not a stale closure capture from attach time.
+      const secVal = addressInputRef.current
+        ?.closest('.space-y-2')
+        ?.querySelectorAll('input')[1]
+        ?.value ?? '';
+      onChange(encodeLocation('place', label, url, secVal || undefined));
     });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [onChange]);
 
-  // Lazily load Maps API when user focuses the address input
-  const handleAddressFocus = useCallback(async () => {
-    if (!mapsApiKey || autocompleteRef.current) return;
-    try {
-      await loadMapsApi(mapsApiKey);
-      attachAutocomplete();
-    } catch {
-      // Maps API not available — just use text input
+  // Clear the stale autocomplete instance whenever the user navigates away from
+  // the Address tab — the input element is unmounted and a fresh one is created
+  // on return, so we must re-attach from scratch.
+  useEffect(() => {
+    if (locType !== 'place') {
+      autocompleteRef.current = null;
     }
-  }, [mapsApiKey, attachAutocomplete]);
+  }, [locType]);
 
-  // Keep autocomplete attached after initial load
+  // Eagerly start loading the Maps API as soon as the component mounts so it's
+  // ready by the time the user clicks the address input.
+  useEffect(() => {
+    if (!mapsApiKey) return;
+    loadMapsApi(mapsApiKey)
+      .then(() => { if (locType === 'place') attachAutocomplete(); })
+      .catch(() => {});
+  // Run once on mount — intentionally omitting locType / attachAutocomplete
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mapsApiKey]);
+
+  // Re-attach when switching back to the Address tab after the API is loaded.
   useEffect(() => {
     if (locType === 'place' && mapsApiKey && window._mapsLoaded) {
       attachAutocomplete();
     }
   }, [locType, mapsApiKey, attachAutocomplete]);
+
+  // Final safety net: attach on focus in case the above effects ran too early
+  // (e.g. the input wasn't in the DOM yet when the API finished loading).
+  const handleAddressFocus = useCallback(async () => {
+    if (!mapsApiKey) return;
+    try {
+      await loadMapsApi(mapsApiKey);
+      attachAutocomplete();
+    } catch {
+      // Maps API unavailable — plain text fallback
+    }
+  }, [mapsApiKey, attachAutocomplete]);
 
   const handleTypeChange = (t: LocType) => {
     setLocType(t);
