@@ -15,7 +15,7 @@ interface Particle {
   shape: 'circle' | 'square' | 'strip';
 }
 
-const COLORS = ['#0d9488', '#14b8a6', '#5eead4', '#f59e0b', '#a78bfa', '#fb7185', '#38bdf8', '#34d399'];
+const COLORS = ['#7c3aed', '#8b5cf6', '#a78bfa', '#f59e0b', '#34d399', '#fb7185', '#38bdf8', '#fbbf24'];
 
 function createParticles(count: number): Particle[] {
   return Array.from({ length: count }, (_, i) => ({

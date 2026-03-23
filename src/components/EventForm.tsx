@@ -288,8 +288,8 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
     }
   };
 
-  const inputClass = "w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-transparent text-gray-900 placeholder-gray-400 transition-shadow duration-200";
-  const selectClass = "w-full px-3 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-teal-400 text-gray-900 bg-white transition-shadow duration-200";
+  const inputClass = "w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-transparent text-gray-900 placeholder-gray-400 transition-shadow duration-200";
+  const selectClass = "w-full px-3 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-violet-400 text-gray-900 bg-white transition-shadow duration-200";
 
   // === Type picker (shown before the form when fixed events are enabled) ===
   if (enableFixedEvents && eventType === null) {
@@ -303,8 +303,10 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
           className="w-full flex items-center gap-4 p-5 rounded-2xl border-2 border-gray-200 bg-white hover:border-teal-400 hover:bg-teal-50 text-left transition-all duration-200 active:scale-[0.98] cursor-pointer group"
         >
           <div className="w-12 h-12 rounded-xl bg-teal-100 flex items-center justify-center shrink-0 group-hover:bg-teal-200 transition-colors">
-            <svg className="w-6 h-6 text-teal-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+            <svg className="w-6 h-6 text-teal-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="10.5" cy="10.5" r="6.5" />
+              <path d="M19.5 19.5L15.5 15.5" />
+              <path d="M10.5 8v3l2 1.5" />
             </svg>
           </div>
           <div className="flex-1 min-w-0">
@@ -351,8 +353,10 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
                 <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
             ) : (
-              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="10.5" cy="10.5" r="6.5" />
+                <path d="M19.5 19.5L15.5 15.5" />
+                <path d="M10.5 8v3l2 1.5" />
               </svg>
             )}
             {eventType === 'fixed' ? 'Fixed date' : 'Find a time'}

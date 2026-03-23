@@ -5,8 +5,10 @@ import { format, addMinutes } from 'date-fns';
 import { useCopy } from '@/contexts/CopyContext';
 import { useMonetization } from '@/contexts/MonetizationContext';
 import SupportBanner from './SupportBanner';
+import ConfettiCelebration from './ConfettiCelebration';
 import { useRealtimeParticipants } from '@/hooks/useRealtimeParticipants';
-import { formatDisplayName } from '@/lib/names';
+import { formatDisplayName, firstName } from '@/lib/names';
+import { buildInviteText } from '@/lib/invite';
 import type { Event, RsvpValue } from '@/types';
 
 interface RSVPViewProps {
@@ -16,119 +18,299 @@ interface RSVPViewProps {
   organizerToken?: string | null;
 }
 
+// ── Face icon SVGs ──────────────────────────────────────────────────────────
+
+const SmileFace = () => (
+  <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="9" />
+    <circle cx="9" cy="11" r="0.8" fill="currentColor" stroke="none" />
+    <circle cx="15" cy="11" r="0.8" fill="currentColor" stroke="none" />
+    <path d="M8.5 14.5 Q12 17.5 15.5 14.5" />
+  </svg>
+);
+
+const MaybeFace = () => (
+  <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="9" />
+    <circle cx="9" cy="11" r="0.8" fill="currentColor" stroke="none" />
+    <circle cx="15" cy="11" r="0.8" fill="currentColor" stroke="none" />
+    <path d="M9 15 Q10.5 13.5 12 15 Q13.5 16.5 15 15" />
+  </svg>
+);
+
+const FrownFace = () => (
+  <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="9" />
+    <circle cx="9" cy="11" r="0.8" fill="currentColor" stroke="none" />
+    <circle cx="15" cy="11" r="0.8" fill="currentColor" stroke="none" />
+    <path d="M8.5 16 Q12 13 15.5 16" />
+  </svg>
+);
+
+// ── RSVP config ─────────────────────────────────────────────────────────────
+
 const RSVP_CONFIG = {
   yes: {
-    icon: (
-      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-      </svg>
-    ),
+    icon: <SmileFace />,
     activeClass: 'bg-green-500 text-white border-green-500 shadow-md shadow-green-200',
     hoverClass: 'hover:border-green-400 hover:bg-green-50 hover:text-green-700',
     dotClass: 'bg-green-400',
   },
   maybe: {
-    icon: (
-      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-      </svg>
-    ),
+    icon: <MaybeFace />,
     activeClass: 'bg-amber-400 text-white border-amber-400 shadow-md shadow-amber-200',
     hoverClass: 'hover:border-amber-300 hover:bg-amber-50 hover:text-amber-700',
     dotClass: 'bg-amber-400',
   },
   no: {
-    icon: (
-      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-      </svg>
-    ),
-    activeClass: 'bg-red-400 text-white border-red-400 shadow-md shadow-red-200',
-    hoverClass: 'hover:border-red-300 hover:bg-red-50 hover:text-red-500',
-    dotClass: 'bg-red-400',
+    icon: <FrownFace />,
+    activeClass: 'bg-gray-400 text-white border-gray-400 shadow-md shadow-gray-200',
+    hoverClass: 'hover:border-gray-300 hover:bg-gray-50 hover:text-gray-600',
+    dotClass: 'bg-gray-400',
   },
 } as const;
+
+// ── ICS generator ───────────────────────────────────────────────────────────
 
 function generateICS(event: Event): string {
   const start = new Date(event.finalized_time!);
   const end = addMinutes(start, event.duration_minutes || 60);
   const fmt = (d: Date) => d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
   return [
-    'BEGIN:VCALENDAR',
-    'VERSION:2.0',
-    'BEGIN:VEVENT',
-    `DTSTART:${fmt(start)}`,
-    `DTEND:${fmt(end)}`,
+    'BEGIN:VCALENDAR', 'VERSION:2.0', 'BEGIN:VEVENT',
+    `DTSTART:${fmt(start)}`, `DTEND:${fmt(end)}`,
     `SUMMARY:${event.name}`,
     event.description ? `DESCRIPTION:${event.description}` : '',
     event.location ? `LOCATION:${event.location}` : '',
-    'END:VEVENT',
-    'END:VCALENDAR',
+    'END:VEVENT', 'END:VCALENDAR',
   ].filter(Boolean).join('\r\n');
 }
 
+// ── Accordion section ────────────────────────────────────────────────────────
+
 type SectionKey = 'yes' | 'maybe' | 'no' | 'pending';
 
-interface AccordionSectionProps {
-  label: string;
-  count: number;
-  isOpen: boolean;
-  onToggle: () => void;
-  dotClass?: string;
-  dimWhenEmpty?: boolean;
-  children: React.ReactNode;
-}
-
-function AccordionSection({ label, count, isOpen, onToggle, dotClass, dimWhenEmpty, children }: AccordionSectionProps) {
+function AccordionSection({
+  label, count, isOpen, onToggle, dotClass, dimWhenEmpty, children,
+}: {
+  label: string; count: number; isOpen: boolean; onToggle: () => void;
+  dotClass?: string; dimWhenEmpty?: boolean; children: React.ReactNode;
+}) {
   const isEmpty = count === 0;
   return (
     <div className="border-b border-gray-100 last:border-b-0">
       <button
         type="button"
         onClick={onToggle}
-        className={`w-full flex items-center justify-between py-2.5 text-left transition-colors cursor-pointer ${
-          isEmpty && dimWhenEmpty ? 'opacity-40' : 'hover:bg-gray-50 -mx-1 px-1 rounded-lg'
+        className={`w-full flex items-center justify-between py-2.5 text-left transition-colors cursor-pointer rounded-lg ${
+          isEmpty && dimWhenEmpty ? 'opacity-40' : 'hover:bg-gray-50'
         }`}
       >
         <div className="flex items-center gap-2">
-          {dotClass && !isEmpty && (
-            <span className={`w-2 h-2 rounded-full shrink-0 ${dotClass}`} />
-          )}
-          {(isEmpty || !dotClass) && (
-            <span className="w-2 h-2 rounded-full shrink-0 bg-gray-200" />
-          )}
-          <span className={`text-sm font-medium ${isEmpty && dimWhenEmpty ? 'text-gray-400' : 'text-gray-700'}`}>
-            {label}
-          </span>
-          <span className={`text-xs font-semibold tabular-nums ${isEmpty && dimWhenEmpty ? 'text-gray-300' : 'text-gray-400'}`}>
-            {count}
-          </span>
+          <span className={`w-2 h-2 rounded-full shrink-0 ${!isEmpty && dotClass ? dotClass : 'bg-gray-200'}`} />
+          <span className={`text-sm font-medium ${isEmpty && dimWhenEmpty ? 'text-gray-400' : 'text-gray-700'}`}>{label}</span>
+          <span className={`text-xs font-semibold tabular-nums ${isEmpty && dimWhenEmpty ? 'text-gray-300' : 'text-gray-400'}`}>{count}</span>
         </div>
-        <svg
-          className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
-          fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
-        >
+        <svg className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+          fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
         </svg>
       </button>
-      {isOpen && count > 0 && (
-        <div className="pb-2.5 animate-fade-in">
-          {children}
-        </div>
-      )}
+      {isOpen && count > 0 && <div className="pb-2.5 animate-fade-in">{children}</div>}
     </div>
   );
 }
 
+// ── Confirmation bottom sheet ────────────────────────────────────────────────
+
+const MODAL_CONTENT: Record<RsvpValue, { headline: string; subtext: string; showCalendar: boolean }> = {
+  yes: {
+    headline: "You're in! 🎉",
+    subtext: "We'll see you there. Don't forget to add it to your calendar.",
+    showCalendar: true,
+  },
+  maybe: {
+    headline: "Hope you can make it! 🤞",
+    subtext: "Bookmark this page and come back when you know for sure — updating your RSVP is one tap.",
+    showCalendar: false,
+  },
+  no: {
+    headline: "We'll miss you 😔",
+    subtext: "Changed your mind later? Come back anytime and update your RSVP.",
+    showCalendar: false,
+  },
+};
+
+function RsvpModal({
+  rsvp, event, onClose, onDownloadICS, onCopyDetails,
+}: {
+  rsvp: RsvpValue;
+  event: Event;
+  onClose: () => void;
+  onDownloadICS: () => void;
+  onCopyDetails: () => void;
+}) {
+  const monetization = useMonetization();
+  const [shareCopied, setShareCopied] = useState(false);
+  const content = MODAL_CONTENT[rsvp];
+  const url = typeof window !== 'undefined' ? window.location.href : '';
+  const inviteText = buildInviteText(event, url);
+
+  const handleShare = async () => {
+    if (typeof navigator !== 'undefined' && 'share' in navigator) {
+      try {
+        await navigator.share({ title: event.name, text: inviteText, url });
+        return;
+      } catch { /* cancelled */ }
+    }
+    try {
+      await navigator.clipboard.writeText(inviteText);
+    } catch {
+      const ta = document.createElement('textarea');
+      ta.value = inviteText;
+      ta.style.cssText = 'position:fixed;opacity:0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+    }
+    setShareCopied(true);
+    setTimeout(() => setShareCopied(false), 2000);
+  };
+
+  return (
+    <>
+      {/* Overlay */}
+      <div
+        className="fixed inset-0 bg-black/40 z-40 backdrop-blur-[1px]"
+        onClick={onClose}
+        aria-hidden="true"
+      />
+
+      {/* Bottom sheet */}
+      <div className="fixed bottom-0 left-0 right-0 z-40 flex justify-center animate-slide-up">
+        <div className="w-full max-w-lg bg-white rounded-t-3xl shadow-2xl pb-safe">
+
+          {/* Drag handle */}
+          <div className="flex justify-center pt-3 pb-1">
+            <div className="w-10 h-1 rounded-full bg-gray-200" />
+          </div>
+
+          {/* Close button */}
+          <button
+            type="button"
+            onClick={onClose}
+            className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 text-gray-400 hover:bg-gray-200 hover:text-gray-600 transition-colors cursor-pointer"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+
+          <div className="px-6 pt-2 pb-8 space-y-5">
+
+            {/* Confirmation message */}
+            <div className="text-center py-2">
+              <h2 className="text-xl font-bold text-gray-900">{content.headline}</h2>
+              <p className="text-sm text-gray-500 mt-1.5 leading-relaxed max-w-xs mx-auto">{content.subtext}</p>
+            </div>
+
+            {/* Action buttons */}
+            <div className="space-y-2">
+              {content.showCalendar && event.finalized_time && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => { onDownloadICS(); onClose(); }}
+                    className="w-full py-3 px-4 bg-teal-600 text-white text-sm font-semibold rounded-xl hover:bg-teal-700 transition-all duration-200 active:scale-[0.97] cursor-pointer flex items-center justify-center gap-2"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
+                    </svg>
+                    Add to Calendar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { onCopyDetails(); onClose(); }}
+                    className="w-full py-2.5 px-4 border border-gray-200 text-sm font-medium rounded-xl text-gray-600 hover:bg-gray-50 transition-all duration-200 active:scale-[0.97] cursor-pointer flex items-center justify-center gap-2"
+                  >
+                    <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15.666 3.888A2.25 2.25 0 0013.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 01-.75.75H9.75a.75.75 0 01-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 01-2.25 2.25H6.75A2.25 2.25 0 014.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 011.927-.184" />
+                    </svg>
+                    Copy event details
+                  </button>
+                </>
+              )}
+
+              <button
+                type="button"
+                onClick={handleShare}
+                className="w-full py-2.5 px-4 border border-gray-200 text-sm font-medium rounded-xl text-gray-600 hover:bg-gray-50 transition-all duration-200 active:scale-[0.97] cursor-pointer flex items-center justify-center gap-2"
+              >
+                {shareCopied ? (
+                  <>
+                    <svg className="w-4 h-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span className="text-green-600">Invite copied!</span>
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                    </svg>
+                    Share this event
+                  </>
+                )}
+              </button>
+            </div>
+
+            {/* Divider */}
+            <div className="border-t border-gray-100" />
+
+            {/* App promotion */}
+            <div className="space-y-2.5">
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Planning something?</p>
+              <a
+                href="/"
+                className="w-full py-2.5 px-4 bg-gray-900 text-white text-sm font-semibold rounded-xl hover:bg-gray-800 transition-all duration-200 active:scale-[0.97] cursor-pointer flex items-center justify-center gap-2"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                </svg>
+                Start your own event — it's free
+              </a>
+
+              {monetization.buymeacoffee_url && monetization.show_on_rsvp && (
+                <a
+                  href={monetization.buymeacoffee_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full py-2.5 px-4 border border-amber-200 bg-amber-50 text-amber-700 text-sm font-medium rounded-xl hover:bg-amber-100 transition-all duration-200 active:scale-[0.97] cursor-pointer flex items-center justify-center gap-2"
+                >
+                  ☕ {monetization.donation_cta}
+                </a>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
+// ── Main component ───────────────────────────────────────────────────────────
+
 export default function RSVPView({ event, participantId, isOrganizer, organizerToken }: RSVPViewProps) {
   const copy = useCopy();
-  const monetization = useMonetization();
   const rsvpCopy = copy.rsvp;
   const { participants, removeParticipant } = useRealtimeParticipants(event.id);
   const [saving, setSaving] = useState(false);
   const [optimisticRsvp, setOptimisticRsvp] = useState<RsvpValue | null>(null);
   const [copied, setCopied] = useState(false);
-  const [openSections, setOpenSections] = useState<Set<SectionKey>>(new Set(['yes']));
+  const [openSections, setOpenSections] = useState<Set<SectionKey>>(new Set());
+  const [modalRsvp, setModalRsvp] = useState<RsvpValue | null>(null);
+  const [showConfetti, setShowConfetti] = useState(false);
 
   const me = participants.find((p) => p.id === participantId);
   const myRsvp: RsvpValue | null = optimisticRsvp ?? me?.rsvp ?? null;
@@ -146,6 +328,13 @@ export default function RSVPView({ event, participantId, isOrganizer, organizerT
     if (saving) return;
     setOptimisticRsvp(value);
     setSaving(true);
+
+    // Show confirmation modal + confetti immediately
+    setModalRsvp(value);
+    if (value === 'yes' || value === 'maybe') {
+      setShowConfetti(true);
+    }
+
     try {
       await fetch(`/api/participants/${participantId}`, {
         method: 'PATCH',
@@ -184,14 +373,12 @@ export default function RSVPView({ event, participantId, isOrganizer, organizerT
   const handleCopyDetails = useCallback(async () => {
     const start = new Date(event.finalized_time!);
     const end = addMinutes(start, event.duration_minutes || 60);
-    const lines = [
-      event.name,
-      '',
+    const text = [
+      event.name, '',
       format(start, 'EEEE, MMMM d, yyyy'),
       `${format(start, 'h:mm a')} - ${format(end, 'h:mm a')}`,
       ...(event.location ? [event.location] : []),
-    ];
-    const text = lines.join('\n');
+    ].join('\n');
     try {
       await navigator.clipboard.writeText(text);
     } catch {
@@ -207,22 +394,20 @@ export default function RSVPView({ event, participantId, isOrganizer, organizerT
     setTimeout(() => setCopied(false), 2000);
   }, [event]);
 
-  // Sort helpers
+  // Sorted helpers
   const sortByName = <T extends { name: string }>(arr: T[]) =>
     [...arr].sort((a, b) => a.name.localeCompare(b.name));
 
-  const going = sortByName(participants.filter((p) => p.rsvp === 'yes'));
-  const maybe = sortByName(participants.filter((p) => p.rsvp === 'maybe'));
-  const cant = sortByName(participants.filter((p) => p.rsvp === 'no'));
+  const going   = sortByName(participants.filter((p) => p.rsvp === 'yes'));
+  const maybe   = sortByName(participants.filter((p) => p.rsvp === 'maybe'));
+  const cant    = sortByName(participants.filter((p) => p.rsvp === 'no'));
   const pending = sortByName(participants.filter((p) => !p.rsvp));
 
   const rsvpOptions: { value: RsvpValue; label: string }[] = [
-    { value: 'yes', label: rsvpCopy?.going ?? 'Going' },
+    { value: 'yes',   label: rsvpCopy?.going ?? 'Going' },
     { value: 'maybe', label: rsvpCopy?.maybe ?? 'Maybe' },
-    { value: 'no', label: rsvpCopy?.cant ?? "Can't make it" },
+    { value: 'no',    label: rsvpCopy?.cant  ?? "Can't make it" },
   ];
-
-  const showCalendarActions = event.finalized_time && (myRsvp === 'yes' || myRsvp === 'maybe');
 
   const renderNameList = (list: typeof going) => (
     <ul className="space-y-1 mt-0.5">
@@ -230,9 +415,7 @@ export default function RSVPView({ event, participantId, isOrganizer, organizerT
         <li key={p.id} className="flex items-center justify-between group">
           <span className={`text-sm ${p.id === participantId ? 'font-semibold text-gray-800' : 'text-gray-600'}`}>
             {formatDisplayName(p.name)}
-            {p.id === participantId && (
-              <span className="ml-1 text-xs text-gray-400 font-normal">you</span>
-            )}
+            {p.id === participantId && <span className="ml-1 text-xs text-gray-400 font-normal">you</span>}
           </span>
           {isOrganizer && p.id !== participantId && (
             <button
@@ -250,148 +433,108 @@ export default function RSVPView({ event, participantId, isOrganizer, organizerT
   );
 
   return (
-    <div className="space-y-5">
-      {/* RSVP prompt */}
-      <div>
-        <p className="text-sm font-semibold text-gray-700 mb-3">
-          {myRsvp
-            ? (rsvpCopy?.change ?? 'Change response')
-            : (rsvpCopy?.heading ?? 'Can you make it?')}
-        </p>
-        <div className="grid grid-cols-3 gap-2">
-          {rsvpOptions.map(({ value, label }) => {
-            const cfg = RSVP_CONFIG[value];
-            const isActive = myRsvp === value;
-            return (
-              <button
-                key={value}
-                type="button"
-                onClick={() => handleRsvp(value)}
-                disabled={saving}
-                className={`
-                  flex flex-col items-center gap-1.5 py-3 px-2 rounded-2xl border-2 text-sm font-semibold
-                  transition-all duration-200 active:scale-95 cursor-pointer
-                  ${isActive
-                    ? cfg.activeClass
-                    : `bg-white border-gray-200 text-gray-500 ${cfg.hoverClass}`
-                  }
-                  ${saving ? 'opacity-60 cursor-not-allowed' : ''}
-                `}
-              >
-                {cfg.icon}
-                <span className="text-xs font-semibold leading-tight text-center">{label}</span>
-              </button>
-            );
-          })}
+    <>
+      {/* Confetti burst on Going / Maybe */}
+      {showConfetti && <ConfettiCelebration onComplete={() => setShowConfetti(false)} />}
+
+      <div className="space-y-5">
+        {/* RSVP buttons */}
+        <div>
+          <p className="text-sm font-semibold text-gray-700 mb-3">
+            {myRsvp ? (rsvpCopy?.change ?? 'Change response') : (rsvpCopy?.heading ?? 'Can you make it?')}
+          </p>
+          <div className="grid grid-cols-3 gap-2">
+            {rsvpOptions.map(({ value, label }) => {
+              const cfg = RSVP_CONFIG[value];
+              const isActive = myRsvp === value;
+              return (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => handleRsvp(value)}
+                  disabled={saving}
+                  className={`
+                    flex flex-col items-center gap-1.5 py-3.5 px-2 rounded-2xl border-2 text-sm font-semibold
+                    transition-all duration-200 active:scale-95 cursor-pointer
+                    ${isActive ? cfg.activeClass : `bg-white border-gray-200 text-gray-500 ${cfg.hoverClass}`}
+                    ${saving ? 'opacity-60 cursor-not-allowed' : ''}
+                  `}
+                >
+                  {cfg.icon}
+                  <span className="text-xs font-semibold leading-tight text-center">{label}</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
+
+        {/* Calendar actions — secondary, below RSVP once answered */}
+        {myRsvp === 'yes' && event.finalized_time && (
+          <div className="space-y-2 animate-fade-in">
+            <button type="button" onClick={handleDownloadICS}
+              className="w-full py-2.5 px-4 bg-teal-600 text-white text-sm font-semibold rounded-xl hover:bg-teal-700 shadow-sm transition-all duration-200 active:scale-[0.97] cursor-pointer flex items-center justify-center gap-2">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
+              </svg>
+              Add to Calendar
+            </button>
+            <button type="button" onClick={handleCopyDetails}
+              className={`w-full py-2 px-4 border text-sm font-medium rounded-xl transition-all duration-200 active:scale-[0.97] cursor-pointer flex items-center justify-center gap-2 ${
+                copied ? 'bg-teal-600 border-teal-600 text-white' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+              }`}>
+              {copied ? (
+                <><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>Copied!</>
+              ) : (
+                <><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M15.666 3.888A2.25 2.25 0 0013.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 01-.75.75H9.75a.75.75 0 01-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 01-2.25 2.25H6.75A2.25 2.25 0 014.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 011.927-.184" /></svg>Copy event details</>
+              )}
+            </button>
+          </div>
+        )}
+
+        {/* Accordion RSVP list */}
+        {participants.length > 0 && (
+          <div className="border-t border-gray-100 pt-1 animate-fade-in">
+            <AccordionSection label={rsvpCopy?.going_label ?? 'Going'} count={going.length}
+              isOpen={openSections.has('yes')} onToggle={() => toggleSection('yes')}
+              dotClass={RSVP_CONFIG.yes.dotClass} dimWhenEmpty>
+              {renderNameList(going)}
+            </AccordionSection>
+            <AccordionSection label={rsvpCopy?.maybe_label ?? 'Maybe'} count={maybe.length}
+              isOpen={openSections.has('maybe')} onToggle={() => toggleSection('maybe')}
+              dotClass={RSVP_CONFIG.maybe.dotClass} dimWhenEmpty>
+              {renderNameList(maybe)}
+            </AccordionSection>
+            <AccordionSection label={rsvpCopy?.cant_label ?? "Can't make it"} count={cant.length}
+              isOpen={openSections.has('no')} onToggle={() => toggleSection('no')}
+              dotClass={RSVP_CONFIG.no.dotClass} dimWhenEmpty>
+              {renderNameList(cant)}
+            </AccordionSection>
+            {pending.length > 0 && (
+              <AccordionSection label={rsvpCopy?.pending_label ?? 'No response yet'} count={pending.length}
+                isOpen={openSections.has('pending')} onToggle={() => toggleSection('pending')}>
+                {renderNameList(pending)}
+              </AccordionSection>
+            )}
+          </div>
+        )}
+
+        {participants.length === 0 && (
+          <p className="text-sm text-gray-400 italic pt-1 border-t border-gray-100">
+            {rsvpCopy?.no_responses ?? 'No responses yet'}
+          </p>
+        )}
       </div>
 
-      {/* Calendar actions — appear once user says they're going or maybe */}
-      {showCalendarActions && (
-        <div className="space-y-2 animate-fade-in">
-          <button
-            type="button"
-            onClick={handleDownloadICS}
-            className="w-full py-2.5 px-4 bg-teal-600 text-white text-sm font-semibold rounded-xl hover:bg-teal-700 shadow-sm transition-all duration-200 active:scale-[0.97] cursor-pointer flex items-center justify-center gap-2"
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
-            </svg>
-            Add to Calendar
-          </button>
-          <button
-            type="button"
-            onClick={handleCopyDetails}
-            className={`w-full py-2 px-4 border text-sm font-medium rounded-xl transition-all duration-200 active:scale-[0.97] cursor-pointer flex items-center justify-center gap-2 ${
-              copied
-                ? 'bg-teal-600 border-teal-600 text-white'
-                : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
-            }`}
-          >
-            {copied ? (
-              <>
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                </svg>
-                Copied!
-              </>
-            ) : (
-              <>
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.666 3.888A2.25 2.25 0 0013.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 01-.75.75H9.75a.75.75 0 01-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 01-2.25 2.25H6.75A2.25 2.25 0 014.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 011.927-.184" />
-                </svg>
-                Copy event details
-              </>
-            )}
-          </button>
-        </div>
-      )}
-
-      {/* Accordion RSVP list */}
-      {participants.length > 0 && (
-        <div className="border-t border-gray-100 pt-1 animate-fade-in">
-          <AccordionSection
-            label={rsvpCopy?.going_label ?? 'Going'}
-            count={going.length}
-            isOpen={openSections.has('yes')}
-            onToggle={() => toggleSection('yes')}
-            dotClass={RSVP_CONFIG.yes.dotClass}
-            dimWhenEmpty
-          >
-            {renderNameList(going)}
-          </AccordionSection>
-
-          <AccordionSection
-            label={rsvpCopy?.maybe_label ?? 'Maybe'}
-            count={maybe.length}
-            isOpen={openSections.has('maybe')}
-            onToggle={() => toggleSection('maybe')}
-            dotClass={RSVP_CONFIG.maybe.dotClass}
-            dimWhenEmpty
-          >
-            {renderNameList(maybe)}
-          </AccordionSection>
-
-          <AccordionSection
-            label={rsvpCopy?.cant_label ?? "Can't make it"}
-            count={cant.length}
-            isOpen={openSections.has('no')}
-            onToggle={() => toggleSection('no')}
-            dotClass={RSVP_CONFIG.no.dotClass}
-            dimWhenEmpty
-          >
-            {renderNameList(cant)}
-          </AccordionSection>
-
-          {pending.length > 0 && (
-            <AccordionSection
-              label={rsvpCopy?.pending_label ?? 'No response yet'}
-              count={pending.length}
-              isOpen={openSections.has('pending')}
-              onToggle={() => toggleSection('pending')}
-            >
-              {renderNameList(pending)}
-            </AccordionSection>
-          )}
-        </div>
-      )}
-
-      {participants.length === 0 && (
-        <p className="text-sm text-gray-400 italic pt-1 border-t border-gray-100">
-          {rsvpCopy?.no_responses ?? 'No responses yet'}
-        </p>
-      )}
-
-      {/* Support nudge — shown once per session after user responds */}
-      {myRsvp && monetization.buymeacoffee_url && monetization.show_on_rsvp && (
-        <SupportBanner
-          url={monetization.buymeacoffee_url}
-          cta={monetization.donation_cta}
-          message={monetization.donation_message}
-          variant="banner"
-          sessionKey="support_nudge_rsvp"
+      {/* Confirmation bottom sheet */}
+      {modalRsvp && (
+        <RsvpModal
+          rsvp={modalRsvp}
+          event={event}
+          onClose={() => setModalRsvp(null)}
+          onDownloadICS={handleDownloadICS}
+          onCopyDetails={handleCopyDetails}
         />
       )}
-    </div>
+    </>
   );
 }

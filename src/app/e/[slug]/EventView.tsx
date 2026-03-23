@@ -201,7 +201,7 @@ export default function EventView({ event: initialEvent }: EventViewProps) {
         {!isFixed && isOrganizer && !event.finalized_time && <BookmarkPrompt eventSlug={event.slug} />}
 
         <div className="mb-4">
-          <ShareLink eventName={event.name} isOrganizer={isOrganizer} />
+          <ShareLink event={event} isOrganizer={isOrganizer} />
         </div>
 
         {/* Main card: event details + grid/RSVP */}
