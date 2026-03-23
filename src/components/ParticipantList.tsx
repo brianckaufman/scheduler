@@ -15,26 +15,21 @@ export default function ParticipantList({
 
   return (
     <div>
-      <h3 className="text-sm font-medium text-gray-700 mb-2">
+      <h3 className="text-sm font-semibold text-gray-700 mb-2">
         Participants ({participants.length})
       </h3>
-      <div className="flex flex-wrap gap-2">
+      <ul className="space-y-1">
         {participants.map((p) => (
-          <span
-            key={p.id}
-            className={`
-              inline-flex items-center px-3 py-1 rounded-full text-sm
-              ${p.id === currentParticipantId
-                ? 'bg-violet-100 text-violet-700 font-medium'
-                : 'bg-gray-100 text-gray-600'
-              }
-            `}
-          >
-            {p.name}
-            {p.id === currentParticipantId && ' (you)'}
-          </span>
+          <li key={p.id} className="flex items-center">
+            <span className={`text-sm ${p.id === currentParticipantId ? 'font-semibold text-gray-800' : 'text-gray-600'}`}>
+              {p.name}
+              {p.id === currentParticipantId && (
+                <span className="ml-1 text-xs text-gray-400 font-normal">you</span>
+              )}
+            </span>
+          </li>
         ))}
-      </div>
+      </ul>
     </div>
   );
 }
