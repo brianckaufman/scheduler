@@ -5,6 +5,11 @@ import { parseLocation, buildMapsUrl, buildMapsPlaceUrl, encodeLocation } from '
 
 type LocType = 'place' | 'virtual' | 'text';
 
+interface Prediction {
+  description: string;
+  place_id: string;
+}
+
 interface LocationInputProps {
   value: string;
   onChange: (value: string) => void;
@@ -13,7 +18,7 @@ interface LocationInputProps {
 
 /** Detect the input type from an existing stored value. */
 function detectType(raw: string): LocType {
-  if (!raw) return 'place'; // default tab for new events
+  if (!raw) return 'place';
   const parsed = parseLocation(raw);
   if (parsed.type === 'place')   return 'place';
   if (parsed.type === 'virtual') return 'virtual';
@@ -28,40 +33,8 @@ function extractFields(raw: string): { address: string; secondary: string; virtu
   return { address: '', secondary: '', virtualLabel: '', virtualUrl: '', text: (parsed as { text: string }).text };
 }
 
-// Declare google on window for Places API
-declare global {
-  interface Window {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    google?: any;
-    _mapsLoading?: boolean;
-    _mapsLoaded?: boolean;
-  }
-}
-
-/** Load the Google Maps JS API once. Returns a promise that resolves when ready. */
-function loadMapsApi(apiKey: string): Promise<void> {
-  if (typeof window === 'undefined') return Promise.reject();
-  if (window._mapsLoaded) return Promise.resolve();
-  if (window._mapsLoading) {
-    return new Promise((resolve) => {
-      const check = setInterval(() => {
-        if (window._mapsLoaded) { clearInterval(check); resolve(); }
-      }, 100);
-    });
-  }
-  window._mapsLoading = true;
-  return new Promise((resolve, reject) => {
-    const script = document.createElement('script');
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
-    script.async = true;
-    script.onload = () => { window._mapsLoaded = true; window._mapsLoading = false; resolve(); };
-    script.onerror = reject;
-    document.head.appendChild(script);
-  });
-}
-
 export default function LocationInput({ value, onChange, inputClassName = '' }: LocationInputProps) {
-  const [locType, setLocType] = useState<LocType>(() => detectType(value));
+  const [locType, setLocType]           = useState<LocType>(() => detectType(value));
   const fields = extractFields(value);
   const [address, setAddress]           = useState(fields.address);
   const [secondary, setSecondary]       = useState(fields.secondary);
@@ -69,9 +42,25 @@ export default function LocationInput({ value, onChange, inputClassName = '' }: 
   const [virtualUrl, setVirtualUrl]     = useState(fields.virtualUrl);
   const [text, setText]                 = useState(fields.text);
 
-  const addressInputRef = useRef<HTMLInputElement>(null);
-  const autocompleteRef = useRef<unknown>(null);
-  const mapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+  const [predictions, setPredictions]   = useState<Prediction[]>([]);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [activeIndex, setActiveIndex]   = useState(-1);
+  const [fetching, setFetching]         = useState(false);
+
+  const debounceRef  = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const wrapperRef   = useRef<HTMLDivElement>(null);
+  const mapsApiKey   = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleOutsideClick(e: MouseEvent) {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
+        setShowDropdown(false);
+      }
+    }
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, []);
 
   // Emit the encoded value whenever sub-fields change
   const emit = useCallback((type: LocType, a: string, sec: string, vl: string, vu: string, t: string) => {
@@ -88,72 +77,66 @@ export default function LocationInput({ value, onChange, inputClassName = '' }: 
     }
   }, [onChange]);
 
-  // Attach Places Autocomplete to the address input.
-  // Safe to call multiple times — guards against double-attachment internally.
-  const attachAutocomplete = useCallback(() => {
-    if (!addressInputRef.current || autocompleteRef.current || !window.google?.maps?.places) return;
-    const ac = new window.google.maps.places.Autocomplete(addressInputRef.current, {
-      types: ['establishment', 'geocode'],
-      fields: ['place_id', 'name', 'formatted_address'],
-    });
-    autocompleteRef.current = ac;
-    ac.addListener('place_changed', () => {
-      const place = ac.getPlace();
-      if (!place) return;
-      const label = place.name || place.formatted_address || addressInputRef.current?.value || '';
-      const url = place.place_id ? buildMapsPlaceUrl(place.place_id) : buildMapsUrl(label);
-      setAddress(label);
-      // Read secondary from the DOM directly so we always get the current value,
-      // not a stale closure capture from attach time.
-      const secVal = addressInputRef.current
-        ?.closest('.space-y-2')
-        ?.querySelectorAll('input')[1]
-        ?.value ?? '';
-      onChange(encodeLocation('place', label, url, secVal || undefined));
-    });
-  }, [onChange]);
-
-  // Clear the stale autocomplete instance whenever the user navigates away from
-  // the Address tab — the input element is unmounted and a fresh one is created
-  // on return, so we must re-attach from scratch.
-  useEffect(() => {
-    if (locType !== 'place') {
-      autocompleteRef.current = null;
+  // Fetch autocomplete predictions via our own API route (avoids referrer/CSP issues)
+  const fetchPredictions = useCallback(async (input: string) => {
+    if (!mapsApiKey || input.trim().length < 2) {
+      setPredictions([]);
+      setShowDropdown(false);
+      return;
     }
-  }, [locType]);
-
-  // Eagerly start loading the Maps API as soon as the component mounts so it's
-  // ready by the time the user clicks the address input.
-  useEffect(() => {
-    if (!mapsApiKey) return;
-    loadMapsApi(mapsApiKey)
-      .then(() => { if (locType === 'place') attachAutocomplete(); })
-      .catch(() => {});
-  // Run once on mount — intentionally omitting locType / attachAutocomplete
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    setFetching(true);
+    try {
+      const res = await fetch(`/api/places/autocomplete?input=${encodeURIComponent(input)}`);
+      const data = await res.json();
+      setPredictions(data.predictions ?? []);
+      setShowDropdown((data.predictions ?? []).length > 0);
+    } catch {
+      setPredictions([]);
+      setShowDropdown(false);
+    } finally {
+      setFetching(false);
+    }
   }, [mapsApiKey]);
 
-  // Re-attach when switching back to the Address tab after the API is loaded.
-  useEffect(() => {
-    if (locType === 'place' && mapsApiKey && window._mapsLoaded) {
-      attachAutocomplete();
-    }
-  }, [locType, mapsApiKey, attachAutocomplete]);
+  const handleAddressChange = (val: string) => {
+    setAddress(val);
+    setActiveIndex(-1);
+    emit('place', val, secondary, virtualLabel, virtualUrl, text);
+    // Debounce API calls
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => fetchPredictions(val), 280);
+  };
 
-  // Final safety net: attach on focus in case the above effects ran too early
-  // (e.g. the input wasn't in the DOM yet when the API finished loading).
-  const handleAddressFocus = useCallback(async () => {
-    if (!mapsApiKey) return;
-    try {
-      await loadMapsApi(mapsApiKey);
-      attachAutocomplete();
-    } catch {
-      // Maps API unavailable — plain text fallback
+  const handleSelectPrediction = (p: Prediction) => {
+    const label = p.description;
+    const url   = buildMapsPlaceUrl(p.place_id);
+    setAddress(label);
+    onChange(encodeLocation('place', label, url, secondary || undefined));
+    setPredictions([]);
+    setShowDropdown(false);
+    setActiveIndex(-1);
+  };
+
+  const handleAddressKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!showDropdown || predictions.length === 0) return;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setActiveIndex((i) => Math.min(i + 1, predictions.length - 1));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setActiveIndex((i) => Math.max(i - 1, 0));
+    } else if (e.key === 'Enter' && activeIndex >= 0) {
+      e.preventDefault();
+      handleSelectPrediction(predictions[activeIndex]);
+    } else if (e.key === 'Escape') {
+      setShowDropdown(false);
     }
-  }, [mapsApiKey, attachAutocomplete]);
+  };
 
   const handleTypeChange = (t: LocType) => {
     setLocType(t);
+    setPredictions([]);
+    setShowDropdown(false);
     emit(t, address, secondary, virtualLabel, virtualUrl, text);
   };
 
@@ -196,23 +179,60 @@ export default function LocationInput({ value, onChange, inputClassName = '' }: 
         </button>
       </div>
 
-      {/* Place / address */}
+      {/* Address tab */}
       {locType === 'place' && (
         <div className="space-y-2">
-          <input
-            ref={addressInputRef}
-            type="text"
-            value={address}
-            onChange={(e) => {
-              setAddress(e.target.value);
-              emit('place', e.target.value, secondary, virtualLabel, virtualUrl, text);
-            }}
-            onFocus={handleAddressFocus}
-            placeholder={mapsApiKey ? 'Start typing an address or place name…' : 'Enter address or place name'}
-            maxLength={300}
-            className={inputClassName}
-            autoComplete="off"
-          />
+          {/* Address input with autocomplete dropdown */}
+          <div ref={wrapperRef} className="relative">
+            <input
+              type="text"
+              value={address}
+              onChange={(e) => handleAddressChange(e.target.value)}
+              onKeyDown={handleAddressKeyDown}
+              onFocus={() => { if (predictions.length > 0) setShowDropdown(true); }}
+              placeholder="Start typing an address or place name…"
+              maxLength={300}
+              className={inputClassName}
+              autoComplete="off"
+              aria-autocomplete="list"
+              aria-expanded={showDropdown}
+            />
+
+            {/* Spinner while fetching */}
+            {fetching && (
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                <svg className="w-4 h-4 text-gray-300 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth={4} />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                </svg>
+              </div>
+            )}
+
+            {/* Suggestions dropdown */}
+            {showDropdown && predictions.length > 0 && (
+              <ul className="absolute z-50 left-0 right-0 top-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden">
+                {predictions.map((p, i) => (
+                  <li key={p.place_id}>
+                    <button
+                      type="button"
+                      onMouseDown={(e) => { e.preventDefault(); handleSelectPrediction(p); }}
+                      className={`w-full text-left px-3 py-2.5 text-sm flex items-center gap-2.5 transition-colors cursor-pointer ${
+                        i === activeIndex ? 'bg-violet-50 text-violet-900' : 'text-gray-700 hover:bg-gray-50'
+                      }`}
+                    >
+                      <svg className="w-3.5 h-3.5 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" />
+                        <circle cx="12" cy="9" r="2.5" />
+                      </svg>
+                      <span className="truncate">{p.description}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          {/* Secondary location */}
           {address && (
             <>
               <input
@@ -273,7 +293,7 @@ export default function LocationInput({ value, onChange, inputClassName = '' }: 
         </div>
       )}
 
-      {/* Plain text */}
+      {/* Plain text / named place */}
       {locType === 'text' && (
         <input
           type="text"
