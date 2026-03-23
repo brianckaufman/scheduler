@@ -132,7 +132,7 @@ export default function LocationInput({ value, onChange, inputClassName = '' }: 
     emit(t, address, secondary, virtualLabel, virtualUrl, text);
   };
 
-  const tabBase   = 'flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer';
+  const tabBase   = 'flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5';
   const tabActive = 'bg-white text-gray-800 shadow-sm';
   const tabIdle   = 'text-gray-500 hover:text-gray-700';
 
@@ -142,15 +142,31 @@ export default function LocationInput({ value, onChange, inputClassName = '' }: 
       <div className="flex gap-1 bg-gray-100 p-1 rounded-xl">
         <button type="button" onClick={() => handleTypeChange('place')}
           className={`${tabBase} ${locType === 'place' ? tabActive : tabIdle}`}>
-          📍 Place
+          {/* Map pin — links to Google Maps */}
+          <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" />
+            <circle cx="12" cy="9" r="2.5" />
+          </svg>
+          Address
         </button>
         <button type="button" onClick={() => handleTypeChange('virtual')}
           className={`${tabBase} ${locType === 'virtual' ? tabActive : tabIdle}`}>
-          🔗 Virtual
+          <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+            <path d="M15 10l4.553-2.276A1 1 0 0121 8.723v6.554a1 1 0 01-1.447.894L15 14" />
+            <rect x="3" y="8" width="12" height="8" rx="2" />
+          </svg>
+          Virtual
         </button>
         <button type="button" onClick={() => handleTypeChange('text')}
           className={`${tabBase} ${locType === 'text' ? tabActive : tabIdle}`}>
-          💬 Text
+          {/* Building — a venue described in plain text */}
+          <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+            <path d="M3 21h18" />
+            <path d="M5 21V7l7-4 7 4v14" />
+            <path d="M9 21v-4h6v4" />
+            <path d="M9 11h.01M15 11h.01M9 15h.01M15 15h.01" />
+          </svg>
+          Place
         </button>
       </div>
 
@@ -188,7 +204,7 @@ export default function LocationInput({ value, onChange, inputClassName = '' }: 
                 <svg className="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                 </svg>
-                Primary address opens in Google Maps when tapped
+                Tapping the address opens Google Maps
               </p>
             </>
           )}
@@ -240,7 +256,7 @@ export default function LocationInput({ value, onChange, inputClassName = '' }: 
             setText(e.target.value);
             emit('text', address, secondary, virtualLabel, virtualUrl, e.target.value);
           }}
-          placeholder="e.g. Dave's backyard, Building C Room 204…"
+          placeholder="e.g. Dave's backyard, The Grand Ballroom, Rooftop Terrace…"
           maxLength={200}
           className={inputClassName}
         />
