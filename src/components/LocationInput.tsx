@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { parseLocation, buildMapsUrl, buildMapsPlaceUrl, encodeLocation } from '@/lib/location';
 
 type LocType = 'place' | 'virtual' | 'text';
@@ -46,10 +47,22 @@ export default function LocationInput({ value, onChange, inputClassName = '' }: 
   const [showDropdown, setShowDropdown] = useState(false);
   const [activeIndex, setActiveIndex]   = useState(-1);
   const [fetching, setFetching]         = useState(false);
+  const [dropdownPos, setDropdownPos]   = useState<{ top: number; left: number; width: number } | null>(null);
 
   const debounceRef  = useRef<ReturnType<typeof setTimeout> | null>(null);
   const wrapperRef   = useRef<HTMLDivElement>(null);
   const mapsApiKey   = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+
+  /** Measure the input wrapper and store its page-relative position for the portal. */
+  const updateDropdownPos = useCallback(() => {
+    if (!wrapperRef.current) return;
+    const rect = wrapperRef.current.getBoundingClientRect();
+    setDropdownPos({
+      top:   rect.bottom + window.scrollY + 4,
+      left:  rect.left   + window.scrollX,
+      width: rect.width,
+    });
+  }, []);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -88,15 +101,21 @@ export default function LocationInput({ value, onChange, inputClassName = '' }: 
     try {
       const res = await fetch(`/api/places/autocomplete?input=${encodeURIComponent(input)}`);
       const data = await res.json();
-      setPredictions(data.predictions ?? []);
-      setShowDropdown((data.predictions ?? []).length > 0);
+      const preds = data.predictions ?? [];
+      setPredictions(preds);
+      if (preds.length > 0) {
+        updateDropdownPos();
+        setShowDropdown(true);
+      } else {
+        setShowDropdown(false);
+      }
     } catch {
       setPredictions([]);
       setShowDropdown(false);
     } finally {
       setFetching(false);
     }
-  }, [mapsApiKey]);
+  }, [mapsApiKey, updateDropdownPos]);
 
   const handleAddressChange = (val: string) => {
     setAddress(val);
@@ -189,7 +208,7 @@ export default function LocationInput({ value, onChange, inputClassName = '' }: 
               value={address}
               onChange={(e) => handleAddressChange(e.target.value)}
               onKeyDown={handleAddressKeyDown}
-              onFocus={() => { if (predictions.length > 0) setShowDropdown(true); }}
+              onFocus={() => { if (predictions.length > 0) { updateDropdownPos(); setShowDropdown(true); } }}
               placeholder="Start typing an address or place name…"
               maxLength={300}
               className={inputClassName}
@@ -208,28 +227,41 @@ export default function LocationInput({ value, onChange, inputClassName = '' }: 
               </div>
             )}
 
-            {/* Suggestions dropdown */}
-            {showDropdown && predictions.length > 0 && (
-              <ul className="absolute z-50 left-0 right-0 top-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden">
-                {predictions.map((p, i) => (
-                  <li key={p.place_id}>
-                    <button
-                      type="button"
-                      onMouseDown={(e) => { e.preventDefault(); handleSelectPrediction(p); }}
-                      className={`w-full text-left px-3 py-2.5 text-sm flex items-center gap-2.5 transition-colors cursor-pointer ${
-                        i === activeIndex ? 'bg-violet-50 text-violet-900' : 'text-gray-700 hover:bg-gray-50'
-                      }`}
-                    >
-                      <svg className="w-3.5 h-3.5 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" />
-                        <circle cx="12" cy="9" r="2.5" />
-                      </svg>
-                      <span className="truncate">{p.description}</span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
+            {/* Suggestions dropdown — rendered in a portal so it escapes
+                any parent overflow:hidden / stacking context in the form */}
+            {showDropdown && predictions.length > 0 && dropdownPos && typeof document !== 'undefined' &&
+              createPortal(
+                <ul
+                  style={{
+                    position: 'absolute',
+                    top:   dropdownPos.top,
+                    left:  dropdownPos.left,
+                    width: dropdownPos.width,
+                    zIndex: 9999,
+                  }}
+                  className="bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden"
+                >
+                  {predictions.map((p, i) => (
+                    <li key={p.place_id}>
+                      <button
+                        type="button"
+                        onMouseDown={(e) => { e.preventDefault(); handleSelectPrediction(p); }}
+                        className={`w-full text-left px-3 py-2.5 text-sm flex items-center gap-2.5 transition-colors cursor-pointer ${
+                          i === activeIndex ? 'bg-violet-50 text-violet-900' : 'text-gray-700 hover:bg-gray-50'
+                        }`}
+                      >
+                        <svg className="w-3.5 h-3.5 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" />
+                          <circle cx="12" cy="9" r="2.5" />
+                        </svg>
+                        <span className="truncate">{p.description}</span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>,
+                document.body
+              )
+            }
           </div>
 
           {/* Secondary location */}
