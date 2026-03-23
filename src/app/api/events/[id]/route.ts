@@ -88,7 +88,7 @@ export async function PATCH(
     safeUpdate.organizer_name = safeName;
   }
   if ('location' in updates) {
-    safeUpdate.location = updates.location ? sanitizeText(updates.location, 100) : null;
+    safeUpdate.location = updates.location ? sanitizeText(updates.location, 600) : null;
   }
   if ('duration_minutes' in updates) {
     const valid = [10, 15, 30, 45, 60, 90, 120, 180, 240];

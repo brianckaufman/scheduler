@@ -4,6 +4,7 @@ import { useState, lazy, Suspense } from 'react';
 import { format, addDays } from 'date-fns';
 import type { Event } from '@/types';
 const RichTextEditor = lazy(() => import('@/components/RichTextEditor'));
+import LocationInput from '@/components/LocationInput';
 
 const DURATION_OPTIONS = [
   { value: 10, label: '10 min' },
@@ -173,8 +174,7 @@ export default function EditEventModal({ event, organizerToken, onClose, onSave,
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">Location</label>
-              <input type="text" value={location} onChange={(e) => setLocation(e.target.value)}
-                className={inputClass} maxLength={100} placeholder="Optional" />
+              <LocationInput value={location} onChange={setLocation} inputClassName={inputClass} />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">

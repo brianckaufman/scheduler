@@ -42,7 +42,7 @@ export default function RichTextDisplay({
       <button
         type="button"
         onClick={() => setExpanded((v) => !v)}
-        className="mt-1.5 text-xs font-medium text-teal-600 hover:text-teal-700 transition-colors cursor-pointer flex items-center gap-1"
+        className="mt-1.5 text-xs font-medium text-gray-400 hover:text-gray-600 transition-colors cursor-pointer flex items-center gap-1"
       >
         {expanded ? (
           <>

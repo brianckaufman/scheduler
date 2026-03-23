@@ -21,6 +21,7 @@ import ConfettiCelebration from '@/components/ConfettiCelebration';
 import { useCreatedEvents } from '@/hooks/useCreatedEvents';
 import { optimizedLogoUrl } from '@/lib/image';
 import RichTextDisplay from '@/components/RichTextDisplay';
+import LocationDisplay from '@/components/LocationDisplay';
 import { formatDisplayName, firstName } from '@/lib/names';
 import type { Event } from '@/types';
 
@@ -238,9 +239,9 @@ export default function EventView({ event: initialEvent }: EventViewProps) {
             {isFixed && event.finalized_time ? (
               <>
                 {/* Fixed event: prominent date/time/location block */}
-                <div className="bg-teal-50 border border-teal-100 rounded-xl p-3 space-y-2">
+                <div className="bg-gray-50 border border-gray-100 rounded-xl p-3 space-y-2">
                   <div className="flex items-center gap-2.5">
-                    <svg className="w-4 h-4 text-teal-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
                     </svg>
                     <span className="text-sm font-semibold text-gray-900">
@@ -248,7 +249,7 @@ export default function EventView({ event: initialEvent }: EventViewProps) {
                     </span>
                   </div>
                   <div className="flex items-center gap-2.5">
-                    <svg className="w-4 h-4 text-teal-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                     <span className="text-sm font-semibold text-gray-900">
@@ -259,11 +260,11 @@ export default function EventView({ event: initialEvent }: EventViewProps) {
                   </div>
                   {event.location && (
                     <div className="flex items-center gap-2.5">
-                      <svg className="w-4 h-4 text-teal-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                         <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                       </svg>
-                      <span className="text-sm text-gray-700">{event.location}</span>
+                      <LocationDisplay location={event.location ?? ''} textClassName="text-sm text-gray-700" />
                     </div>
                   )}
                 </div>
@@ -302,7 +303,7 @@ export default function EventView({ event: initialEvent }: EventViewProps) {
                         <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                         <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                       </svg>
-                      {event.location}
+                      <LocationDisplay location={event.location ?? ''} textClassName="text-xs text-gray-400" />
                     </span>
                   )}
                   {event.duration_minutes && (

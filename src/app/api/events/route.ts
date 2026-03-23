@@ -139,7 +139,7 @@ export async function POST(request: NextRequest) {
   const safeDescription = description ? sanitizeText(description, 500) : null;
   const safeBody = bodyText ? sanitizeHtml(bodyText) : null;
   const safeOrganizerName = organizerName ? sanitizeName(organizerName) : null;
-  const safeLocation = location ? sanitizeText(location, 100) : null;
+  const safeLocation = location ? sanitizeText(location, 600) : null;
 
   if (!safeName) {
     return NextResponse.json({ error: 'Event name is required' }, { status: 400 });

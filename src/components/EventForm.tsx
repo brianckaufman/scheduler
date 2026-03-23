@@ -21,6 +21,7 @@ import {
   startOfDay,
 } from 'date-fns';
 import { POPULAR_TIMEZONES, detectUserTimezone, getTimezoneLabel } from '@/lib/timezones';
+import LocationInput from '@/components/LocationInput';
 
 interface EventFormProps {
   enableFixedEvents?: boolean;
@@ -422,18 +423,10 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
         </div>
 
         <div>
-          <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-1.5">
+          <label className="block text-sm font-medium text-gray-700 mb-1.5">
             Location <span className="text-gray-400 font-normal">(optional)</span>
           </label>
-          <input
-            id="location"
-            type="text"
-            value={location}
-            onChange={(e) => setLocation(e.target.value)}
-            placeholder={copy.form.location_placeholder}
-            className={inputClass}
-            maxLength={100}
-          />
+          <LocationInput value={location} onChange={setLocation} inputClassName={inputClass} />
         </div>
       </div>
 
