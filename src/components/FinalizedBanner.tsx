@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { format, addMinutes } from 'date-fns';
 import type { Event } from '@/types';
 import { firstName } from '@/lib/names';
+import { parseLocation, locationLabel } from '@/lib/location';
 
 interface FinalizedBannerProps {
   event: Event;
@@ -26,7 +27,7 @@ function generateICS(event: Event): string {
     `DTEND:${fmt(end)}`,
     `SUMMARY:${event.name}`,
     event.description ? `DESCRIPTION:${event.description}` : '',
-    event.location ? `LOCATION:${event.location}` : '',
+    event.location ? `LOCATION:${locationLabel(parseLocation(event.location))}` : '',
     'END:VEVENT',
     'END:VCALENDAR',
   ].filter(Boolean).join('\r\n');
@@ -42,7 +43,7 @@ function getGoogleCalendarUrl(event: Event): string {
     text: event.name,
     dates: `${fmt(start)}/${fmt(end)}`,
     ...(event.description && { details: event.description }),
-    ...(event.location && { location: event.location }),
+    ...(event.location && { location: locationLabel(parseLocation(event.location)) }),
   });
 
   return `https://calendar.google.com/calendar/render?${params}`;
@@ -63,7 +64,7 @@ function buildConfirmationText(event: Event, forOrganizer: boolean): string {
   lines.push(`📅 ${format(start, 'EEEE, MMMM d, yyyy')}`);
   lines.push(`🕐 ${format(start, 'h:mm a')} – ${format(end, 'h:mm a')}`);
   if (event.location) {
-    lines.push(`📍 ${event.location}`);
+    lines.push(`📍 ${locationLabel(parseLocation(event.location))}`);
   }
   if (forOrganizer) {
     lines.push('');
@@ -129,7 +130,7 @@ export default function FinalizedBanner({ event, isOrganizer, organizerToken, on
           {format(start, 'EEEE, MMM d')} at {format(start, 'h:mm a')}
         </p>
         {event.location && (
-          <p className="text-sm text-green-700 mt-1">{event.location}</p>
+          <p className="text-sm text-green-700 mt-1">{locationLabel(parseLocation(event.location))}</p>
         )}
       </div>
 

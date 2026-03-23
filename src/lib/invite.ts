@@ -1,5 +1,6 @@
 import { format, addMinutes } from 'date-fns';
 import { firstName } from './names';
+import { parseLocation, locationLabel } from './location';
 import type { Event } from '@/types';
 
 /**
@@ -16,7 +17,7 @@ export function buildInviteText(event: Event, url: string): string {
       event.name,
       `📅 ${format(start, 'EEEE, MMMM d')}`,
       `⏰ ${format(start, 'h:mm a')} – ${format(end, 'h:mm a')}`,
-      ...(event.location ? [`📍 ${event.location}`] : []),
+      ...(event.location ? [`📍 ${locationLabel(parseLocation(event.location))}`] : []),
       ``,
       `Let us know if you can make it:`,
       url,

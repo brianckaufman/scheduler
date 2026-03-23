@@ -52,6 +52,11 @@ export function parseLocation(raw: string | null | undefined): ParsedLocation {
   return { type: 'text', text: raw };
 }
 
+/** Return the human-readable display label for any ParsedLocation variant. */
+export function locationLabel(loc: ParsedLocation): string {
+  return loc.type === 'text' ? loc.text : loc.label;
+}
+
 /** Build a Google Maps search URL from an address string. */
 export function buildMapsUrl(address: string): string {
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
