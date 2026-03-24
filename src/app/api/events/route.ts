@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
 
   const {
     name, description, body: bodyText, organizerName, location, durationMinutes,
-    responseDeadline, maxParticipants, timezone, coverImageUrl,
+    responseDeadline, maxParticipants, timezone,
     // Availability-mode fields
     dates, timeStart, timeEnd,
     // Fixed-mode fields
@@ -168,9 +168,6 @@ export async function POST(request: NextRequest) {
     ...(safeBody && { body: safeBody }),
     ...(responseDeadline && { response_deadline: responseDeadline }),
     ...(safeMaxParticipants && { max_participants: safeMaxParticipants }),
-    ...(coverImageUrl && typeof coverImageUrl === 'string' && /^https?:\/\//i.test(coverImageUrl)
-      ? { cover_image_url: coverImageUrl.substring(0, 500) }
-      : {}),
   };
 
   const { data, error } = await supabase

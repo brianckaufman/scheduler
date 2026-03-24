@@ -70,7 +70,6 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
   const [description, setDescription] = useState('');
   const [organizerName, setOrganizerName] = useState('');
   const [location, setLocation] = useState('');
-  const [coverImageUrl, setCoverImageUrl] = useState('');
   const [durationMinutes, setDurationMinutes] = useState(60);
   const [responseDeadline, setResponseDeadline] = useState('');
   const [selectedDates, setSelectedDates] = useState<Date[]>([]);
@@ -252,7 +251,6 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
         body: body.trim() || null,
         organizerName: organizerName.trim() || null,
         location: location.trim() || null,
-        coverImageUrl: coverImageUrl.trim() || null,
         durationMinutes: resolvedDuration,
         timezone,
         eventType,
@@ -439,27 +437,6 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
           <LocationInput value={location} onChange={setLocation} inputClassName={inputClass} />
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">
-            Event photo <span className="text-gray-400 font-normal">(optional)</span>
-          </label>
-          <input
-            type="url"
-            value={coverImageUrl}
-            onChange={(e) => setCoverImageUrl(e.target.value)}
-            placeholder="Paste an image URL…"
-            className={inputClass}
-          />
-          {coverImageUrl && /^https?:\/\//i.test(coverImageUrl) && (
-            /* eslint-disable-next-line @next/next/no-img-element */
-            <img
-              src={coverImageUrl}
-              alt="Cover preview"
-              className="mt-2 w-full h-32 object-cover rounded-xl"
-              onError={(e) => { e.currentTarget.style.display = 'none'; }}
-            />
-          )}
-        </div>
       </div>
 
       {/* Subtle divider */}

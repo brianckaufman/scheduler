@@ -110,14 +110,7 @@ export async function PATCH(
   if ('body' in updates) {
     safeUpdate.body = updates.body ? sanitizeHtml(String(updates.body)) : null;
   }
-  if ('cover_image_url' in updates) {
-    const raw = updates.cover_image_url;
-    if (!raw) {
-      safeUpdate.cover_image_url = null;
-    } else if (typeof raw === 'string' && /^https?:\/\//i.test(raw)) {
-      safeUpdate.cover_image_url = raw.substring(0, 500);
-    }
-  }
+
 
   if (Object.keys(safeUpdate).length === 0) {
     return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 });

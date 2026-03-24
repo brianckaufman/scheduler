@@ -580,23 +580,22 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
             )}
           </div>
         </div>
-        <div className="flex flex-wrap gap-1.5">
+        <ul className="space-y-1">
           {(participants.length > 8 && !showAllParticipants
             ? participants.slice(0, 6)
             : participants
-          ).map((p, i) => (
-            <span
-              key={p.id}
-              className="animate-fade-in inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs bg-gray-50 border border-gray-100 transition-all duration-200"
-              style={{ animationDelay: `${i * 50}ms` }}
-            >
-              <span
-                className="inline-block w-2.5 h-2.5 rounded-full shrink-0"
-                style={{ backgroundColor: participantColorMap.get(p.id) }}
-              />
-              <span className="text-gray-600">
-                {formatDisplayName(p.name)}{p.id === participantId && ` ${copy.grid.you_suffix}`}
-              </span>
+          ).map((p) => (
+            <li key={p.id} className="flex items-center justify-between group animate-fade-in">
+              <div className="flex items-center gap-2 min-w-0">
+                <span
+                  className="inline-block w-2.5 h-2.5 rounded-full shrink-0"
+                  style={{ backgroundColor: participantColorMap.get(p.id) }}
+                />
+                <span className={`text-sm truncate ${p.id === participantId ? 'font-semibold text-gray-800' : 'text-gray-600'}`}>
+                  {formatDisplayName(p.name)}
+                  {p.id === participantId && <span className="ml-1 text-xs text-gray-400 font-normal">{copy.grid.you_suffix?.replace(/[()]/g, '').trim() ?? 'you'}</span>}
+                </span>
+              </div>
               {isOrganizer && p.id !== participantId && (
                 <button
                   type="button"
@@ -605,22 +604,20 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
                       handleDeleteParticipant(p.id);
                     }
                   }}
-                  className="ml-0.5 text-gray-400 hover:text-red-500 transition-colors cursor-pointer"
+                  className="text-xs text-gray-300 hover:text-red-400 transition-colors cursor-pointer opacity-0 group-hover:opacity-100 focus:opacity-100 ml-2 shrink-0"
                   title={`Remove ${formatDisplayName(p.name)}`}
                 >
-                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
+                  Remove
                 </button>
               )}
-            </span>
+            </li>
           ))}
           {participants.length > 8 && !showAllParticipants && (
-            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs bg-gray-50 border border-gray-100 text-gray-400">
+            <li className="text-xs text-gray-400 pl-[18px]">
               +{participants.length - 6} more
-            </span>
+            </li>
           )}
-        </div>
+        </ul>
 
         {/* Export CSV (organizer only) */}
         {isOrganizer && participants.length > 0 && (

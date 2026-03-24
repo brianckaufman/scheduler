@@ -44,7 +44,6 @@ export default function EventView({ event: initialEvent }: EventViewProps) {
   const monetization = useMonetization();
   const router = useRouter();
   const [event, setEvent] = useState(initialEvent);
-  const [coverImageError, setCoverImageError] = useState(false);
   const [isOrganizer, setIsOrganizer] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const { participantId, hasSession, saveSession, loaded } = useParticipantSession(event.slug, event.id);
@@ -219,19 +218,6 @@ export default function EventView({ event: initialEvent }: EventViewProps) {
         <div ref={gridRef} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
           {/* Event details header */}
           <div className="mb-4 pb-4 border-b border-gray-100">
-            {/* Cover image hero */}
-            {event.cover_image_url && !coverImageError && (
-              <div className="relative -mx-4 -mt-4 mb-4 rounded-t-2xl overflow-hidden h-48">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={event.cover_image_url}
-                  alt={event.name}
-                  className="w-full h-full object-cover"
-                  onError={() => setCoverImageError(true)}
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
-              </div>
-            )}
             <div className="flex items-start justify-between gap-2 mb-3">
               <div className="flex items-center gap-1.5 min-w-0">
                 <a
