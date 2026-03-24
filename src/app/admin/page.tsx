@@ -9,11 +9,45 @@ import RichTextEditor from '@/components/RichTextEditor';
 
 import type { ReactNode } from 'react';
 
-type TabKey = 'seo' | 'branding' | 'copy' | 'monetization' | 'analytics' | 'social' | 'app' | 'legal';
+type TabKey = 'usage' | 'seo' | 'branding' | 'copy' | 'monetization' | 'analytics' | 'social' | 'app' | 'legal';
+
+interface UsageData {
+  summary: {
+    totalEvents: number;
+    fixedEvents: number;
+    availEvents: number;
+    finalizedEvents: number;
+    finalizedPercent: number;
+    events7d: number;
+    events30d: number;
+    totalParticipants: number;
+    avgParticipants: number;
+    totalSlots: number;
+    totalPushSubs: number;
+    rsvpYes: number;
+    rsvpMaybe: number;
+    rsvpNo: number;
+    rsvpTotal: number;
+  };
+  dailyActivity: { date: string; events: number; participants: number }[];
+  recentEvents: {
+    id: string; name: string; slug: string; event_type: string;
+    finalized_time: string | null; created_at: string;
+    organizer_name: string | null; timezone: string;
+    participant_count: number;
+  }[];
+  topTimezones: { tz: string; count: number }[];
+  generatedAt: string;
+}
 
 const iconClass = 'w-4 h-4 flex-shrink-0';
 
 const TAB_ICONS: Record<TabKey, ReactNode> = {
+  usage: (
+    <svg className={iconClass} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
+    </svg>
+  ),
   seo: (
     <svg className={iconClass} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
       <path strokeLinecap="round" strokeLinejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 013 12c0-1.605.42-3.113 1.157-4.418" />
@@ -57,6 +91,7 @@ const TAB_ICONS: Record<TabKey, ReactNode> = {
 };
 
 const TABS: { key: TabKey; label: string }[] = [
+  { key: 'usage', label: 'Usage & Stats' },
   { key: 'seo', label: 'SEO' },
   { key: 'branding', label: 'Branding' },
   { key: 'copy', label: 'Copy & Language' },
@@ -252,6 +287,32 @@ export default function AdminDashboard() {
   const [originalSettings, setOriginalSettings] = useState<SiteSettings>(DEFAULT_SETTINGS);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set(['home']));
 
+  // ── Usage analytics state ───────────────────────────────────────────────
+  const [usageData, setUsageData] = useState<UsageData | null>(null);
+  const [usageLoading, setUsageLoading] = useState(false);
+  const [usageError, setUsageError] = useState('');
+
+  const fetchUsage = useCallback(async () => {
+    setUsageLoading(true);
+    setUsageError('');
+    try {
+      const res = await fetch('/api/admin/analytics');
+      if (!res.ok) throw new Error('Failed to load analytics');
+      const data = await res.json();
+      setUsageData(data);
+    } catch {
+      setUsageError('Could not load analytics. Make sure SUPABASE_SERVICE_ROLE_KEY is set.');
+    } finally {
+      setUsageLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (activeTab === 'usage' && !usageData && !usageLoading) {
+      fetchUsage();
+    }
+  }, [activeTab, usageData, usageLoading, fetchUsage]);
+
   const fetchSettings = useCallback(async () => {
     try {
       const res = await fetch('/api/admin/settings');
@@ -329,9 +390,12 @@ export default function AdminDashboard() {
 
     try {
       // Only send the active tab's section to avoid overwriting other sections
+      // 'usage' is read-only so it should never reach here, but guard anyway
+      if (activeTab === 'usage') return;
+      const settingsTab = activeTab as keyof SiteSettings;
       const sectionUpdate = activeTab === 'copy'
         ? { copy: settings.copy }
-        : { [activeTab]: settings[activeTab] };
+        : { [settingsTab]: settings[settingsTab] };
 
       const res = await fetch('/api/admin/settings', {
         method: 'PUT',
@@ -1003,8 +1067,285 @@ export default function AdminDashboard() {
     </div>
   );
 
+  // ── Usage / Analytics dashboard ──────────────────────────────────────────
+
+  const renderUsage = () => {
+    if (usageLoading) {
+      return (
+        <div className="space-y-4">
+          {[1,2,3].map((i) => (
+            <div key={i} className="h-20 bg-gray-100 animate-pulse rounded-xl" />
+          ))}
+        </div>
+      );
+    }
+    if (usageError) {
+      return (
+        <div className="text-center py-10 space-y-3">
+          <p className="text-red-500 text-sm">{usageError}</p>
+          <button onClick={fetchUsage} className="text-sm text-teal-600 underline cursor-pointer">Try again</button>
+        </div>
+      );
+    }
+    if (!usageData) return null;
+
+    const { summary, dailyActivity, recentEvents, topTimezones } = usageData;
+
+    // Bar chart helpers
+    const maxEvents = Math.max(...dailyActivity.map((d) => d.events), 1);
+    const maxParticipants = Math.max(...dailyActivity.map((d) => d.participants), 1);
+
+    const StatCard = ({ label, value, sub, color = 'teal' }: { label: string; value: string | number; sub?: string; color?: string }) => (
+      <div className="bg-gray-50 rounded-xl p-4 space-y-1">
+        <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">{label}</p>
+        <p className={`text-2xl font-bold ${color === 'violet' ? 'text-violet-600' : color === 'amber' ? 'text-amber-600' : 'text-teal-600'}`}>{value}</p>
+        {sub && <p className="text-xs text-gray-400">{sub}</p>}
+      </div>
+    );
+
+    return (
+      <div className="space-y-7">
+        {/* Refresh + timestamp */}
+        <div className="flex items-center justify-between">
+          <p className="text-xs text-gray-400">
+            Last updated: {new Date(usageData.generatedAt).toLocaleTimeString()}
+          </p>
+          <button
+            onClick={fetchUsage}
+            disabled={usageLoading}
+            className="flex items-center gap-1.5 text-xs text-teal-600 hover:text-teal-800 font-medium cursor-pointer disabled:opacity-50 transition-colors"
+          >
+            <svg className={`w-3.5 h-3.5 ${usageLoading ? 'animate-spin' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            Refresh
+          </button>
+        </div>
+
+        {/* Primary stat cards */}
+        <div>
+          <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">All Time</h3>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <StatCard label="Total Events" value={summary.totalEvents.toLocaleString()} />
+            <StatCard label="Participants" value={summary.totalParticipants.toLocaleString()} />
+            <StatCard label="Availability Responses" value={summary.totalSlots.toLocaleString()} sub="time slots marked" />
+            <StatCard label="Push Subscribers" value={summary.totalPushSubs.toLocaleString()} color="violet" />
+          </div>
+        </div>
+
+        {/* Recent stats */}
+        <div>
+          <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Recent Activity</h3>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <StatCard label="Events (7 days)" value={summary.events7d} />
+            <StatCard label="Events (30 days)" value={summary.events30d} />
+            <StatCard label="Avg Participants" value={summary.avgParticipants} sub="per event" />
+            <StatCard label="Finalized" value={`${summary.finalizedPercent}%`} sub={`${summary.finalizedEvents} of ${summary.totalEvents}`} color="amber" />
+          </div>
+        </div>
+
+        {/* Event type breakdown */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Event types */}
+          <div className="bg-gray-50 rounded-xl p-4 space-y-3">
+            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Event Types</h3>
+            <div className="space-y-2">
+              {[
+                { label: 'Find-a-Time', count: summary.availEvents, color: 'bg-teal-400' },
+                { label: 'Fixed Date/Time', count: summary.fixedEvents, color: 'bg-violet-400' },
+              ].map(({ label, count, color }) => {
+                const pct = summary.totalEvents > 0 ? Math.round((count / summary.totalEvents) * 100) : 0;
+                return (
+                  <div key={label}>
+                    <div className="flex justify-between text-xs mb-1">
+                      <span className="text-gray-600 font-medium">{label}</span>
+                      <span className="text-gray-400">{count.toLocaleString()} ({pct}%)</span>
+                    </div>
+                    <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                      <div className={`h-full ${color} rounded-full transition-all`} style={{ width: `${pct}%` }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* RSVP breakdown */}
+          {summary.rsvpTotal > 0 && (
+            <div className="bg-gray-50 rounded-xl p-4 space-y-3">
+              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">RSVP Responses</h3>
+              <div className="space-y-2">
+                {[
+                  { label: 'Going', count: summary.rsvpYes, color: 'bg-green-400' },
+                  { label: 'Maybe', count: summary.rsvpMaybe, color: 'bg-amber-400' },
+                  { label: "Can't Make It", count: summary.rsvpNo, color: 'bg-gray-400' },
+                ].map(({ label, count, color }) => {
+                  const pct = summary.rsvpTotal > 0 ? Math.round((count / summary.rsvpTotal) * 100) : 0;
+                  return (
+                    <div key={label}>
+                      <div className="flex justify-between text-xs mb-1">
+                        <span className="text-gray-600 font-medium">{label}</span>
+                        <span className="text-gray-400">{count.toLocaleString()} ({pct}%)</span>
+                      </div>
+                      <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                        <div className={`h-full ${color} rounded-full transition-all`} style={{ width: `${pct}%` }} />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Top timezones */}
+          {topTimezones.length > 0 && (
+            <div className="bg-gray-50 rounded-xl p-4 space-y-3">
+              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Top Timezones</h3>
+              <div className="space-y-1.5">
+                {topTimezones.map(({ tz, count }) => {
+                  const pct = summary.totalEvents > 0 ? Math.round((count / summary.totalEvents) * 100) : 0;
+                  return (
+                    <div key={tz} className="flex items-center justify-between gap-2">
+                      <span className="text-xs text-gray-600 truncate font-mono">{tz}</span>
+                      <span className="text-xs text-gray-400 shrink-0">{count} ({pct}%)</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Daily activity chart — events */}
+        <div className="bg-gray-50 rounded-xl p-4 space-y-3">
+          <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Events Created — Last 30 Days</h3>
+          <div className="flex items-end gap-[3px] h-24">
+            {dailyActivity.map(({ date, events }) => {
+              const h = maxEvents > 0 ? Math.max(Math.round((events / maxEvents) * 100), events > 0 ? 8 : 2) : 2;
+              const label = new Date(date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+              return (
+                <div
+                  key={date}
+                  className="flex-1 group relative flex items-end"
+                  style={{ height: '100%' }}
+                >
+                  <div
+                    className="w-full bg-teal-400 hover:bg-teal-500 rounded-sm transition-colors cursor-default"
+                    style={{ height: `${h}%` }}
+                  />
+                  {events > 0 && (
+                    <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-[10px] px-1.5 py-0.5 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+                      {label}: {events}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          <div className="flex justify-between text-[10px] text-gray-400">
+            <span>{dailyActivity[0]?.date ? new Date(dailyActivity[0].date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : ''}</span>
+            <span>Today</span>
+          </div>
+        </div>
+
+        {/* Daily participants chart */}
+        <div className="bg-gray-50 rounded-xl p-4 space-y-3">
+          <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Participants Joined — Last 30 Days</h3>
+          <div className="flex items-end gap-[3px] h-24">
+            {dailyActivity.map(({ date, participants }) => {
+              const h = maxParticipants > 0 ? Math.max(Math.round((participants / maxParticipants) * 100), participants > 0 ? 8 : 2) : 2;
+              const label = new Date(date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+              return (
+                <div key={date} className="flex-1 group relative flex items-end" style={{ height: '100%' }}>
+                  <div
+                    className="w-full bg-violet-400 hover:bg-violet-500 rounded-sm transition-colors cursor-default"
+                    style={{ height: `${h}%` }}
+                  />
+                  {participants > 0 && (
+                    <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-[10px] px-1.5 py-0.5 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+                      {label}: {participants}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          <div className="flex justify-between text-[10px] text-gray-400">
+            <span>{dailyActivity[0]?.date ? new Date(dailyActivity[0].date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : ''}</span>
+            <span>Today</span>
+          </div>
+        </div>
+
+        {/* Recent events table */}
+        <div className="space-y-3">
+          <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Recent Events</h3>
+          <div className="rounded-xl border border-gray-200 overflow-hidden">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-gray-50 border-b border-gray-200">
+                  <th className="text-left px-4 py-2.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">Event</th>
+                  <th className="text-left px-4 py-2.5 text-xs font-semibold text-gray-500 uppercase tracking-wider hidden sm:table-cell">Type</th>
+                  <th className="text-center px-4 py-2.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">Participants</th>
+                  <th className="text-left px-4 py-2.5 text-xs font-semibold text-gray-500 uppercase tracking-wider hidden md:table-cell">Status</th>
+                  <th className="text-left px-4 py-2.5 text-xs font-semibold text-gray-500 uppercase tracking-wider hidden lg:table-cell">Created</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {recentEvents.map((e) => (
+                  <tr key={e.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-4 py-3">
+                      <a
+                        href={`/e/${e.slug}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-medium text-gray-800 hover:text-teal-600 transition-colors block truncate max-w-[180px]"
+                      >
+                        {e.name}
+                      </a>
+                      {e.organizer_name && (
+                        <span className="text-xs text-gray-400">by {e.organizer_name}</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 hidden sm:table-cell">
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                        e.event_type === 'fixed'
+                          ? 'bg-violet-100 text-violet-700'
+                          : 'bg-teal-100 text-teal-700'
+                      }`}>
+                        {e.event_type === 'fixed' ? 'Fixed' : 'Find-a-Time'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <span className="text-sm font-semibold text-gray-700">{e.participant_count}</span>
+                    </td>
+                    <td className="px-4 py-3 hidden md:table-cell">
+                      {e.finalized_time ? (
+                        <span className="inline-flex items-center gap-1 text-xs text-green-600 font-medium">
+                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                          </svg>
+                          Finalized
+                        </span>
+                      ) : (
+                        <span className="text-xs text-gray-400">Open</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-xs text-gray-400 hidden lg:table-cell whitespace-nowrap">
+                      {new Date(e.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   const renderTabContent = () => {
     switch (activeTab) {
+      case 'usage': return renderUsage();
       case 'seo': return renderSEO();
       case 'branding': return renderBranding();
       case 'copy': return renderCopy();
@@ -1089,7 +1430,8 @@ export default function AdminDashboard() {
 
               {renderTabContent()}
 
-              {/* Save Bar */}
+              {/* Save Bar — hidden on read-only tabs */}
+              {activeTab !== 'usage' && (
               <div className="mt-8 pt-5 border-t border-gray-100 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <button
@@ -1114,6 +1456,7 @@ export default function AdminDashboard() {
                   </p>
                 )}
               </div>
+              )}
             </div>
           </div>
         </div>
