@@ -1,15 +1,20 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState } from 'react';
 
 interface RichTextDisplayProps {
   html: string;
-  /** Number of lines to clamp before "Read more" appears. Default: 3 */
-  clampLines?: number;
+  /** Plain-text character threshold before "Read more" appears. Default: 280 */
+  truncateAt?: number;
   /** Label for the expand button. Default: "Read more" */
   expandLabel?: string;
   /** Label for the collapse button. Default: "Show less" */
   collapseLabel?: string;
+}
+
+/** Strip HTML tags to measure plain-text length. */
+function stripHtml(html: string): string {
+  return html.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
 }
 
 /**
@@ -17,43 +22,32 @@ interface RichTextDisplayProps {
  * Content is sanitized server-side before storage; this component only
  * renders what's already in the database.
  *
- * Shows a "Read more" toggle only when the content actually overflows
- * the clamped height — short content never shows the button.
+ * Shows a "Read more" toggle only when plain-text length exceeds truncateAt.
+ * Short descriptions never show the button.
  */
 export default function RichTextDisplay({
   html,
-  clampLines = 3,
+  truncateAt = 280,
   expandLabel = 'Read more',
   collapseLabel = 'Show less',
 }: RichTextDisplayProps) {
   const [expanded, setExpanded] = useState(false);
-  const [showToggle, setShowToggle] = useState(false);
-  const contentRef = useRef<HTMLDivElement>(null);
-
-  // Measure overflow while clamped to decide whether to show the button.
-  // Runs after paint so the clamped CSS is applied before we measure.
-  useEffect(() => {
-    const el = contentRef.current;
-    if (!el) return;
-    // When not expanded, clamp is active — scrollHeight > clientHeight means overflow.
-    // Add 1px tolerance for sub-pixel rounding.
-    setShowToggle(el.scrollHeight > el.clientHeight + 1);
-  }, [html]); // re-check if html content changes; intentionally excludes `expanded`
 
   if (!html || html === '<p></p>') return null;
+
+  const isLong = stripHtml(html).length > truncateAt;
 
   return (
     <div className="mt-3">
       <div
-        ref={contentRef}
-        className={`rich-text-display text-sm text-gray-600 leading-relaxed overflow-hidden ${
-          expanded ? '' : `line-clamp-${clampLines}`
+        className={`rich-text-display text-sm text-gray-600 leading-relaxed${
+          isLong && !expanded ? ' line-clamp-5' : ''
         }`}
         // Content is sanitized via sanitizeHtml() before DB storage
         // eslint-disable-next-line react/no-danger
         dangerouslySetInnerHTML={{ __html: html }}
       />
-      {showToggle && (
+      {isLong && (
         <button
           type="button"
           onClick={() => setExpanded((v) => !v)}
