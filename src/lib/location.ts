@@ -52,9 +52,30 @@ export function parseLocation(raw: string | null | undefined): ParsedLocation {
   return { type: 'text', text: raw };
 }
 
+/**
+ * Normalizes a stored place label for clean display:
+ *  - Business name (first segment doesn't start with a digit): show just the name
+ *  - Street address (first segment starts with a digit): show "street, city" only
+ * Handles legacy labels stored as full Google Places descriptions.
+ */
+export function normalizePlaceLabel(label: string): string {
+  const firstComma = label.indexOf(',');
+  if (firstComma === -1) return label;
+  const firstPart = label.slice(0, firstComma).trim();
+  if (/^\d/.test(firstPart)) {
+    // Street address — include city (up to second comma)
+    const secondComma = label.indexOf(',', firstComma + 1);
+    return secondComma === -1 ? firstPart : label.slice(0, secondComma).trim();
+  }
+  // Business name — just the name before the first comma
+  return firstPart;
+}
+
 /** Return the human-readable display label for any ParsedLocation variant. */
 export function locationLabel(loc: ParsedLocation): string {
-  return loc.type === 'text' ? loc.text : loc.label;
+  if (loc.type === 'text') return loc.text;
+  if (loc.type === 'place') return normalizePlaceLabel(loc.label);
+  return loc.label;
 }
 
 /** Build a Google Maps search URL from an address string. */

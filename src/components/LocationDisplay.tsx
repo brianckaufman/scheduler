@@ -1,6 +1,6 @@
 'use client';
 
-import { parseLocation } from '@/lib/location';
+import { parseLocation, normalizePlaceLabel } from '@/lib/location';
 
 interface LocationDisplayProps {
   location: string;
@@ -22,25 +22,6 @@ const ExternalIcon = ({ size = 3 }: { size?: number }) => (
     <line x1="10" y1="14" x2="21" y2="3" />
   </svg>
 );
-
-/**
- * Normalizes a stored place label for display:
- *  - Business name (no leading digit): show just the name (before first comma)
- *  - Street address (leading digit): show "street, city" (before second comma)
- * This handles legacy labels stored as full Google Places descriptions.
- */
-function normalizePlaceLabel(label: string): string {
-  const firstComma = label.indexOf(',');
-  if (firstComma === -1) return label;
-  const firstPart = label.slice(0, firstComma).trim();
-  if (/^\d/.test(firstPart)) {
-    // Street address — include city (up to second comma)
-    const secondComma = label.indexOf(',', firstComma + 1);
-    return secondComma === -1 ? firstPart : label.slice(0, secondComma).trim();
-  }
-  // Business name — just the name
-  return firstPart;
-}
 
 /**
  * Renders a location field with smart link behaviour:
