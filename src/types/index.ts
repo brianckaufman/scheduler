@@ -16,6 +16,7 @@ export interface Event {
   timezone: string;
   created_at: string;
   event_type: 'availability' | 'fixed';
+  cover_image_url: string | null;
 }
 
 export type RsvpValue = 'yes' | 'maybe' | 'no';

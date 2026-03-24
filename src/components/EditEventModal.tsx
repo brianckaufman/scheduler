@@ -34,6 +34,7 @@ export default function EditEventModal({ event, organizerToken, onClose, onSave,
   const [body, setBody] = useState(event.body || '');
   const [organizerName, setOrganizerName] = useState(event.organizer_name || '');
   const [location, setLocation] = useState(event.location || '');
+  const [coverImageUrl, setCoverImageUrl] = useState(event.cover_image_url || '');
   const [durationMinutes, setDurationMinutes] = useState(event.duration_minutes);
   const [maxParticipants, setMaxParticipants] = useState<string>(
     event.max_participants ? String(event.max_participants) : ''
@@ -74,6 +75,7 @@ export default function EditEventModal({ event, organizerToken, onClose, onSave,
           body: body.trim() || null,
           organizer_name: organizerName.trim(),
           location: location.trim() || null,
+          cover_image_url: coverImageUrl.trim() || null,
           duration_minutes: durationMinutes,
           max_participants: maxP,
           response_deadline: responseDeadline
@@ -174,6 +176,27 @@ export default function EditEventModal({ event, organizerToken, onClose, onSave,
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1">Location</label>
             <LocationInput value={location} onChange={setLocation} inputClassName={inputClass} />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">
+              Event photo <span className="text-gray-400 font-normal">(optional)</span>
+            </label>
+            <input
+              type="url"
+              value={coverImageUrl}
+              onChange={(e) => setCoverImageUrl(e.target.value)}
+              placeholder="Paste an image URL…"
+              className={inputClass}
+            />
+            {coverImageUrl && /^https?:\/\//i.test(coverImageUrl) && (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img
+                src={coverImageUrl}
+                alt="Cover preview"
+                className="mt-2 w-full h-28 object-cover rounded-xl"
+                onError={(e) => { e.currentTarget.style.display = 'none'; }}
+              />
+            )}
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>

@@ -108,27 +108,59 @@ export default function ParticipantEntry({ event, onJoin }: ParticipantEntryProp
           <div className="animate-fade-in">
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
 
-              {/* Gradient header */}
-              <div className={`bg-gradient-to-br ${headerGradient} px-6 py-6 text-white`}>
-                {branding.logo_url && (
-                  <div className="mb-3">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={optimizedLogoUrl(branding.logo_url, Math.round((branding.logo_height || 40) * 0.7))}
-                      alt={branding.site_name}
-                      style={{ height: `${Math.round((branding.logo_height || 40) * 0.7)}px` }}
-                      className="w-auto object-contain brightness-0 invert"
-                    />
+              {/* Hero header — cover image if set, otherwise gradient */}
+              {event.cover_image_url ? (
+                <div className="relative overflow-hidden h-48">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={event.cover_image_url}
+                    alt={event.name}
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-black/10" />
+                  {branding.logo_url && (
+                    <div className="absolute top-4 left-6">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={optimizedLogoUrl(branding.logo_url, Math.round((branding.logo_height || 40) * 0.7))}
+                        alt={branding.site_name}
+                        style={{ height: `${Math.round((branding.logo_height || 40) * 0.7)}px` }}
+                        className="w-auto object-contain brightness-0 invert"
+                      />
+                    </div>
+                  )}
+                  <div className="absolute bottom-0 left-0 right-0 px-6 pb-5 text-white">
+                    <p className="text-xs font-semibold uppercase tracking-widest mb-1 text-white/70">
+                      {isFixed ? "You're invited" : "Help pick a time"}
+                    </p>
+                    <h1 className="text-2xl font-bold leading-tight">{event.name}</h1>
+                    {event.description && (
+                      <p className="text-white/80 text-sm mt-1.5 leading-relaxed line-clamp-2">{event.description}</p>
+                    )}
                   </div>
-                )}
-                <p className={`text-xs font-semibold uppercase tracking-widest mb-1 ${accentSubtleText} opacity-80`}>
-                  {isFixed ? "You're invited" : "Help pick a time"}
-                </p>
-                <h1 className="text-2xl font-bold leading-tight">{event.name}</h1>
-                {event.description && (
-                  <p className={`${accentSubtleText} text-sm mt-2 leading-relaxed`}>{event.description}</p>
-                )}
-              </div>
+                </div>
+              ) : (
+                <div className={`bg-gradient-to-br ${headerGradient} px-6 py-6 text-white`}>
+                  {branding.logo_url && (
+                    <div className="mb-3">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={optimizedLogoUrl(branding.logo_url, Math.round((branding.logo_height || 40) * 0.7))}
+                        alt={branding.site_name}
+                        style={{ height: `${Math.round((branding.logo_height || 40) * 0.7)}px` }}
+                        className="w-auto object-contain brightness-0 invert"
+                      />
+                    </div>
+                  )}
+                  <p className={`text-xs font-semibold uppercase tracking-widest mb-1 ${accentSubtleText} opacity-80`}>
+                    {isFixed ? "You're invited" : "Help pick a time"}
+                  </p>
+                  <h1 className="text-2xl font-bold leading-tight">{event.name}</h1>
+                  {event.description && (
+                    <p className={`${accentSubtleText} text-sm mt-2 leading-relaxed`}>{event.description}</p>
+                  )}
+                </div>
+              )}
 
               {/* Event details */}
               <div className="px-6 py-4 space-y-2.5 border-b border-gray-100">

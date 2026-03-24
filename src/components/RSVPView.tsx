@@ -9,6 +9,7 @@ import ConfettiCelebration from './ConfettiCelebration';
 import { useRealtimeParticipants } from '@/hooks/useRealtimeParticipants';
 import { formatDisplayName, firstName } from '@/lib/names';
 import { buildInviteText } from '@/lib/invite';
+import { parseLocation, locationLabel } from '@/lib/location';
 import type { Event, RsvpValue } from '@/types';
 
 interface RSVPViewProps {
@@ -81,7 +82,7 @@ function generateICS(event: Event): string {
     `DTSTART:${fmt(start)}`, `DTEND:${fmt(end)}`,
     `SUMMARY:${event.name}`,
     event.description ? `DESCRIPTION:${event.description}` : '',
-    event.location ? `LOCATION:${event.location}` : '',
+    event.location ? `LOCATION:${locationLabel(parseLocation(event.location))}` : '',
     'END:VEVENT', 'END:VCALENDAR',
   ].filter(Boolean).join('\r\n');
 }
@@ -377,7 +378,7 @@ export default function RSVPView({ event, participantId, isOrganizer, organizerT
       event.name, '',
       format(start, 'EEEE, MMMM d, yyyy'),
       `${format(start, 'h:mm a')} - ${format(end, 'h:mm a')}`,
-      ...(event.location ? [event.location] : []),
+      ...(event.location ? [locationLabel(parseLocation(event.location))] : []),
     ].join('\n');
     try {
       await navigator.clipboard.writeText(text);
