@@ -91,9 +91,19 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  // Detect device type from User-Agent header
+  const ua = request.headers.get('user-agent') ?? '';
+  const deviceType = /Mobile|Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua)
+    ? 'mobile'
+    : 'desktop';
+
   const { data, error } = await supabase
     .from('participants')
-    .insert({ event_id, name: safeName })
+    .insert({
+      event_id,
+      name: safeName,
+      ...(deviceType && { device_type: deviceType }),
+    })
     .select()
     .single();
 

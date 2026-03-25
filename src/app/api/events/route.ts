@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
 
   const {
     name, description, body: bodyText, organizerName, location, durationMinutes,
-    responseDeadline, maxParticipants, timezone,
+    responseDeadline, maxParticipants, timezone, organizerEmail,
     // Availability-mode fields
     dates, timeStart, timeEnd,
     // Fixed-mode fields
@@ -141,6 +141,17 @@ export async function POST(request: NextRequest) {
   const safeOrganizerName = organizerName ? sanitizeName(organizerName) : null;
   const safeLocation = location ? sanitizeText(location, 600) : null;
 
+  const safeOrganizerEmail = organizerEmail && typeof organizerEmail === 'string'
+    && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(organizerEmail)
+    ? sanitizeText(organizerEmail, 200)
+    : null;
+
+  // Detect organizer device type
+  const organizerUa = request.headers.get('user-agent') ?? '';
+  const organizerDevice = /Mobile|Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(organizerUa)
+    ? 'mobile'
+    : 'desktop';
+
   if (!safeName) {
     return NextResponse.json({ error: 'Event name is required' }, { status: 400 });
   }
@@ -168,6 +179,8 @@ export async function POST(request: NextRequest) {
     ...(safeBody && { body: safeBody }),
     ...(responseDeadline && { response_deadline: responseDeadline }),
     ...(safeMaxParticipants && { max_participants: safeMaxParticipants }),
+    ...(safeOrganizerEmail && { organizer_email: safeOrganizerEmail }),
+    ...(organizerDevice && { device_type: organizerDevice }),
   };
 
   const { data, error } = await supabase

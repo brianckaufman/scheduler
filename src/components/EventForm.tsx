@@ -69,6 +69,7 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [organizerName, setOrganizerName] = useState('');
+  const [organizerEmail, setOrganizerEmail] = useState('');
   const [location, setLocation] = useState('');
   const [durationMinutes, setDurationMinutes] = useState(60);
   const [responseDeadline, setResponseDeadline] = useState('');
@@ -250,6 +251,7 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
         description: description.trim() || null,
         body: body.trim() || null,
         organizerName: organizerName.trim() || null,
+        organizerEmail: organizerEmail.trim() || null,
         location: location.trim() || null,
         durationMinutes: resolvedDuration,
         timezone,
@@ -412,6 +414,21 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
             className={inputClass}
             required
             maxLength={50}
+          />
+        </div>
+
+        <div>
+          <label htmlFor="organizerEmail" className="block text-sm font-medium text-gray-700 mb-1.5">
+            Your email <span className="text-gray-400 font-normal">(optional — get notified when everyone responds)</span>
+          </label>
+          <input
+            id="organizerEmail"
+            type="email"
+            value={organizerEmail}
+            onChange={(e) => setOrganizerEmail(e.target.value)}
+            placeholder="you@example.com"
+            className={inputClass}
+            maxLength={200}
           />
         </div>
 

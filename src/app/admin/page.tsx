@@ -13,30 +13,39 @@ type TabKey = 'usage' | 'seo' | 'branding' | 'copy' | 'monetization' | 'analytic
 
 interface UsageData {
   summary: {
-    totalEvents: number;
-    fixedEvents: number;
-    availEvents: number;
-    finalizedEvents: number;
-    finalizedPercent: number;
-    events7d: number;
-    events30d: number;
-    totalParticipants: number;
-    avgParticipants: number;
-    totalSlots: number;
-    totalPushSubs: number;
-    rsvpYes: number;
-    rsvpMaybe: number;
-    rsvpNo: number;
-    rsvpTotal: number;
+    totalEvents: number; fixedEvents: number; availEvents: number;
+    events7d: number; events30d: number;
+    totalParticipants: number; avgParticipants: number; totalSlots: number;
+    rsvpYes: number; rsvpMaybe: number; rsvpNo: number; rsvpTotal: number;
   };
+  funnel: {
+    created: number; participated: number; participatedPct: number;
+    finalized: number; finalizedOfParticipated: number; finalizedOfTotal: number;
+  };
+  groupSizeDistribution: { bucket: string; count: number; pct: number }[];
+  abandonment: { abandoned: number; eligible: number; rate: number };
+  finalizationTime: { median: number; p25: number; p75: number; count: number };
+  featureAdoption: {
+    location: { count: number; pct: number };
+    description: { count: number; pct: number };
+    richText: { count: number; pct: number };
+    deadline: { count: number; pct: number };
+    maxParticipants: { count: number; pct: number };
+    email: { count: number; pct: number };
+  };
+  deviceBreakdown: {
+    mobile: number; desktop: number; unknown: number;
+    hasData: boolean; mobilePct: number; desktopPct: number;
+  };
+  repeatOrganizers: { returning: number; total: number; rate: number };
   dailyActivity: { date: string; events: number; participants: number }[];
   recentEvents: {
     id: string; name: string; slug: string; event_type: string;
     finalized_time: string | null; created_at: string;
-    organizer_name: string | null; timezone: string;
-    participant_count: number;
+    organizer_name: string | null; organizer_email: string | null;
+    timezone: string; participant_count: number; device_type: string | null;
   }[];
-  topTimezones: { tz: string; count: number }[];
+  topTimezones: { tz: string; count: number; pct: number }[];
   generatedAt: string;
 }
 
@@ -1073,9 +1082,7 @@ export default function AdminDashboard() {
     if (usageLoading) {
       return (
         <div className="space-y-4">
-          {[1,2,3].map((i) => (
-            <div key={i} className="h-20 bg-gray-100 animate-pulse rounded-xl" />
-          ))}
+          {[1,2,3,4].map(i => <div key={i} className="h-20 bg-gray-100 animate-pulse rounded-xl" />)}
         </div>
       );
     }
@@ -1089,32 +1096,43 @@ export default function AdminDashboard() {
     }
     if (!usageData) return null;
 
-    const { summary, dailyActivity, recentEvents, topTimezones } = usageData;
+    const { summary, funnel, groupSizeDistribution, abandonment, finalizationTime,
+            featureAdoption, deviceBreakdown, repeatOrganizers,
+            dailyActivity, recentEvents, topTimezones } = usageData;
 
-    // Bar chart helpers
-    const maxEvents = Math.max(...dailyActivity.map((d) => d.events), 1);
-    const maxParticipants = Math.max(...dailyActivity.map((d) => d.participants), 1);
+    const maxEventBar = Math.max(...dailyActivity.map(d => d.events), 1);
+    const maxParticipantBar = Math.max(...dailyActivity.map(d => d.participants), 1);
 
-    const StatCard = ({ label, value, sub, color = 'teal' }: { label: string; value: string | number; sub?: string; color?: string }) => (
-      <div className="bg-gray-50 rounded-xl p-4 space-y-1">
-        <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">{label}</p>
-        <p className={`text-2xl font-bold ${color === 'violet' ? 'text-violet-600' : color === 'amber' ? 'text-amber-600' : 'text-teal-600'}`}>{value}</p>
-        {sub && <p className="text-xs text-gray-400">{sub}</p>}
+    const Stat = ({ label, value, sub, accent = false }: { label: string; value: string | number; sub?: string; accent?: boolean }) => (
+      <div className="bg-gray-50 rounded-xl p-4">
+        <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-1">{label}</p>
+        <p className={`text-2xl font-bold ${accent ? 'text-violet-600' : 'text-teal-600'}`}>{value}</p>
+        {sub && <p className="text-xs text-gray-400 mt-0.5">{sub}</p>}
       </div>
     );
 
+    const AdoptionBar = ({ label, pct, count }: { label: string; pct: number; count: number }) => (
+      <div>
+        <div className="flex justify-between text-xs mb-1">
+          <span className="text-gray-600 font-medium">{label}</span>
+          <span className="text-gray-400">{count.toLocaleString()} ({pct}%)</span>
+        </div>
+        <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+          <div className="h-full bg-teal-400 rounded-full transition-all" style={{ width: `${pct}%` }} />
+        </div>
+      </div>
+    );
+
+    const formatHours = (h: number) => h < 1 ? `${Math.round(h * 60)}m` : h < 24 ? `${h.toFixed(1)}h` : `${(h / 24).toFixed(1)}d`;
+
     return (
-      <div className="space-y-7">
-        {/* Refresh + timestamp */}
+      <div className="space-y-8">
+
+        {/* Header */}
         <div className="flex items-center justify-between">
-          <p className="text-xs text-gray-400">
-            Last updated: {new Date(usageData.generatedAt).toLocaleTimeString()}
-          </p>
-          <button
-            onClick={fetchUsage}
-            disabled={usageLoading}
-            className="flex items-center gap-1.5 text-xs text-teal-600 hover:text-teal-800 font-medium cursor-pointer disabled:opacity-50 transition-colors"
-          >
+          <p className="text-xs text-gray-400">Updated {new Date(usageData.generatedAt).toLocaleTimeString()}</p>
+          <button onClick={fetchUsage} disabled={usageLoading}
+            className="flex items-center gap-1.5 text-xs text-teal-600 hover:text-teal-800 font-medium cursor-pointer disabled:opacity-50">
             <svg className={`w-3.5 h-3.5 ${usageLoading ? 'animate-spin' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
@@ -1122,39 +1140,224 @@ export default function AdminDashboard() {
           </button>
         </div>
 
-        {/* Primary stat cards */}
+        {/* ── Summary stats ── */}
         <div>
-          <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">All Time</h3>
+          <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Overview</h3>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <StatCard label="Total Events" value={summary.totalEvents.toLocaleString()} />
-            <StatCard label="Participants" value={summary.totalParticipants.toLocaleString()} />
-            <StatCard label="Availability Responses" value={summary.totalSlots.toLocaleString()} sub="time slots marked" />
-            <StatCard label="Push Subscribers" value={summary.totalPushSubs.toLocaleString()} color="violet" />
+            <Stat label="Total Events" value={summary.totalEvents.toLocaleString()} sub={`${summary.events30d} last 30 days`} />
+            <Stat label="Participants" value={summary.totalParticipants.toLocaleString()} sub={`avg ${summary.avgParticipants} per event`} />
+            <Stat label="New This Week" value={summary.events7d} sub="events created" />
+            <Stat label="Availability Responses" value={summary.totalSlots.toLocaleString()} sub="time slots marked" accent />
           </div>
         </div>
 
-        {/* Recent stats */}
+        {/* ── FUNNEL ── most important section */}
         <div>
-          <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Recent Activity</h3>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <StatCard label="Events (7 days)" value={summary.events7d} />
-            <StatCard label="Events (30 days)" value={summary.events30d} />
-            <StatCard label="Avg Participants" value={summary.avgParticipants} sub="per event" />
-            <StatCard label="Finalized" value={`${summary.finalizedPercent}%`} sub={`${summary.finalizedEvents} of ${summary.totalEvents}`} color="amber" />
+          <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Conversion Funnel</h3>
+          <div className="bg-gray-50 rounded-xl p-5 space-y-3">
+            {[
+              {
+                label: 'Events Created',
+                value: funnel.created,
+                pct: 100,
+                color: 'bg-teal-500',
+                desc: 'Starting point',
+              },
+              {
+                label: 'Got Participation',
+                value: funnel.participated,
+                pct: funnel.participatedPct,
+                color: 'bg-teal-400',
+                desc: `${funnel.participatedPct}% of created — ${funnel.created - funnel.participated} abandoned`,
+              },
+              {
+                label: 'Time Finalized',
+                value: funnel.finalized,
+                pct: funnel.finalizedOfParticipated,
+                color: 'bg-violet-500',
+                desc: `${funnel.finalizedOfParticipated}% of participated — ${funnel.finalizedOfTotal}% overall`,
+              },
+            ].map(({ label, value, pct, color, desc }) => (
+              <div key={label}>
+                <div className="flex items-center justify-between text-sm mb-1.5">
+                  <span className="font-semibold text-gray-800">{label}</span>
+                  <span className="font-bold text-gray-700">{value.toLocaleString()}</span>
+                </div>
+                <div className="h-5 bg-gray-200 rounded-lg overflow-hidden">
+                  <div className={`h-full ${color} rounded-lg transition-all flex items-center pl-2`}
+                    style={{ width: `${Math.max(pct, 2)}%` }}>
+                    {pct >= 12 && <span className="text-white text-xs font-bold">{pct}%</span>}
+                  </div>
+                </div>
+                <p className="text-xs text-gray-400 mt-1">{desc}</p>
+              </div>
+            ))}
           </div>
         </div>
 
-        {/* Event type breakdown */}
+        {/* ── Two-column: Abandonment + Finalization time ── */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {/* Event types */}
+          <div className="bg-gray-50 rounded-xl p-4 space-y-2">
+            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Abandonment Rate</h3>
+            <p className="text-3xl font-bold text-red-500">{abandonment.rate}%</p>
+            <p className="text-xs text-gray-500">
+              {abandonment.abandoned} of {abandonment.eligible} eligible events (48h+ old, 0 participants)
+            </p>
+            <p className="text-xs text-gray-400 italic">
+              {abandonment.rate < 20 ? '✓ Healthy — most events get shared' :
+               abandonment.rate < 40 ? '↗ Moderate — some organizers aren\'t sharing' :
+               '⚠ High — many events never get a response'}
+            </p>
+          </div>
+
+          <div className="bg-gray-50 rounded-xl p-4 space-y-2">
+            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Time to Finalize</h3>
+            {finalizationTime.count > 0 ? (
+              <>
+                <p className="text-3xl font-bold text-teal-600">{formatHours(finalizationTime.median)}</p>
+                <p className="text-xs text-gray-500">median · based on {finalizationTime.count} finalized events</p>
+                <p className="text-xs text-gray-400">
+                  25th–75th pct: {formatHours(finalizationTime.p25)} – {formatHours(finalizationTime.p75)}
+                </p>
+              </>
+            ) : (
+              <p className="text-sm text-gray-400 italic">No finalized events yet</p>
+            )}
+          </div>
+        </div>
+
+        {/* ── Group size distribution ── */}
+        <div>
+          <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Group Size Distribution</h3>
+          <div className="bg-gray-50 rounded-xl p-4 space-y-3">
+            {groupSizeDistribution.map(({ bucket, count, pct }) => (
+              <div key={bucket}>
+                <div className="flex justify-between text-xs mb-1">
+                  <span className="text-gray-600 font-medium">
+                    {bucket === '0' ? 'No participants (abandoned)' :
+                     bucket === '1' ? '1 participant' :
+                     `${bucket} participants`}
+                  </span>
+                  <span className="text-gray-400">{count.toLocaleString()} ({pct}%)</span>
+                </div>
+                <div className="h-2.5 bg-gray-200 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all ${
+                      bucket === '0' ? 'bg-red-300' :
+                      bucket === '1' ? 'bg-amber-300' :
+                      bucket === '2-3' ? 'bg-teal-300' :
+                      bucket === '4-6' ? 'bg-teal-400' :
+                      bucket === '7-10' ? 'bg-teal-500' : 'bg-violet-500'
+                    }`}
+                    style={{ width: `${Math.max(pct, count > 0 ? 2 : 0)}%` }}
+                  />
+                </div>
+              </div>
+            ))}
+            {summary.totalEvents > 0 && (
+              <p className="text-xs text-gray-400 pt-1 border-t border-gray-200">
+                Sweet spot (4–10 participants): {
+                  ((groupSizeDistribution.find(b => b.bucket === '4-6')?.count ?? 0) +
+                   (groupSizeDistribution.find(b => b.bucket === '7-10')?.count ?? 0)).toLocaleString()
+                } events ({
+                  Math.round((
+                    ((groupSizeDistribution.find(b => b.bucket === '4-6')?.count ?? 0) +
+                     (groupSizeDistribution.find(b => b.bucket === '7-10')?.count ?? 0)) /
+                    summary.totalEvents
+                  ) * 100)
+                }%)
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* ── Feature adoption + Device breakdown ── */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="bg-gray-50 rounded-xl p-4 space-y-3">
+            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Feature Adoption</h3>
+            <AdoptionBar label="Location set" pct={featureAdoption.location.pct} count={featureAdoption.location.count} />
+            <AdoptionBar label="Description" pct={featureAdoption.description.pct} count={featureAdoption.description.count} />
+            <AdoptionBar label="Rich text details" pct={featureAdoption.richText.pct} count={featureAdoption.richText.count} />
+            <AdoptionBar label="Response deadline" pct={featureAdoption.deadline.pct} count={featureAdoption.deadline.count} />
+            <AdoptionBar label="Max participants" pct={featureAdoption.maxParticipants.pct} count={featureAdoption.maxParticipants.count} />
+            <AdoptionBar label="Email captured" pct={featureAdoption.email.pct} count={featureAdoption.email.count} />
+          </div>
+
+          <div className="space-y-4">
+            {/* Device breakdown */}
+            <div className="bg-gray-50 rounded-xl p-4 space-y-3">
+              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Device Breakdown</h3>
+              {deviceBreakdown.hasData ? (
+                <>
+                  {[
+                    { label: 'Mobile', pct: deviceBreakdown.mobilePct, count: deviceBreakdown.mobile, color: 'bg-violet-400' },
+                    { label: 'Desktop', pct: deviceBreakdown.desktopPct, count: deviceBreakdown.desktop, color: 'bg-teal-400' },
+                  ].map(({ label, pct, count, color }) => (
+                    <div key={label}>
+                      <div className="flex justify-between text-xs mb-1">
+                        <span className="text-gray-600 font-medium">{label}</span>
+                        <span className="text-gray-400">{count.toLocaleString()} ({pct}%)</span>
+                      </div>
+                      <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                        <div className={`h-full ${color} rounded-full`} style={{ width: `${pct}%` }} />
+                      </div>
+                    </div>
+                  ))}
+                  <p className="text-xs text-gray-400 italic">
+                    {deviceBreakdown.mobilePct >= 60 ? '✓ Majority mobile — your core use case' :
+                     deviceBreakdown.mobilePct >= 40 ? 'Mixed — solid mobile and desktop usage' :
+                     'Desktop-heavy — consider mobile UX improvements'}
+                  </p>
+                </>
+              ) : (
+                <p className="text-xs text-gray-400 italic">Run migration to enable device tracking</p>
+              )}
+            </div>
+
+            {/* Repeat organizers */}
+            <div className="bg-gray-50 rounded-xl p-4 space-y-2">
+              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Returning Organizers</h3>
+              <p className="text-2xl font-bold text-teal-600">{repeatOrganizers.rate}%</p>
+              <p className="text-xs text-gray-500">
+                {repeatOrganizers.returning} of {repeatOrganizers.total} named organizers created 2+ events
+              </p>
+              <p className="text-xs text-gray-400 italic">Approximate — based on organizer name matching</p>
+            </div>
+          </div>
+        </div>
+
+        {/* ── Event type + RSVP breakdown ── */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="bg-gray-50 rounded-xl p-4 space-y-3">
             <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Event Types</h3>
-            <div className="space-y-2">
+            {[
+              { label: 'Find-a-Time', count: summary.availEvents, color: 'bg-teal-400' },
+              { label: 'Fixed Date/Time', count: summary.fixedEvents, color: 'bg-violet-400' },
+            ].map(({ label, count, color }) => {
+              const pct = summary.totalEvents > 0 ? Math.round((count / summary.totalEvents) * 100) : 0;
+              return (
+                <div key={label}>
+                  <div className="flex justify-between text-xs mb-1">
+                    <span className="text-gray-600 font-medium">{label}</span>
+                    <span className="text-gray-400">{count.toLocaleString()} ({pct}%)</span>
+                  </div>
+                  <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                    <div className={`h-full ${color} rounded-full`} style={{ width: `${pct}%` }} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {summary.rsvpTotal > 0 && (
+            <div className="bg-gray-50 rounded-xl p-4 space-y-3">
+              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">RSVP Responses</h3>
               {[
-                { label: 'Find-a-Time', count: summary.availEvents, color: 'bg-teal-400' },
-                { label: 'Fixed Date/Time', count: summary.fixedEvents, color: 'bg-violet-400' },
+                { label: 'Going', count: summary.rsvpYes, color: 'bg-green-400' },
+                { label: 'Maybe', count: summary.rsvpMaybe, color: 'bg-amber-400' },
+                { label: "Can't Make It", count: summary.rsvpNo, color: 'bg-gray-400' },
               ].map(({ label, count, color }) => {
-                const pct = summary.totalEvents > 0 ? Math.round((count / summary.totalEvents) * 100) : 0;
+                const pct = summary.rsvpTotal > 0 ? Math.round((count / summary.rsvpTotal) * 100) : 0;
                 return (
                   <div key={label}>
                     <div className="flex justify-between text-xs mb-1">
@@ -1162,175 +1365,106 @@ export default function AdminDashboard() {
                       <span className="text-gray-400">{count.toLocaleString()} ({pct}%)</span>
                     </div>
                     <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                      <div className={`h-full ${color} rounded-full transition-all`} style={{ width: `${pct}%` }} />
+                      <div className={`h-full ${color} rounded-full`} style={{ width: `${pct}%` }} />
                     </div>
                   </div>
                 );
               })}
             </div>
-          </div>
+          )}
+        </div>
 
-          {/* RSVP breakdown */}
-          {summary.rsvpTotal > 0 && (
-            <div className="bg-gray-50 rounded-xl p-4 space-y-3">
-              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">RSVP Responses</h3>
-              <div className="space-y-2">
-                {[
-                  { label: 'Going', count: summary.rsvpYes, color: 'bg-green-400' },
-                  { label: 'Maybe', count: summary.rsvpMaybe, color: 'bg-amber-400' },
-                  { label: "Can't Make It", count: summary.rsvpNo, color: 'bg-gray-400' },
-                ].map(({ label, count, color }) => {
-                  const pct = summary.rsvpTotal > 0 ? Math.round((count / summary.rsvpTotal) * 100) : 0;
+        {/* ── Daily charts ── */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {[
+            { title: 'Events Created — Last 30 Days', key: 'events' as const, max: maxEventBar, color: 'bg-teal-400 hover:bg-teal-500' },
+            { title: 'Participants Joined — Last 30 Days', key: 'participants' as const, max: maxParticipantBar, color: 'bg-violet-400 hover:bg-violet-500' },
+          ].map(({ title, key, max, color }) => (
+            <div key={key} className="bg-gray-50 rounded-xl p-4 space-y-3">
+              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{title}</h3>
+              <div className="flex items-end gap-[2px] h-20">
+                {dailyActivity.map(({ date, ...counts }) => {
+                  const val = counts[key];
+                  const h = max > 0 ? Math.max(Math.round((val / max) * 100), val > 0 ? 6 : 1) : 1;
+                  const label = new Date(date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
                   return (
-                    <div key={label}>
-                      <div className="flex justify-between text-xs mb-1">
-                        <span className="text-gray-600 font-medium">{label}</span>
-                        <span className="text-gray-400">{count.toLocaleString()} ({pct}%)</span>
-                      </div>
-                      <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                        <div className={`h-full ${color} rounded-full transition-all`} style={{ width: `${pct}%` }} />
-                      </div>
+                    <div key={date} className="flex-1 group relative flex items-end" style={{ height: '100%' }}>
+                      <div className={`w-full ${color} rounded-sm transition-colors cursor-default`} style={{ height: `${h}%` }} />
+                      {val > 0 && (
+                        <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-[10px] px-1.5 py-0.5 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+                          {label}: {val}
+                        </div>
+                      )}
                     </div>
                   );
                 })}
               </div>
-            </div>
-          )}
-
-          {/* Top timezones */}
-          {topTimezones.length > 0 && (
-            <div className="bg-gray-50 rounded-xl p-4 space-y-3">
-              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Top Timezones</h3>
-              <div className="space-y-1.5">
-                {topTimezones.map(({ tz, count }) => {
-                  const pct = summary.totalEvents > 0 ? Math.round((count / summary.totalEvents) * 100) : 0;
-                  return (
-                    <div key={tz} className="flex items-center justify-between gap-2">
-                      <span className="text-xs text-gray-600 truncate font-mono">{tz}</span>
-                      <span className="text-xs text-gray-400 shrink-0">{count} ({pct}%)</span>
-                    </div>
-                  );
-                })}
+              <div className="flex justify-between text-[10px] text-gray-400">
+                <span>{dailyActivity[0]?.date ? new Date(dailyActivity[0].date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : ''}</span>
+                <span>Today</span>
               </div>
             </div>
-          )}
+          ))}
         </div>
 
-        {/* Daily activity chart — events */}
-        <div className="bg-gray-50 rounded-xl p-4 space-y-3">
-          <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Events Created — Last 30 Days</h3>
-          <div className="flex items-end gap-[3px] h-24">
-            {dailyActivity.map(({ date, events }) => {
-              const h = maxEvents > 0 ? Math.max(Math.round((events / maxEvents) * 100), events > 0 ? 8 : 2) : 2;
-              const label = new Date(date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-              return (
-                <div
-                  key={date}
-                  className="flex-1 group relative flex items-end"
-                  style={{ height: '100%' }}
-                >
-                  <div
-                    className="w-full bg-teal-400 hover:bg-teal-500 rounded-sm transition-colors cursor-default"
-                    style={{ height: `${h}%` }}
-                  />
-                  {events > 0 && (
-                    <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-[10px] px-1.5 py-0.5 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
-                      {label}: {events}
-                    </div>
-                  )}
+        {/* ── Top timezones (compact) ── */}
+        {topTimezones.length > 0 && (
+          <div>
+            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Top Timezones</h3>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {topTimezones.map(({ tz, count, pct }) => (
+                <div key={tz} className="bg-gray-50 rounded-lg px-3 py-2 flex justify-between items-center">
+                  <span className="text-xs text-gray-600 font-mono truncate">{tz}</span>
+                  <span className="text-xs text-gray-400 ml-2 shrink-0">{count} ({pct}%)</span>
                 </div>
-              );
-            })}
+              ))}
+            </div>
           </div>
-          <div className="flex justify-between text-[10px] text-gray-400">
-            <span>{dailyActivity[0]?.date ? new Date(dailyActivity[0].date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : ''}</span>
-            <span>Today</span>
-          </div>
-        </div>
+        )}
 
-        {/* Daily participants chart */}
-        <div className="bg-gray-50 rounded-xl p-4 space-y-3">
-          <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Participants Joined — Last 30 Days</h3>
-          <div className="flex items-end gap-[3px] h-24">
-            {dailyActivity.map(({ date, participants }) => {
-              const h = maxParticipants > 0 ? Math.max(Math.round((participants / maxParticipants) * 100), participants > 0 ? 8 : 2) : 2;
-              const label = new Date(date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-              return (
-                <div key={date} className="flex-1 group relative flex items-end" style={{ height: '100%' }}>
-                  <div
-                    className="w-full bg-violet-400 hover:bg-violet-500 rounded-sm transition-colors cursor-default"
-                    style={{ height: `${h}%` }}
-                  />
-                  {participants > 0 && (
-                    <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-[10px] px-1.5 py-0.5 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
-                      {label}: {participants}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-          <div className="flex justify-between text-[10px] text-gray-400">
-            <span>{dailyActivity[0]?.date ? new Date(dailyActivity[0].date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : ''}</span>
-            <span>Today</span>
-          </div>
-        </div>
-
-        {/* Recent events table */}
-        <div className="space-y-3">
-          <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Recent Events</h3>
+        {/* ── Recent events table ── */}
+        <div>
+          <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Recent Events</h3>
           <div className="rounded-xl border border-gray-200 overflow-hidden">
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-gray-50 border-b border-gray-200">
                   <th className="text-left px-4 py-2.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">Event</th>
                   <th className="text-left px-4 py-2.5 text-xs font-semibold text-gray-500 uppercase tracking-wider hidden sm:table-cell">Type</th>
-                  <th className="text-center px-4 py-2.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">Participants</th>
-                  <th className="text-left px-4 py-2.5 text-xs font-semibold text-gray-500 uppercase tracking-wider hidden md:table-cell">Status</th>
-                  <th className="text-left px-4 py-2.5 text-xs font-semibold text-gray-500 uppercase tracking-wider hidden lg:table-cell">Created</th>
+                  <th className="text-center px-3 py-2.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">Ppl</th>
+                  <th className="text-left px-3 py-2.5 text-xs font-semibold text-gray-500 uppercase tracking-wider hidden md:table-cell">Status</th>
+                  <th className="text-left px-3 py-2.5 text-xs font-semibold text-gray-500 uppercase tracking-wider hidden lg:table-cell">Created</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {recentEvents.map((e) => (
+                {recentEvents.map(e => (
                   <tr key={e.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-4 py-3">
-                      <a
-                        href={`/e/${e.slug}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="font-medium text-gray-800 hover:text-teal-600 transition-colors block truncate max-w-[180px]"
-                      >
+                      <a href={`/e/${e.slug}`} target="_blank" rel="noopener noreferrer"
+                        className="font-medium text-gray-800 hover:text-teal-600 transition-colors block truncate max-w-[160px]">
                         {e.name}
                       </a>
-                      {e.organizer_name && (
-                        <span className="text-xs text-gray-400">by {e.organizer_name}</span>
-                      )}
+                      {e.organizer_name && <span className="text-xs text-gray-400 block">{e.organizer_name}{e.organizer_email ? ` · ${e.organizer_email}` : ''}</span>}
                     </td>
                     <td className="px-4 py-3 hidden sm:table-cell">
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                        e.event_type === 'fixed'
-                          ? 'bg-violet-100 text-violet-700'
-                          : 'bg-teal-100 text-teal-700'
-                      }`}>
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${e.event_type === 'fixed' ? 'bg-violet-100 text-violet-700' : 'bg-teal-100 text-teal-700'}`}>
                         {e.event_type === 'fixed' ? 'Fixed' : 'Find-a-Time'}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-center">
+                    <td className="px-3 py-3 text-center">
                       <span className="text-sm font-semibold text-gray-700">{e.participant_count}</span>
                     </td>
-                    <td className="px-4 py-3 hidden md:table-cell">
+                    <td className="px-3 py-3 hidden md:table-cell">
                       {e.finalized_time ? (
                         <span className="inline-flex items-center gap-1 text-xs text-green-600 font-medium">
-                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                          </svg>
-                          Finalized
+                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                          Done
                         </span>
                       ) : (
                         <span className="text-xs text-gray-400">Open</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-xs text-gray-400 hidden lg:table-cell whitespace-nowrap">
+                    <td className="px-3 py-3 text-xs text-gray-400 hidden lg:table-cell whitespace-nowrap">
                       {new Date(e.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                     </td>
                   </tr>
@@ -1339,6 +1473,7 @@ export default function AdminDashboard() {
             </table>
           </div>
         </div>
+
       </div>
     );
   };
