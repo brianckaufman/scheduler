@@ -1,7 +1,10 @@
 /**
  * AnalyticsScripts — renders GA4, GTM, and custom scripts as real <script>
- * tags in the server-rendered HTML (not via next/script which only injects
- * client-side and is invisible to Google's tag detection tools).
+ * tags in the server-rendered HTML so Google's tag detection tools find them.
+ *
+ * React 19 note: inline <script> tags must use string children, NOT
+ * dangerouslySetInnerHTML. React 19's hydration handles these differently and
+ * dangerouslySetInnerHTML on <script> can prevent execution after hydration.
  *
  * Must be placed inside <head> in layout.tsx.
  */
@@ -19,7 +22,6 @@ interface ParsedScript {
  */
 function parseScriptTags(html: string): ParsedScript[] {
   const results: ParsedScript[] = [];
-  // Match both <script ...>content</script> and self-closing <script ... />
   const tagRe = /<script([^>]*)>([\s\S]*?)<\/script>|<script([^>]*?)\/>/gi;
   let m: RegExpExecArray | null;
   while ((m = tagRe.exec(html)) !== null) {
@@ -60,21 +62,14 @@ export function AnalyticsScripts({ gaId, gtmId, customScripts }: AnalyticsScript
         <>
           {/* eslint-disable-next-line @next/next/no-sync-scripts */}
           <script async src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`} />
-          <script
-            id="ga4-init"
-            // eslint-disable-next-line react/no-danger
-            dangerouslySetInnerHTML={{ __html: gaInit }}
-          />
+          {/* React 19: use children string, not dangerouslySetInnerHTML */}
+          <script id="ga4-init">{gaInit}</script>
         </>
       )}
 
       {/* ── Google Tag Manager ── */}
       {gtmId && (
-        <script
-          id="gtm-init"
-          // eslint-disable-next-line react/no-danger
-          dangerouslySetInnerHTML={{ __html: gtmInit }}
-        />
+        <script id="gtm-init">{gtmInit}</script>
       )}
 
       {/* ── Custom head scripts (supports pasted raw HTML <script> blocks) ── */}
@@ -84,12 +79,10 @@ export function AnalyticsScripts({ gaId, gtmId, customScripts }: AnalyticsScript
           // eslint-disable-next-line @next/next/no-sync-scripts
           <script key={`custom-src-${i}`} src={s.src} async={s.async ?? false} />
         ) : (
-          // Inline script
-          <script
-            key={`custom-inline-${i}`}
-            // eslint-disable-next-line react/no-danger
-            dangerouslySetInnerHTML={{ __html: s.content! }}
-          />
+          // Inline script — use children string, not dangerouslySetInnerHTML (React 19)
+          <script key={`custom-inline-${i}`} id={`custom-inline-${i}`}>
+            {s.content!}
+          </script>
         )
       )}
     </>
