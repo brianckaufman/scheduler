@@ -180,7 +180,8 @@ export async function POST(request: NextRequest) {
     ...(responseDeadline && { response_deadline: responseDeadline }),
     ...(safeMaxParticipants && { max_participants: safeMaxParticipants }),
     ...(safeOrganizerEmail && { organizer_email: safeOrganizerEmail }),
-    ...(organizerDevice && { device_type: organizerDevice }),
+    // device_type requires supabase-analytics-migration.sql to be run first
+    // ...(organizerDevice && { device_type: organizerDevice }),
   };
 
   const { data, error } = await supabase

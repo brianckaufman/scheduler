@@ -102,7 +102,8 @@ export async function POST(request: NextRequest) {
     .insert({
       event_id,
       name: safeName,
-      ...(deviceType && { device_type: deviceType }),
+      // device_type requires supabase-analytics-migration.sql to be run first
+      // ...(deviceType && { device_type: deviceType }),
     })
     .select()
     .single();
