@@ -13,73 +13,26 @@ interface BestTimesProps {
   onFinalize?: (time: string) => void;
 }
 
-interface TimeBlock {
-  start: string;
-  end: string;
-  participantIds: Set<string>;
-  count: number;
-}
-
 export default function BestTimes({ overlapMap, totalParticipants, durationMinutes, participants, onFinalize }: BestTimesProps) {
   const bestBlocks = useMemo(() => {
     if (totalParticipants < 2) return [];
 
-    // Get all slot keys sorted by time
-    const slots = Array.from(overlapMap.entries())
+    // Each slot_start in the overlapMap is already a valid full-duration event
+    // start time (generateSlots ensures the full duration fits the time window).
+    // No contiguity check is needed — just rank and surface the best ones.
+    return Array.from(overlapMap.entries())
       .filter(([, pSet]) => pSet.size >= 2)
-      .sort(([a], [b]) => a.localeCompare(b));
-
-    if (slots.length === 0) return [];
-
-    // Find contiguous blocks where the same set of people overlap
-    const slotsNeeded = Math.max(1, Math.floor(durationMinutes / 30));
-    const blocks: TimeBlock[] = [];
-
-    for (let i = 0; i <= slots.length - slotsNeeded; i++) {
-      const [startKey, startSet] = slots[i];
-      const startTime = new Date(startKey).getTime();
-
-      // Check if we have enough contiguous 30-min slots
-      let valid = true;
-      let minParticipants = startSet;
-
-      for (let j = 1; j < slotsNeeded; j++) {
-        const expectedTime = startTime + j * 30 * 60 * 1000;
-        const nextSlot = slots[i + j];
-        if (!nextSlot || new Date(nextSlot[0]).getTime() !== expectedTime) {
-          valid = false;
-          break;
-        }
-        // Intersect participants across all slots in the block
-        const intersection = new Set<string>();
-        for (const pid of minParticipants) {
-          if (nextSlot[1].has(pid)) intersection.add(pid);
-        }
-        minParticipants = intersection;
-      }
-
-      if (valid && minParticipants.size >= 2) {
-        const endTime = new Date(startTime + slotsNeeded * 30 * 60 * 1000);
-        blocks.push({
-          start: startKey,
+      .map(([slotKey, pSet]) => {
+        const endTime = new Date(new Date(slotKey).getTime() + durationMinutes * 60 * 1000);
+        return {
+          start: slotKey,
           end: endTime.toISOString(),
-          participantIds: minParticipants,
-          count: minParticipants.size,
-        });
-      }
-    }
-
-    // Sort by most participants, then by time
-    blocks.sort((a, b) => b.count - a.count || a.start.localeCompare(b.start));
-
-    // Deduplicate overlapping blocks — keep the best per time window
-    const seen = new Set<string>();
-    return blocks.filter((block) => {
-      const key = block.start;
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    }).slice(0, 5);
+          participantIds: pSet,
+          count: pSet.size,
+        };
+      })
+      .sort((a, b) => b.count - a.count || a.start.localeCompare(b.start))
+      .slice(0, 5);
   }, [overlapMap, totalParticipants, durationMinutes]);
 
   if (bestBlocks.length === 0) return null;
