@@ -74,6 +74,7 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
   const [responseDeadline, setResponseDeadline] = useState('');
   const [selectedDates, setSelectedDates] = useState<Date[]>([]);
   const [maxParticipants, setMaxParticipants] = useState('');
+  const [minResponses, setMinResponses] = useState('');
   const [timeStart, setTimeStart] = useState('09:00');
   const [timeEnd, setTimeEnd] = useState('17:00');
   const [timezone, setTimezone] = useState(detectUserTimezone);
@@ -263,6 +264,7 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
             timeStart,
             timeEnd,
             maxParticipants: maxParticipants ? parseInt(maxParticipants, 10) : null,
+            minResponses: minResponses ? parseInt(minResponses, 10) : null,
             responseDeadline: responseDeadline
               ? new Date(responseDeadline + 'T23:59:59').toISOString()
               : null,
@@ -705,6 +707,27 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
                   {maxParticipants && parseInt(maxParticipants, 10) > 0 && (
                     <p className="text-xs text-gray-400 mt-1">
                       New participants will be blocked after {maxParticipants} have joined
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label htmlFor="minResponses" className="block text-sm font-medium text-gray-700 mb-1.5">
+                    Minimum responses needed <span className="text-gray-400 font-normal">(optional)</span>
+                  </label>
+                  <input
+                    id="minResponses"
+                    type="number"
+                    value={minResponses}
+                    onChange={(e) => setMinResponses(e.target.value)}
+                    placeholder="No minimum"
+                    min={2}
+                    max={1000}
+                    className={inputClass}
+                  />
+                  {minResponses && parseInt(minResponses, 10) >= 2 && (
+                    <p className="text-xs text-gray-400 mt-1">
+                      A waiting indicator will show until {minResponses} people have responded.
                     </p>
                   )}
                 </div>

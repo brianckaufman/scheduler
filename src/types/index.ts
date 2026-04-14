@@ -10,6 +10,7 @@ export interface Event {
   response_deadline: string | null;
   finalized_time: string | null;
   max_participants: number | null;
+  min_responses: number | null;
   dates: string[];
   time_start: string;
   time_end: string;

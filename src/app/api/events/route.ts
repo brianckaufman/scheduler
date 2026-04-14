@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
 
   const {
     name, description, body: bodyText, organizerName, location, durationMinutes,
-    responseDeadline, maxParticipants, timezone,
+    responseDeadline, maxParticipants, minResponses, timezone,
     // Availability-mode fields
     dates, timeStart, timeEnd,
     // Fixed-mode fields
@@ -134,6 +134,15 @@ export async function POST(request: NextRequest) {
     }
   }
 
+  // Validate min responses (optional, availability events only)
+  let safeMinResponses: number | null = null;
+  if (minResponses !== undefined && minResponses !== null && minResponses !== '') {
+    const num = Number(minResponses);
+    if (Number.isInteger(num) && num >= 2 && num <= 1000) {
+      safeMinResponses = num;
+    }
+  }
+
   // --- Sanitize text inputs ---
   const safeName = sanitizeText(name, 100);
   const safeDescription = description ? sanitizeText(description, 500) : null;
@@ -174,6 +183,7 @@ export async function POST(request: NextRequest) {
     ...(safeBody && { body: safeBody }),
     ...(responseDeadline && { response_deadline: responseDeadline }),
     ...(safeMaxParticipants && { max_participants: safeMaxParticipants }),
+    ...(safeMinResponses && { min_responses: safeMinResponses }),
     // device_type requires supabase-analytics-migration.sql to be run first
     // ...(organizerDevice && { device_type: organizerDevice }),
   };

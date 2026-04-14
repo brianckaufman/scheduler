@@ -541,6 +541,7 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
                 totalParticipants={totalParticipants}
                 durationMinutes={event.duration_minutes || 30}
                 participants={participants}
+                minResponses={event.min_responses}
                 onFinalize={isOrganizer ? (time: string) => {
                   handleFinalize(time);
                   setShowTimePicker(false);

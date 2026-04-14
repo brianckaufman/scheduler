@@ -107,6 +107,17 @@ export async function PATCH(
       safeUpdate.max_participants = val;
     }
   }
+  if ('min_responses' in updates) {
+    const val = updates.min_responses;
+    if (val === null || val === '' || val === 0) {
+      safeUpdate.min_responses = null;
+    } else {
+      const num = Number(val);
+      if (Number.isInteger(num) && num >= 2 && num <= 1000) {
+        safeUpdate.min_responses = num;
+      }
+    }
+  }
   if ('body' in updates) {
     safeUpdate.body = updates.body ? sanitizeHtml(String(updates.body)) : null;
   }

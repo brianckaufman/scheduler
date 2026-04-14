@@ -38,6 +38,9 @@ export default function EditEventModal({ event, organizerToken, onClose, onSave,
   const [maxParticipants, setMaxParticipants] = useState<string>(
     event.max_participants ? String(event.max_participants) : ''
   );
+  const [minResponses, setMinResponses] = useState<string>(
+    event.min_responses ? String(event.min_responses) : ''
+  );
   const [responseDeadline, setResponseDeadline] = useState(
     event.response_deadline ? format(new Date(event.response_deadline), 'yyyy-MM-dd') : ''
   );
@@ -76,6 +79,7 @@ export default function EditEventModal({ event, organizerToken, onClose, onSave,
           location: location.trim() || null,
           duration_minutes: durationMinutes,
           max_participants: maxP,
+          min_responses: minResponses ? parseInt(minResponses, 10) : null,
           response_deadline: responseDeadline
             ? new Date(responseDeadline + 'T23:59:59').toISOString()
             : null,
@@ -214,6 +218,30 @@ export default function EditEventModal({ event, organizerToken, onClose, onSave,
               </p>
             )}
           </div>
+
+          {/* Min responses — availability events only */}
+          {event.event_type !== 'fixed' && (
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">
+                Minimum responses needed
+                <span className="text-gray-400 font-normal ml-1">(optional)</span>
+              </label>
+              <input
+                type="number"
+                value={minResponses}
+                onChange={(e) => setMinResponses(e.target.value)}
+                placeholder="No minimum"
+                min={2}
+                max={1000}
+                className={inputClass}
+              />
+              {minResponses && parseInt(minResponses, 10) >= 2 && (
+                <p className="text-xs text-gray-400 mt-1">
+                  Waiting indicator shows until {minResponses} people have responded.
+                </p>
+              )}
+            </div>
+          )}
 
           {error && <p className="text-red-500 text-sm">{error}</p>}
 
