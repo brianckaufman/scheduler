@@ -223,8 +223,8 @@ export default function EditEventModal({ event, organizerToken, onClose, onSave,
           {event.event_type !== 'fixed' && (
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">
-                Minimum responses needed
-                <span className="text-gray-400 font-normal ml-1">(optional)</span>
+                Responses needed to pick a time
+                <span className="text-gray-400 font-normal ml-1">(including yours, optional)</span>
               </label>
               <input
                 type="number"
@@ -237,7 +237,7 @@ export default function EditEventModal({ event, organizerToken, onClose, onSave,
               />
               {minResponses && parseInt(minResponses, 10) >= 2 && (
                 <p className="text-xs text-gray-400 mt-1">
-                  Waiting indicator shows until {minResponses} people have responded.
+                  The Pick a Time panel will wait until {minResponses} people have responded, including you.
                 </p>
               )}
             </div>

@@ -655,6 +655,29 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
             </select>
           </div>
 
+          {/* Minimum responses — always visible, not hidden behind More options */}
+          <div>
+            <label htmlFor="minResponses" className="block text-sm font-medium text-gray-700 mb-1.5">
+              Responses needed to pick a time{' '}
+              <span className="text-gray-400 font-normal">(including yours, optional)</span>
+            </label>
+            <input
+              id="minResponses"
+              type="number"
+              value={minResponses}
+              onChange={(e) => setMinResponses(e.target.value)}
+              placeholder="No minimum"
+              min={2}
+              max={1000}
+              className={inputClass}
+            />
+            {minResponses && parseInt(minResponses, 10) >= 2 && (
+              <p className="text-xs text-gray-400 mt-1">
+                The Pick a Time panel will wait until {minResponses} people have responded, including you.
+              </p>
+            )}
+          </div>
+
           {/* === Optional section (availability only) === */}
           <div>
             {!showOptional && (
@@ -707,27 +730,6 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
                   {maxParticipants && parseInt(maxParticipants, 10) > 0 && (
                     <p className="text-xs text-gray-400 mt-1">
                       New participants will be blocked after {maxParticipants} have joined
-                    </p>
-                  )}
-                </div>
-
-                <div>
-                  <label htmlFor="minResponses" className="block text-sm font-medium text-gray-700 mb-1.5">
-                    Minimum responses needed <span className="text-gray-400 font-normal">(optional)</span>
-                  </label>
-                  <input
-                    id="minResponses"
-                    type="number"
-                    value={minResponses}
-                    onChange={(e) => setMinResponses(e.target.value)}
-                    placeholder="No minimum"
-                    min={2}
-                    max={1000}
-                    className={inputClass}
-                  />
-                  {minResponses && parseInt(minResponses, 10) >= 2 && (
-                    <p className="text-xs text-gray-400 mt-1">
-                      A waiting indicator will show until {minResponses} people have responded.
                     </p>
                   )}
                 </div>
