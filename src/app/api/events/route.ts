@@ -138,7 +138,7 @@ export async function POST(request: NextRequest) {
   let safeMinResponses: number | null = null;
   if (minResponses !== undefined && minResponses !== null && minResponses !== '') {
     const num = Number(minResponses);
-    if (Number.isInteger(num) && num >= 2 && num <= 1000) {
+    if (Number.isInteger(num) && num >= 1 && num <= 1000) {
       safeMinResponses = num;
     }
   }

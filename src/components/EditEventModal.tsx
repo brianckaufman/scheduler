@@ -226,18 +226,22 @@ export default function EditEventModal({ event, organizerToken, onClose, onSave,
                 Responses needed to pick a time
                 <span className="text-gray-400 font-normal ml-1">(including yours, optional)</span>
               </label>
-              <input
-                type="number"
+              <select
                 value={minResponses}
                 onChange={(e) => setMinResponses(e.target.value)}
-                placeholder="No minimum"
-                min={2}
-                max={1000}
-                className={inputClass}
-              />
-              {minResponses && parseInt(minResponses, 10) >= 2 && (
+                className={selectClass}
+              >
+                <option value="">No minimum</option>
+                {Array.from({ length: 20 }, (_, i) => i + 1).map((n) => (
+                  <option key={n} value={n}>
+                    {n} {n === 1 ? 'person' : 'people'}
+                  </option>
+                ))}
+              </select>
+              {minResponses && parseInt(minResponses, 10) >= 1 && (
                 <p className="text-xs text-gray-400 mt-1">
-                  The Pick a Time panel will wait until {minResponses} people have responded, including you.
+                  The Pick a Time panel will wait until {minResponses}{' '}
+                  {parseInt(minResponses, 10) === 1 ? 'person has' : 'people have'} responded, including you.
                 </p>
               )}
             </div>
