@@ -41,6 +41,10 @@ export default function EditEventModal({ event, organizerToken, onClose, onSave,
   const [minResponses, setMinResponses] = useState<string>(
     event.min_responses ? String(event.min_responses) : ''
   );
+  // If the saved value is outside the dropdown range, start in custom mode
+  const [minResponsesCustom, setMinResponsesCustom] = useState(
+    !!event.min_responses && event.min_responses > 15
+  );
   const [responseDeadline, setResponseDeadline] = useState(
     event.response_deadline ? format(new Date(event.response_deadline), 'yyyy-MM-dd') : ''
   );
@@ -226,18 +230,47 @@ export default function EditEventModal({ event, organizerToken, onClose, onSave,
                 Responses needed to pick a time
                 <span className="text-gray-400 font-normal ml-1">(including yours, optional)</span>
               </label>
-              <select
-                value={minResponses}
-                onChange={(e) => setMinResponses(e.target.value)}
-                className={selectClass}
-              >
-                <option value="">No minimum</option>
-                {Array.from({ length: 20 }, (_, i) => i + 1).map((n) => (
-                  <option key={n} value={n}>
-                    {n} {n === 1 ? 'person' : 'people'}
-                  </option>
-                ))}
-              </select>
+              {!minResponsesCustom ? (
+                <select
+                  value={minResponses}
+                  onChange={(e) => {
+                    if (e.target.value === 'custom') {
+                      setMinResponsesCustom(true);
+                      setMinResponses('');
+                    } else {
+                      setMinResponses(e.target.value);
+                    }
+                  }}
+                  className={selectClass}
+                >
+                  <option value="">No minimum</option>
+                  {Array.from({ length: 15 }, (_, i) => i + 1).map((n) => (
+                    <option key={n} value={n}>
+                      {n} {n === 1 ? 'person' : 'people'}
+                    </option>
+                  ))}
+                  <option value="custom">Enter a number...</option>
+                </select>
+              ) : (
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    value={minResponses}
+                    onChange={(e) => setMinResponses(e.target.value.replace(/\D/g, '').slice(0, 3))}
+                    placeholder="e.g. 25"
+                    className={inputClass}
+                    autoFocus
+                  />
+                  <button
+                    type="button"
+                    onClick={() => { setMinResponsesCustom(false); setMinResponses(''); }}
+                    className="shrink-0 px-3 py-2 text-xs text-gray-400 hover:text-gray-600 border border-gray-200 rounded-xl transition-colors cursor-pointer"
+                  >
+                    Reset
+                  </button>
+                </div>
+              )}
               {minResponses && parseInt(minResponses, 10) >= 1 && (
                 <p className="text-xs text-gray-400 mt-1">
                   The Pick a Time panel will wait until {minResponses}{' '}
