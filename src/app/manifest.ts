@@ -70,7 +70,7 @@ export default async function manifest(): Promise<MetadataRoute.Manifest> {
     start_url: '/',
     display: 'standalone',
     background_color: '#f9fafb',
-    theme_color: settings.branding.accent_color || '#14b8a6',
+    theme_color: settings.branding.accent_color || '#0373F6',
     icons,
   };
 }

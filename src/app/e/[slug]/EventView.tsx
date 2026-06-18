@@ -145,7 +145,7 @@ export default function EventView({ event: initialEvent }: EventViewProps) {
   const showPushPrompt = !isFixed && pushSupported && !isSubscribed && !pushDismissed && !event.finalized_time && !isOrganizer;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-subtle">
       {showCelebration && <ConfettiCelebration onComplete={() => setShowCelebration(false)} />}
       <div className="max-w-lg mx-auto px-4 py-6">
         {/* Logo */}
@@ -176,29 +176,29 @@ export default function EventView({ event: initialEvent }: EventViewProps) {
 
         {/* Push notification opt-in (availability events only) */}
         {showPushPrompt && (
-          <div className="animate-fade-in mb-4 bg-blue-50 border border-blue-100 rounded-2xl p-4 flex items-start gap-3">
+          <div className="animate-fade-in mb-4 bg-blue-50 dark:bg-[#0D223A] border border-teal-500 rounded-2xl p-4 flex items-start gap-3">
             <div className="shrink-0 mt-0.5">
-              <svg className="w-5 h-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <svg className="w-5 h-5 text-accent-fg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
               </svg>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-blue-900">{interpolate(copy.notifications.title, { name: firstName(event.organizer_name || 'the organizer') })}</p>
-              <p className="text-xs text-blue-600 mt-0.5">
+              <p className="text-sm font-medium text-accent-fg">{interpolate(copy.notifications.title, { name: firstName(event.organizer_name || 'the organizer') })}</p>
+              <p className="text-xs text-accent-fg mt-0.5">
                 {interpolate(copy.notifications.description, { name: firstName(event.organizer_name || 'the organizer') })}
               </p>
               <div className="flex gap-2 mt-2">
                 <button
                   type="button"
                   onClick={handleEnableNotifications}
-                  className="px-3 py-1.5 bg-blue-600 text-white text-xs font-semibold rounded-full hover:bg-blue-700 transition-all duration-200 active:scale-95 cursor-pointer"
+                  className="px-3 py-1.5 bg-teal-500 text-white text-xs font-semibold rounded-full hover:bg-teal-600 transition-all duration-200 active:scale-95 cursor-pointer"
                 >
                   {copy.notifications.enable}
                 </button>
                 <button
                   type="button"
                   onClick={handleDismissNotifications}
-                  className="px-3 py-1.5 text-blue-600 text-xs font-medium hover:text-blue-800 transition-colors cursor-pointer"
+                  className="px-3 py-1.5 text-accent-fg text-xs font-medium hover:text-accent-fg transition-colors cursor-pointer"
                 >
                   {copy.notifications.dismiss}
                 </button>
@@ -215,27 +215,27 @@ export default function EventView({ event: initialEvent }: EventViewProps) {
         </div>
 
         {/* Main card: event details + grid/RSVP */}
-        <div ref={gridRef} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+        <div ref={gridRef} className="bg-surface rounded-2xl shadow-sm border border-hairline-soft p-4">
           {/* Event details header */}
-          <div className="mb-4 pb-4 border-b border-gray-100">
+          <div className="mb-4 pb-4 border-b border-hairline-soft">
             <div className="flex items-start justify-between gap-2 mb-3">
               <div className="flex items-center gap-1.5 min-w-0">
                 <a
                   href="/"
-                  className="shrink-0 p-1 -ml-1 text-gray-300 hover:text-violet-600 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+                  className="shrink-0 p-1 -ml-1 text-faint2 hover:text-social-fg rounded-lg hover:bg-fill transition-colors cursor-pointer"
                   title="Back to home"
                 >
                   <svg className="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
                   </svg>
                 </a>
-                <h1 className="text-xl font-bold text-gray-900 truncate">{event.name}</h1>
+                <h1 className="text-xl font-bold text-heading truncate">{event.name}</h1>
               </div>
               {isOrganizer && (
                 <button
                   type="button"
                   onClick={() => setShowEditModal(true)}
-                  className="shrink-0 p-1.5 text-gray-400 hover:text-violet-600 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+                  className="shrink-0 p-1.5 text-faint hover:text-social-fg rounded-lg hover:bg-fill transition-colors cursor-pointer"
                   title="Edit event"
                 >
                   <svg className="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -251,24 +251,24 @@ export default function EventView({ event: initialEvent }: EventViewProps) {
                 <div className="space-y-2.5 mt-1">
                   {/* Date */}
                   <div className="flex items-center gap-3">
-                    <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <svg className="w-4 h-4 text-faint shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
                     </svg>
-                    <span className="text-sm font-semibold text-gray-900">
+                    <span className="text-sm font-semibold text-heading">
                       {format(new Date(event.finalized_time), 'EEEE, MMMM d, yyyy')}
                     </span>
                   </div>
                   {/* Time */}
                   <div className="flex items-center gap-3">
-                    <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <svg className="w-4 h-4 text-faint shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    <span className="text-sm font-semibold text-gray-900">
+                    <span className="text-sm font-semibold text-heading">
                       {format(new Date(event.finalized_time), 'h:mm a')}
                       {' – '}
                       {format(addMinutes(new Date(event.finalized_time), event.duration_minutes || 60), 'h:mm a')}
                       {event.timezone && (
-                        <span className="ml-1.5 text-xs font-normal text-gray-400">
+                        <span className="ml-1.5 text-xs font-normal text-faint">
                           {getTzAbbr(event.finalized_time, event.timezone)}
                         </span>
                       )}
@@ -277,20 +277,20 @@ export default function EventView({ event: initialEvent }: EventViewProps) {
                   {/* Location */}
                   {event.location && (
                     <div className="flex items-start gap-3">
-                      <svg className="w-4 h-4 text-gray-400 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <svg className="w-4 h-4 text-faint shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                         <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                       </svg>
-                      <LocationDisplay location={event.location ?? ''} textClassName="text-sm text-gray-700" />
+                      <LocationDisplay location={event.location ?? ''} textClassName="text-sm text-body" />
                     </div>
                   )}
                   {/* Organizer */}
                   {event.organizer_name && (
                     <div className="flex items-center gap-3">
-                      <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <svg className="w-4 h-4 text-faint shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                       </svg>
-                      <span className="text-sm text-gray-600">
+                      <span className="text-sm text-secondary">
                         {interpolate(copy.event.organized_by, { name: formatDisplayName(event.organizer_name) })}
                       </span>
                     </div>
@@ -298,7 +298,7 @@ export default function EventView({ event: initialEvent }: EventViewProps) {
                 </div>
                 {/* Description / body */}
                 {event.description && (
-                  <p className="text-sm text-gray-500 mt-3 leading-relaxed">{event.description}</p>
+                  <p className="text-sm text-muted mt-3 leading-relaxed">{event.description}</p>
                 )}
                 {event.body && <RichTextDisplay html={event.body} />}
               </>
@@ -306,35 +306,35 @@ export default function EventView({ event: initialEvent }: EventViewProps) {
               <>
                 {/* Availability event: description first, then vertical detail rows */}
                 {event.description && (
-                  <p className="text-sm text-gray-500 mt-1 leading-relaxed">{event.description}</p>
+                  <p className="text-sm text-muted mt-1 leading-relaxed">{event.description}</p>
                 )}
                 {event.body && <RichTextDisplay html={event.body} />}
                 <div className="space-y-2 mt-3">
                   {event.organizer_name && (
                     <div className="flex items-center gap-3">
-                      <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <svg className="w-4 h-4 text-faint shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                       </svg>
-                      <span className="text-sm text-gray-600">
+                      <span className="text-sm text-secondary">
                         {interpolate(copy.event.organized_by, { name: formatDisplayName(event.organizer_name) })}
                       </span>
                     </div>
                   )}
                   {event.location && (
                     <div className="flex items-start gap-3">
-                      <svg className="w-4 h-4 text-gray-400 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <svg className="w-4 h-4 text-faint shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                         <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                       </svg>
-                      <LocationDisplay location={event.location ?? ''} textClassName="text-sm text-gray-700" />
+                      <LocationDisplay location={event.location ?? ''} textClassName="text-sm text-body" />
                     </div>
                   )}
                   {event.duration_minutes && (
                     <div className="flex items-center gap-3">
-                      <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <svg className="w-4 h-4 text-faint shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
-                      <span className="text-sm text-gray-600">
+                      <span className="text-sm text-secondary">
                         {interpolate(copy.event.duration_needed, { duration: event.duration_minutes >= 60
                           ? `${event.duration_minutes / 60} hour${event.duration_minutes > 60 ? 's' : ''}`
                           : `${event.duration_minutes} min` })}
@@ -343,10 +343,10 @@ export default function EventView({ event: initialEvent }: EventViewProps) {
                   )}
                   {event.response_deadline && (
                     <div className="flex items-center gap-3">
-                      <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <svg className="w-4 h-4 text-faint shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                       </svg>
-                      <span className={`text-sm ${deadlinePassed ? 'text-red-500' : 'text-amber-600'}`}>
+                      <span className={`text-sm ${deadlinePassed ? 'text-red-500' : 'text-amber-600 dark:text-amber-400'}`}>
                         {deadlinePassed
                           ? copy.event.deadline_passed
                           : interpolate(copy.event.respond_by, {
@@ -400,18 +400,18 @@ export default function EventView({ event: initialEvent }: EventViewProps) {
 
         {/* Viral CTA footer */}
         <div className="mt-8 mb-4 text-center">
-          <div className="border-t border-gray-100 pt-6">
-            <p className="text-xs text-gray-400 mb-2">{copy.event.cta_prompt}</p>
+          <div className="border-t border-hairline-soft pt-6">
+            <p className="text-xs text-faint mb-2">{copy.event.cta_prompt}</p>
             <a
               href="/"
-              className="inline-flex items-center gap-1.5 px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-full hover:bg-gray-800 transition-all duration-200 active:scale-95 cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#101828] dark:bg-[#232B36] text-white text-sm font-medium rounded-full hover:bg-[#101828] dark:hover:bg-[#232B36] transition-all duration-200 active:scale-95 cursor-pointer"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
               </svg>
               {copy.event.cta_button}
             </a>
-            <p className="text-xs text-gray-400 mt-2">{copy.event.cta_footer}</p>
+            <p className="text-xs text-faint mt-2">{copy.event.cta_footer}</p>
 
             {monetization.buymeacoffee_url && monetization.show_on_event && (
               <div className="mt-3">

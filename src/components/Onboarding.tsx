@@ -62,8 +62,8 @@ export default function Onboarding() {
   const steps: Step[] = [
     {
       icon: (
-        <div className="w-16 h-16 rounded-2xl bg-violet-50 flex items-center justify-center">
-          <svg className="w-8 h-8 text-violet-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <div className="w-16 h-16 rounded-2xl bg-social-50 dark:bg-[#1C1939] flex items-center justify-center">
+          <svg className="w-8 h-8 text-social-fg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
           </svg>
         </div>
@@ -73,8 +73,8 @@ export default function Onboarding() {
     },
     {
       icon: (
-        <div className="w-16 h-16 rounded-2xl bg-blue-50 flex items-center justify-center">
-          <svg className="w-8 h-8 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <div className="w-16 h-16 rounded-2xl bg-blue-50 dark:bg-[#0D223A] flex items-center justify-center">
+          <svg className="w-8 h-8 text-accent-fg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
           </svg>
         </div>
@@ -84,8 +84,8 @@ export default function Onboarding() {
     },
     {
       icon: (
-        <div className="w-16 h-16 rounded-2xl bg-green-50 flex items-center justify-center">
-          <svg className="w-8 h-8 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <div className="w-16 h-16 rounded-2xl bg-green-50 dark:bg-[#112D25] flex items-center justify-center">
+          <svg className="w-8 h-8 text-success-fg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
         </div>
@@ -122,7 +122,7 @@ export default function Onboarding() {
         <div className="flex justify-end mb-8">
           <button
             onClick={dismiss}
-            className="text-xs text-gray-400 hover:text-gray-600 transition-colors px-3 py-1.5 rounded-full hover:bg-gray-100 cursor-pointer"
+            className="text-xs text-faint hover:text-secondary transition-colors px-3 py-1.5 rounded-full hover:bg-fill cursor-pointer"
           >
             Skip
           </button>
@@ -138,15 +138,15 @@ export default function Onboarding() {
           </div>
 
           {/* Step number */}
-          <p className="text-xs font-semibold text-violet-500 uppercase tracking-widest mb-2">
+          <p className="text-xs font-semibold text-social-fg uppercase tracking-widest mb-2">
             Step {currentStep + 1} of {steps.length}
           </p>
 
-          <h2 className="text-2xl font-bold text-gray-900 mb-3">
+          <h2 className="text-2xl font-bold text-heading mb-3">
             {step.title}
           </h2>
 
-          <p className="text-base text-gray-500 leading-relaxed max-w-xs mx-auto">
+          <p className="text-base text-muted leading-relaxed max-w-xs mx-auto">
             {step.description}
           </p>
         </div>
@@ -158,10 +158,10 @@ export default function Onboarding() {
               key={i}
               className={`h-1.5 rounded-full transition-all duration-300 ${
                 i === currentStep
-                  ? 'w-6 bg-violet-500'
+                  ? 'w-6 bg-social-500'
                   : i < currentStep
-                    ? 'w-1.5 bg-violet-300'
-                    : 'w-1.5 bg-gray-200'
+                    ? 'w-1.5 bg-social-500'
+                    : 'w-1.5 bg-fill2'
               }`}
             />
           ))}
@@ -172,14 +172,14 @@ export default function Onboarding() {
           {currentStep > 0 && (
             <button
               onClick={goPrev}
-              className="flex-1 py-3.5 px-6 text-sm font-semibold text-gray-600 bg-gray-100 rounded-2xl hover:bg-gray-200 transition-all duration-200 active:scale-[0.97] cursor-pointer"
+              className="flex-1 py-3.5 px-6 text-sm font-semibold text-secondary bg-fill rounded-2xl hover:bg-fill2 transition-all duration-200 active:scale-[0.97] cursor-pointer"
             >
               Back
             </button>
           )}
           <button
             onClick={goNext}
-            className="flex-1 py-3.5 px-6 text-sm font-semibold text-white bg-violet-600 rounded-2xl hover:bg-violet-700 shadow-lg shadow-violet-200/50 transition-all duration-200 active:scale-[0.97] cursor-pointer"
+            className="flex-1 py-3.5 px-6 text-sm font-semibold text-white bg-social-500 rounded-2xl hover:bg-social-600 shadow-lg shadow-violet-200/50 transition-all duration-200 active:scale-[0.97] cursor-pointer"
           >
             {isLast ? "Let's go" : 'Next'}
           </button>

@@ -7,7 +7,11 @@ import { CopyProvider } from '@/contexts/CopyContext';
 import { BrandingProvider } from '@/contexts/BrandingContext';
 import { MonetizationProvider } from '@/contexts/MonetizationContext';
 import JsonLd, { buildWebAppJsonLd } from '@/components/JsonLd';
+import ThemeToggle from '@/components/ThemeToggle';
 import { optimizedOgImageUrl, optimizedFaviconUrl } from '@/lib/image';
+
+/** Runs before paint to set the .dark class with no flash of the wrong theme. */
+const THEME_INIT_SCRIPT = `(function(){try{var t=localStorage.getItem('theme');var d=t?t==='dark':window.matchMedia('(prefers-color-scheme: dark)').matches;if(d)document.documentElement.classList.add('dark');}catch(e){}})();`;
 
 const poppins = Poppins({
   variable: '--font-poppins',
@@ -128,7 +132,7 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const settings = await getSettings();
-  const accentColor = settings.branding.accent_color || '#7c3aed';
+  const accentColor = settings.branding.accent_color || '#0373F6';
   const siteName = settings.seo.site_name || 'Scheduler';
   const siteUrl = settings.seo.site_url || process.env.NEXT_PUBLIC_SITE_URL || '';
   const ogDesc = settings.seo.og_description || 'Find a time that works for everyone. No accounts needed.';
@@ -136,9 +140,12 @@ export default async function RootLayout({
   return (
     <html
       lang="en"
+      suppressHydrationWarning
       style={{ '--accent-base': accentColor } as React.CSSProperties}
     >
       <head>
+        {/* No-flash theme init — must run before paint */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
         {/* JSON-LD structured data for rich search results */}
         <JsonLd data={buildWebAppJsonLd({ name: siteName, description: ogDesc, url: siteUrl || undefined })} />
         {/* Analytics — real <script> tags in <head> so Google's tag checker finds them
@@ -183,6 +190,7 @@ export default async function RootLayout({
             }}
           >
             <CopyProvider copy={settings.copy}>
+              <ThemeToggle />
               {children}
             </CopyProvider>
           </MonetizationProvider>

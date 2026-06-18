@@ -2,7 +2,7 @@
 
 export default function SkeletonLoader() {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-subtle">
       <div className="max-w-lg mx-auto px-4 py-6 space-y-4 animate-fade-in">
         {/* Header skeleton */}
         <div className="space-y-2">
@@ -21,7 +21,7 @@ export default function SkeletonLoader() {
         </div>
 
         {/* Grid card skeleton */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 space-y-4">
+        <div className="bg-surface rounded-2xl shadow-sm border border-hairline-soft p-4 space-y-4">
           {/* Status bar */}
           <div className="skeleton-shimmer h-12 rounded-xl" />
 

@@ -63,9 +63,9 @@ export default function SupportBanner({
   // ── Prominent banner (post-action gratitude moment) ───────────
   if (variant === 'banner') {
     return (
-      <div className="animate-fade-in mt-4 rounded-2xl border border-amber-100 bg-gradient-to-br from-amber-50 to-orange-50 p-5 text-center">
+      <div className="animate-fade-in mt-4 rounded-2xl border border-amber-100 dark:border-[#3a2f17] bg-gradient-to-br from-amber-50 to-orange-50 dark:from-[#302817] dark:to-[#302817] p-5 text-center">
         {message && (
-          <p className="text-sm text-amber-800 font-medium mb-2">{message}</p>
+          <p className="text-sm text-amber-800 dark:text-amber-300 font-medium mb-2">{message}</p>
         )}
         <a
           href={url}
@@ -92,9 +92,9 @@ export default function SupportBanner({
         href={url}
         target="_blank"
         rel="noopener noreferrer"
-        className="inline-flex items-center gap-1.5 text-xs text-gray-400 hover:text-teal-600 transition-colors group"
+        className="inline-flex items-center gap-1.5 text-xs text-faint hover:text-teal-600 transition-colors group"
       >
-        <HeartIcon className="w-3.5 h-3.5 text-gray-300 group-hover:text-red-400 transition-colors" />
+        <HeartIcon className="w-3.5 h-3.5 text-faint2 group-hover:text-red-400 transition-colors" />
         <span>{cta}</span>
       </a>
     </div>

@@ -3,18 +3,18 @@
 import { memo, useRef, useCallback } from 'react';
 
 export const PARTICIPANT_COLORS = [
-  '#14b8a6', // teal-500
-  '#8b5cf6', // violet-500
-  '#f59e0b', // amber-500
-  '#ef4444', // red-500
-  '#3b82f6', // blue-500
-  '#ec4899', // pink-500
-  '#10b981', // emerald-500
-  '#f97316', // orange-500
-  '#6366f1', // indigo-500
-  '#06b6d4', // cyan-500
-  '#84cc16', // lime-500
-  '#a855f7', // purple-500
+  '#0373F6', // 1  brand blue
+  '#03D2A3', // 2  brand emerald
+  '#6B34EE', // 3  brand violet
+  '#F59E0B', // 4  amber
+  '#F43F5E', // 5  rose
+  '#06B6D4', // 6  cyan
+  '#84CC16', // 7  lime
+  '#F97316', // 8  orange
+  '#EC4899', // 9  pink
+  '#6366F1', // 10 indigo
+  '#D946EF', // 11 fuchsia
+  '#EAB308', // 12 yellow
 ];
 
 // Max dots to show before switching to count mode
@@ -89,37 +89,35 @@ function TimeGridSlotInner({
   const totalAvailable = participantColors.length;
   const useCountMode = totalParticipants > MAX_DOTS || totalAvailable > MAX_DOTS;
 
-  // Slot background: clear visual distinction for selected vs unselected
-  let bgClass = 'bg-gray-100';
-  let extra = '';
-  let heatStyle: React.CSSProperties | undefined;
+  // Slot background + ring are driven entirely by theme tokens (defined in
+  // globals.css) so the grid flips correctly between light and dark.
+  // Empty/others/mine = neutral surfaces, partial = brand emerald heat,
+  // full match = brand green, best/selected = accent ring.
+  const cellStyle: React.CSSProperties = { backgroundColor: 'var(--t-grid-empty)' };
+  const ring = (color: string) => { cellStyle.boxShadow = `inset 0 0 0 2px ${color}`; };
 
   if (isAllMatch) {
-    bgClass = 'bg-green-100';
-    extra = 'ring-2 ring-green-400';
+    cellStyle.backgroundColor = 'var(--t-grid-full)';
+    ring('var(--t-success-ring)');
   } else if (totalAvailable > 0 && useCountMode) {
     const fraction = totalAvailable / totalParticipants;
-    const alpha = 0.12 + fraction * 0.45;
-    bgClass = '';
-    heatStyle = { backgroundColor: `rgba(20, 184, 166, ${alpha})` };
-    if (isMine) {
-      extra = 'ring-2 ring-gray-400';
-    }
+    const alpha = 0.16 + fraction * 0.5;
+    cellStyle.backgroundColor = `rgba(var(--t-heat-rgb), ${alpha})`;
+    if (isMine) ring('var(--t-border-strong)');
   } else if (isMine && othersCount > 0) {
-    bgClass = 'bg-gray-300';
-    extra = 'ring-2 ring-gray-400';
+    cellStyle.backgroundColor = 'var(--t-grid-mine)';
+    ring('var(--t-border-strong)');
   } else if (isMine) {
-    bgClass = 'bg-gray-250';
-    extra = 'ring-2 ring-gray-400';
-    heatStyle = { backgroundColor: '#d1d5db' }; // gray-300
+    cellStyle.backgroundColor = 'var(--t-grid-mine)';
+    ring('var(--t-border-strong)');
   } else if (othersCount > 0) {
-    bgClass = 'bg-gray-200';
+    cellStyle.backgroundColor = 'var(--t-grid-others)';
   }
 
-  // Best-available slot (most people free, but not everyone): make it pop with a
-  // teal ring so the strongest option is obvious even without a full overlap.
+  // Best-available slot (most people free, but not everyone): accent ring so the
+  // strongest option pops even without a full overlap.
   if (isBest && !isAllMatch) {
-    extra = 'ring-2 ring-teal-500';
+    ring('var(--t-best-ring)');
   }
 
   // Desktop drag
@@ -149,16 +147,15 @@ function TimeGridSlotInner({
       className={`
         slot-cell w-full min-h-[44px] rounded-lg text-xs font-medium select-none cursor-pointer
         flex items-center justify-center gap-[3px] flex-wrap p-1
-        ${bgClass} ${extra}
         ${isMine ? 'slot-selected' : ''} ${isAllMatch ? 'slot-match' : ''}
         active:scale-[0.93] touch-manipulation
       `}
-      style={heatStyle}
+      style={cellStyle}
     >
       {useCountMode ? (
         totalAvailable > 0 && (
           <span className={`text-[11px] font-bold ${
-            isAllMatch ? 'text-green-700' : isMine ? 'text-teal-700' : 'text-teal-600'
+            isAllMatch ? 'text-success-fg' : 'text-accent-fg'
           }`}>
             {totalAvailable}
           </span>

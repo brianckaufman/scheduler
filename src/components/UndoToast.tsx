@@ -29,7 +29,7 @@ export default function UndoToast({ message, onUndo, onDismiss, duration = 4000 
   return (
     <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
       <div
-        className={`${exiting ? 'animate-toast-out' : 'animate-toast-in'} flex items-center gap-3 px-4 py-3 bg-gray-900 text-white rounded-2xl shadow-lg shadow-gray-900/20 text-sm max-w-[90vw]`}
+        className={`${exiting ? 'animate-toast-out' : 'animate-toast-in'} flex items-center gap-3 px-4 py-3 bg-[#101828] dark:bg-[#232B36] text-white rounded-2xl shadow-lg shadow-gray-900/20 text-sm max-w-[90vw]`}
       >
         <span>{message}</span>
         <button

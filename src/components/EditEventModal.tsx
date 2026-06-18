@@ -127,21 +127,21 @@ export default function EditEventModal({ event, organizerToken, onClose, onSave,
     }
   };
 
-  const inputClass = "w-full px-3 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-transparent text-gray-900 text-sm";
-  const selectClass = "w-full px-3 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-violet-400 text-gray-900 bg-white text-sm";
+  const inputClass = "w-full px-3 py-2.5 rounded-xl border border-hairline focus:outline-none focus:ring-2 focus:ring-social-500 focus:border-transparent text-heading text-sm";
+  const selectClass = "w-full px-3 py-2.5 rounded-xl border border-hairline focus:outline-none focus:ring-2 focus:ring-social-500 text-heading bg-surface text-sm";
 
   return (
     <div
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 animate-fade-in"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="bg-white w-full max-w-md rounded-t-2xl sm:rounded-2xl shadow-xl animate-slide-up max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 bg-white border-b border-gray-100 px-5 py-4 flex items-center justify-between rounded-t-2xl">
-          <h2 className="text-lg font-bold text-gray-900">Edit Event</h2>
+      <div className="bg-surface w-full max-w-md rounded-t-2xl sm:rounded-2xl shadow-xl animate-slide-up max-h-[90vh] overflow-y-auto">
+        <div className="sticky top-0 bg-surface border-b border-hairline-soft px-5 py-4 flex items-center justify-between rounded-t-2xl">
+          <h2 className="text-lg font-bold text-heading">Edit Event</h2>
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-colors cursor-pointer"
+            className="p-1.5 text-faint hover:text-secondary rounded-full hover:bg-fill transition-colors cursor-pointer"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -150,21 +150,21 @@ export default function EditEventModal({ event, organizerToken, onClose, onSave,
         </div>
         <div className="p-5 space-y-4">
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Event name</label>
+            <label className="block text-xs font-medium text-secondary mb-1">Event name</label>
             <input type="text" value={name} onChange={(e) => setName(e.target.value)}
               className={inputClass} maxLength={100} required />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Short description</label>
+            <label className="block text-xs font-medium text-secondary mb-1">Short description</label>
             <input type="text" value={description} onChange={(e) => setDescription(e.target.value)}
               className={inputClass} maxLength={500} placeholder="Optional — shown as a subtitle" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1.5">
+            <label className="block text-xs font-medium text-secondary mb-1.5">
               Full details{' '}
-              <span className="text-gray-400 font-normal">(optional — hidden behind "Read more")</span>
+              <span className="text-faint font-normal">(optional — hidden behind "Read more")</span>
             </label>
-            <Suspense fallback={<div className="h-28 rounded-xl border border-gray-300 bg-gray-50 animate-pulse" />}>
+            <Suspense fallback={<div className="h-28 rounded-xl border border-strong bg-subtle animate-pulse" />}>
               <RichTextEditor
                 value={body}
                 onChange={setBody}
@@ -175,17 +175,17 @@ export default function EditEventModal({ event, organizerToken, onClose, onSave,
             </Suspense>
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Your name</label>
+            <label className="block text-xs font-medium text-secondary mb-1">Your name</label>
             <input type="text" value={organizerName} onChange={(e) => setOrganizerName(e.target.value)}
               className={inputClass} maxLength={50} required />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Location</label>
+            <label className="block text-xs font-medium text-secondary mb-1">Location</label>
             <LocationInput value={location} onChange={setLocation} inputClassName={inputClass} />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Duration needed</label>
+              <label className="block text-xs font-medium text-secondary mb-1">Duration needed</label>
               <select value={durationMinutes} onChange={(e) => setDurationMinutes(Number(e.target.value))}
                 className={selectClass}>
                 {DURATION_OPTIONS.map((d) => (
@@ -194,7 +194,7 @@ export default function EditEventModal({ event, organizerToken, onClose, onSave,
               </select>
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Respond by</label>
+              <label className="block text-xs font-medium text-secondary mb-1">Respond by</label>
               <input type="date" value={responseDeadline} min={minDeadline}
                 onChange={(e) => setResponseDeadline(e.target.value)}
                 className={selectClass} />
@@ -203,9 +203,9 @@ export default function EditEventModal({ event, organizerToken, onClose, onSave,
 
           {/* Max participants */}
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">
+            <label className="block text-xs font-medium text-secondary mb-1">
               Max participants
-              <span className="text-gray-400 font-normal ml-1">(optional)</span>
+              <span className="text-faint font-normal ml-1">(optional)</span>
             </label>
             <input
               type="number"
@@ -217,7 +217,7 @@ export default function EditEventModal({ event, organizerToken, onClose, onSave,
               className={inputClass}
             />
             {maxParticipants && parseInt(maxParticipants, 10) > 0 && (
-              <p className="text-xs text-gray-400 mt-1">
+              <p className="text-xs text-faint mt-1">
                 Limits this event to {maxParticipants} participant{parseInt(maxParticipants, 10) !== 1 ? 's' : ''}
               </p>
             )}
@@ -226,9 +226,9 @@ export default function EditEventModal({ event, organizerToken, onClose, onSave,
           {/* Min responses — availability events only */}
           {event.event_type !== 'fixed' && (
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">
+              <label className="block text-xs font-medium text-secondary mb-1">
                 Responses needed to pick a time
-                <span className="text-gray-400 font-normal ml-1">(including yours, optional)</span>
+                <span className="text-faint font-normal ml-1">(including yours, optional)</span>
               </label>
               {!minResponsesCustom ? (
                 <select
@@ -265,14 +265,14 @@ export default function EditEventModal({ event, organizerToken, onClose, onSave,
                   <button
                     type="button"
                     onClick={() => { setMinResponsesCustom(false); setMinResponses(''); }}
-                    className="shrink-0 px-3 py-2 text-xs text-gray-400 hover:text-gray-600 border border-gray-200 rounded-xl transition-colors cursor-pointer"
+                    className="shrink-0 px-3 py-2 text-xs text-faint hover:text-secondary border border-hairline rounded-xl transition-colors cursor-pointer"
                   >
                     Reset
                   </button>
                 </div>
               )}
               {minResponses && parseInt(minResponses, 10) >= 1 && (
-                <p className="text-xs text-gray-400 mt-1">
+                <p className="text-xs text-faint mt-1">
                   The Pick a Time panel will wait until {minResponses}{' '}
                   {parseInt(minResponses, 10) === 1 ? 'person has' : 'people have'} responded, including you.
                 </p>
@@ -280,24 +280,24 @@ export default function EditEventModal({ event, organizerToken, onClose, onSave,
             </div>
           )}
 
-          {error && <p className="text-red-500 text-sm">{error}</p>}
+          {error && <p className="text-red-500 dark:text-red-400 text-sm">{error}</p>}
 
           <button
             type="button"
             onClick={handleSave}
             disabled={saving || !name.trim() || !organizerName.trim()}
-            className="w-full py-2.5 bg-violet-600 text-white font-semibold rounded-xl hover:bg-violet-700 transition-all duration-200 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            className="w-full py-2.5 bg-social-500 text-white font-semibold rounded-xl hover:bg-social-600 transition-all duration-200 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
           >
             {saving ? 'Saving...' : 'Save Changes'}
           </button>
 
           {/* Safe Delete Section */}
-          <div className="border-t border-gray-100 pt-4 mt-2">
+          <div className="border-t border-hairline-soft pt-4 mt-2">
             {deleteStep === 'idle' && (
               <button
                 type="button"
                 onClick={() => setDeleteStep('confirm')}
-                className="w-full flex items-center justify-center gap-2 py-2.5 text-red-500 text-sm font-medium hover:bg-red-50 rounded-xl transition-colors cursor-pointer"
+                className="w-full flex items-center justify-center gap-2 py-2.5 text-red-500 dark:text-red-400 text-sm font-medium hover:bg-red-50 dark:hover:bg-[#30181F] rounded-xl transition-colors cursor-pointer"
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -307,16 +307,16 @@ export default function EditEventModal({ event, organizerToken, onClose, onSave,
             )}
 
             {deleteStep === 'confirm' && (
-              <div className="animate-fade-in bg-red-50 rounded-xl p-4 space-y-3">
+              <div className="animate-fade-in bg-red-50 dark:bg-[#30181F] rounded-xl p-4 space-y-3">
                 <div className="flex items-start gap-3">
                   <div className="shrink-0 mt-0.5">
-                    <svg className="w-5 h-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <svg className="w-5 h-5 text-red-500 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                     </svg>
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-red-800">Are you sure?</p>
-                    <p className="text-xs text-red-600 mt-1">
+                    <p className="text-sm font-semibold text-red-800 dark:text-red-300">Are you sure?</p>
+                    <p className="text-xs text-red-600 dark:text-red-400 mt-1">
                       This will permanently delete <strong>{event.name}</strong> and all participant responses. This cannot be undone.
                     </p>
                   </div>
@@ -332,7 +332,7 @@ export default function EditEventModal({ event, organizerToken, onClose, onSave,
                   <button
                     type="button"
                     onClick={() => setDeleteStep('idle')}
-                    className="flex-1 py-2 bg-white text-gray-600 text-sm font-medium rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer"
+                    className="flex-1 py-2 bg-surface text-secondary text-sm font-medium rounded-xl border border-hairline hover:bg-subtle transition-colors cursor-pointer"
                   >
                     Cancel
                   </button>
@@ -341,9 +341,9 @@ export default function EditEventModal({ event, organizerToken, onClose, onSave,
             )}
 
             {deleteStep === 'typing' && (
-              <div className="animate-fade-in bg-red-50 rounded-xl p-4 space-y-3">
-                <p className="text-sm text-red-800">
-                  Type <strong className="font-mono bg-red-100 px-1.5 py-0.5 rounded">{deleteConfirmRequired}</strong> to confirm:
+              <div className="animate-fade-in bg-red-50 dark:bg-[#30181F] rounded-xl p-4 space-y-3">
+                <p className="text-sm text-red-800 dark:text-red-300">
+                  Type <strong className="font-mono bg-red-100 dark:bg-[#30181F] px-1.5 py-0.5 rounded">{deleteConfirmRequired}</strong> to confirm:
                 </p>
                 <input
                   type="text"
@@ -351,7 +351,7 @@ export default function EditEventModal({ event, organizerToken, onClose, onSave,
                   onChange={(e) => setDeleteConfirmText(e.target.value.toUpperCase())}
                   placeholder={deleteConfirmRequired}
                   autoFocus
-                  className="w-full px-3 py-2.5 rounded-xl border border-red-200 focus:outline-none focus:ring-2 focus:ring-red-400 focus:border-transparent text-gray-900 text-sm font-mono"
+                  className="w-full px-3 py-2.5 rounded-xl border border-red-200 focus:outline-none focus:ring-2 focus:ring-red-400 focus:border-transparent text-heading text-sm font-mono"
                 />
                 <div className="flex gap-2">
                   <button
@@ -365,7 +365,7 @@ export default function EditEventModal({ event, organizerToken, onClose, onSave,
                   <button
                     type="button"
                     onClick={() => { setDeleteStep('idle'); setDeleteConfirmText(''); }}
-                    className="flex-1 py-2 bg-white text-gray-600 text-sm font-medium rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer"
+                    className="flex-1 py-2 bg-surface text-secondary text-sm font-medium rounded-xl border border-hairline hover:bg-subtle transition-colors cursor-pointer"
                   >
                     Cancel
                   </button>

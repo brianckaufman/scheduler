@@ -13,7 +13,7 @@ export default async function Home() {
   const logoHeight = branding.logo_height || 40;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-subtle">
       {/* First-time onboarding overlay */}
       <Onboarding />
 
@@ -32,12 +32,12 @@ export default async function Home() {
             </div>
           )}
           {!branding.hide_home_title && (
-            <h1 className="text-3xl font-bold text-gray-900 mb-2 tracking-tight">
+            <h1 className="text-3xl font-bold text-heading mb-2 tracking-tight">
               {home.title}
             </h1>
           )}
           {!branding.hide_home_subtitle && (
-            <p className="text-gray-500 text-base leading-relaxed">
+            <p className="text-muted text-base leading-relaxed">
               {home.subtitle}
             </p>
           )}
@@ -48,7 +48,7 @@ export default async function Home() {
 
         {/* Tabbed interface: New Event (default) / Your Events */}
         <HomeTabs>
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 animate-fade-in">
+          <div className="bg-surface rounded-2xl shadow-sm border border-hairline-soft p-6 animate-fade-in">
             <Suspense>
               <EventForm enableFixedEvents={settings.app.enable_fixed_events !== false} />
             </Suspense>

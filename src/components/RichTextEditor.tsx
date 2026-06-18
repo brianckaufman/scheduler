@@ -48,7 +48,7 @@ function TBtn({
       onMouseDown={(e) => { e.preventDefault(); onClick(); }}
       title={title}
       className={`p-1.5 rounded-md transition-colors cursor-pointer ${
-        active ? 'bg-gray-200 text-gray-900' : 'text-gray-500 hover:bg-gray-100 hover:text-gray-800'
+        active ? 'bg-fill2 text-heading' : 'text-muted hover:bg-fill hover:text-heading'
       }`}
     >
       {children}
@@ -79,7 +79,7 @@ export default function RichTextEditor({
       }),
       Link.configure({
         openOnClick: false,
-        HTMLAttributes: { class: 'text-violet-600 underline hover:text-violet-700', target: '_blank', rel: 'noopener noreferrer' },
+        HTMLAttributes: { class: 'text-social-fg underline hover:opacity-80', target: '_blank', rel: 'noopener noreferrer' },
       }),
       Placeholder.configure({ placeholder }),
     ],
@@ -90,7 +90,7 @@ export default function RichTextEditor({
     },
     editorProps: {
       attributes: {
-        class: 'prose-editor px-3 py-2.5 text-sm text-gray-800 focus:outline-none leading-relaxed',
+        class: 'prose-editor px-3 py-2.5 text-sm text-heading focus:outline-none leading-relaxed',
         style: `min-height:${minHeight}px`,
       },
     },
@@ -112,14 +112,14 @@ export default function RichTextEditor({
   if (!editor) return null;
 
   return (
-    <div className="border border-gray-300 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-violet-400 focus-within:border-violet-400 transition-shadow bg-white">
+    <div className="border border-strong rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-social-500 focus-within:border-social-500 transition-shadow bg-surface">
 
       {/* ── Toolbar ── */}
-      <div className="flex items-center gap-0.5 px-2 py-1.5 border-b border-gray-100 bg-gray-50">
+      <div className="flex items-center gap-0.5 px-2 py-1.5 border-b border-hairline-soft bg-subtle">
         <TBtn active={editor.isActive('bold')}       onClick={() => editor.chain().focus().toggleBold().run()}         title="Bold">    <BoldIcon /></TBtn>
         <TBtn active={editor.isActive('italic')}     onClick={() => editor.chain().focus().toggleItalic().run()}       title="Italic">  <ItalicIcon /></TBtn>
         <TBtn active={editor.isActive('link')}       onClick={setLink}                                                 title="Link">    <LinkIcon /></TBtn>
-        <span className="w-px h-4 bg-gray-200 mx-1" />
+        <span className="w-px h-4 bg-fill2 mx-1" />
         <TBtn active={editor.isActive('bulletList')} onClick={() => editor.chain().focus().toggleBulletList().run()}   title="Bullet list">   <BulletIcon /></TBtn>
         <TBtn active={editor.isActive('orderedList')}onClick={() => editor.chain().focus().toggleOrderedList().run()} title="Numbered list"> <OrderedIcon /></TBtn>
       </div>

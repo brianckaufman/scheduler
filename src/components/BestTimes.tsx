@@ -55,19 +55,19 @@ export default function BestTimes({
 
   return (
     <div className="space-y-3">
-      <h3 className="text-sm font-semibold text-gray-700">Best times</h3>
+      <h3 className="text-sm font-semibold text-body">Best times</h3>
 
       {/* Response threshold progress — shown when min_responses is set and not yet met */}
       {threshold && !thresholdMet && (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 space-y-2">
+        <div className="rounded-xl border border-amber-200 bg-amber-50 dark:bg-[#302817] p-3 space-y-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5">
               <svg className="w-4 h-4 text-amber-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              <span className="text-xs font-semibold text-amber-800">Waiting for responses</span>
+              <span className="text-xs font-semibold text-amber-800 dark:text-amber-300">Waiting for responses</span>
             </div>
-            <span className="text-xs font-bold text-amber-700">{totalParticipants} of {threshold}</span>
+            <span className="text-xs font-bold text-amber-700 dark:text-amber-400">{totalParticipants} of {threshold}</span>
           </div>
           <div className="h-1.5 bg-amber-200 rounded-full overflow-hidden">
             <div
@@ -75,7 +75,7 @@ export default function BestTimes({
               style={{ width: `${thresholdPct}%` }}
             />
           </div>
-          <p className="text-xs text-amber-700">
+          <p className="text-xs text-amber-700 dark:text-amber-400">
             {threshold - totalParticipants} more{' '}
             {threshold - totalParticipants === 1 ? 'person needs' : 'people need'} to respond
             before a time is ready to pick.
@@ -94,23 +94,23 @@ export default function BestTimes({
             key={block.start}
             className={`animate-fade-in flex items-center gap-3 rounded-xl p-3 transition-all duration-200 hover:shadow-sm ${
               allFree && thresholdMet
-                ? 'bg-green-50 border border-green-100 hover:bg-green-100/60'
-                : 'bg-gray-50 hover:bg-gray-100/80'
+                ? 'bg-green-50 dark:bg-[#112D25] border border-green-100 dark:border-[#123428] hover:bg-green-100/60'
+                : 'bg-subtle hover:bg-fill/80'
             }`}
             style={{ animationDelay: `${i * 80}ms` }}
           >
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-900">
+              <p className="text-sm font-medium text-heading">
                 {format(start, 'EEE, MMM d')} &middot; {format(start, 'h:mm a')}
               </p>
-              <p className="text-xs text-gray-500 truncate">
+              <p className="text-xs text-muted truncate">
                 {block.count} of {totalParticipants} free &middot; {names.join(', ')}
               </p>
             </div>
 
             {/* "All free" badge — only shown when all responded and threshold is met */}
             {allFree && thresholdMet && (
-              <span className="shrink-0 text-xs font-medium text-green-600 bg-green-100 px-2 py-1 rounded-full animate-fade-in-scale">
+              <span className="shrink-0 text-xs font-medium text-success-fg bg-green-100 dark:bg-[#112D25] px-2 py-1 rounded-full animate-fade-in-scale">
                 All free
               </span>
             )}
@@ -128,7 +128,7 @@ export default function BestTimes({
                 className={`shrink-0 text-sm font-semibold text-white px-4 py-2 rounded-full shadow-sm hover:shadow-md transition-all duration-200 active:scale-95 cursor-pointer ${
                   !thresholdMet
                     ? 'bg-amber-500 hover:bg-amber-600'
-                    : 'bg-blue-600 hover:bg-blue-700'
+                    : 'bg-teal-500 hover:bg-teal-600'
                 }`}
               >
                 {!thresholdMet ? 'Pick anyway' : 'Pick'}
@@ -140,7 +140,7 @@ export default function BestTimes({
 
       {/* Low response nudge — no threshold set, fewer than 3 people responded */}
       {!threshold && totalParticipants < 3 && (
-        <p className="text-xs text-gray-400 text-center pt-1">
+        <p className="text-xs text-faint text-center pt-1">
           Share the link to collect more responses.
         </p>
       )}

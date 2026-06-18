@@ -34,16 +34,16 @@ export default function AdminLoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-subtle px-4">
       <div className="w-full max-w-sm">
-        <div className="bg-white rounded-2xl shadow-lg p-8">
+        <div className="bg-surface rounded-2xl shadow-lg p-8">
           <div className="text-center mb-6">
             <div className="w-12 h-12 bg-teal-100 rounded-xl flex items-center justify-center mx-auto mb-3">
               <svg className="w-6 h-6 text-teal-600" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
               </svg>
             </div>
-            <h1 className="text-xl font-bold text-gray-900">Admin Access</h1>
+            <h1 className="text-xl font-bold text-heading">Admin Access</h1>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -53,14 +53,14 @@ export default function AdminLoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Enter admin password"
-                className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-transparent text-gray-900 placeholder-gray-400"
+                className="w-full px-4 py-3 rounded-xl border border-hairline focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-transparent text-heading placeholder-faint"
                 required
                 autoFocus
               />
             </div>
 
             {error && (
-              <p className="text-red-500 text-sm text-center">{error}</p>
+              <p className="text-red-500 dark:text-red-400 text-sm text-center">{error}</p>
             )}
 
             <button

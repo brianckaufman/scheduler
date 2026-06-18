@@ -151,26 +151,26 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
           <button
             type="button"
             onClick={() => setCurrentMonth(addMonths(currentMonth, -1))}
-            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+            className="p-2 text-faint hover:text-secondary hover:bg-fill rounded-lg transition-colors cursor-pointer"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
             </svg>
           </button>
-          <span className="font-semibold text-gray-900 text-sm">
+          <span className="font-semibold text-heading text-sm">
             {format(currentMonth, 'MMMM yyyy')}
           </span>
           <button
             type="button"
             onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
-            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+            className="p-2 text-faint hover:text-secondary hover:bg-fill rounded-lg transition-colors cursor-pointer"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
             </svg>
           </button>
         </div>
-        <div className="grid grid-cols-7 gap-1 text-center text-[11px] text-gray-400 font-medium mb-1">
+        <div className="grid grid-cols-7 gap-1 text-center text-[11px] text-faint font-medium mb-1">
           {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((d) => (
             <div key={d} className="py-1">{d}</div>
           ))}
@@ -190,10 +190,10 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
                 className={`
                   py-2 rounded-lg text-sm font-medium transition-all duration-150
                   ${!inMonth ? 'invisible' : ''}
-                  ${past ? 'text-gray-300 cursor-not-allowed' : 'cursor-pointer active:scale-90'}
-                  ${selected ? 'bg-violet-500 text-white shadow-sm shadow-violet-200 animate-pop' : ''}
-                  ${!selected && !past && inMonth ? 'text-gray-700 hover:bg-gray-100' : ''}
-                  ${isToday(day) && !selected ? 'ring-1 ring-violet-400' : ''}
+                  ${past ? 'text-faint2 cursor-not-allowed' : 'cursor-pointer active:scale-90'}
+                  ${selected ? 'bg-social-500 text-white shadow-sm shadow-violet-200 animate-pop' : ''}
+                  ${!selected && !past && inMonth ? 'text-body hover:bg-fill' : ''}
+                  ${isToday(day) && !selected ? 'ring-1 ring-social-500' : ''}
                 `}
               >
                 {format(day, 'd')}
@@ -300,32 +300,32 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
     }
   };
 
-  const inputClass = "w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-transparent text-gray-900 placeholder-gray-400 transition-shadow duration-200";
-  const selectClass = "w-full px-3 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-violet-400 text-gray-900 bg-white transition-shadow duration-200";
+  const inputClass = "w-full px-4 py-3 rounded-xl border border-hairline focus:outline-none focus:ring-2 focus:ring-social-500 focus:border-transparent text-heading placeholder-faint transition-shadow duration-200";
+  const selectClass = "w-full px-3 py-3 rounded-xl border border-hairline focus:outline-none focus:ring-2 focus:ring-social-500 text-heading bg-surface transition-shadow duration-200";
 
   // === Type picker (shown before the form when fixed events are enabled) ===
   if (enableFixedEvents && eventType === null) {
     return (
       <div className="space-y-3 animate-fade-in">
-        <p className="text-sm font-semibold text-gray-700 text-center mb-4">What kind of event are you creating?</p>
+        <p className="text-sm font-semibold text-body text-center mb-4">What kind of event are you creating?</p>
 
         <button
           type="button"
           onClick={() => setEventType('availability')}
-          className="w-full flex items-center gap-4 p-5 rounded-2xl border-2 border-gray-200 bg-white hover:border-violet-400 hover:bg-violet-50 text-left transition-all duration-200 active:scale-[0.98] cursor-pointer group"
+          className="w-full flex items-center gap-4 p-5 rounded-2xl border-2 border-hairline bg-surface hover:border-social-500 hover:bg-social-50 dark:hover:bg-[#1C1939] text-left transition-all duration-200 active:scale-[0.98] cursor-pointer group"
         >
-          <div className="w-12 h-12 rounded-xl bg-violet-100 flex items-center justify-center shrink-0 group-hover:bg-violet-200 transition-colors">
-            <svg className="w-6 h-6 text-violet-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+          <div className="w-12 h-12 rounded-xl bg-social-100 dark:bg-[#1C1939] flex items-center justify-center shrink-0 group-hover:bg-social-100 dark:group-hover:bg-[#1C1939] transition-colors">
+            <svg className="w-6 h-6 text-social-fg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
               <circle cx="10.5" cy="10.5" r="6.5" />
               <path d="M19.5 19.5L15.5 15.5" />
               <path d="M10.5 8v3l2 1.5" />
             </svg>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-base font-bold text-gray-900">Find a time</p>
-            <p className="text-sm text-gray-500 mt-0.5 leading-snug">Everyone marks when they&apos;re free. You pick the best time.</p>
+            <p className="text-base font-bold text-heading">Find a time</p>
+            <p className="text-sm text-muted mt-0.5 leading-snug">Everyone marks when they&apos;re free. You pick the best time.</p>
           </div>
-          <svg className="w-5 h-5 text-gray-300 group-hover:text-violet-500 shrink-0 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <svg className="w-5 h-5 text-faint2 group-hover:text-social-fg shrink-0 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
           </svg>
         </button>
@@ -333,18 +333,18 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
         <button
           type="button"
           onClick={() => setEventType('fixed')}
-          className="w-full flex items-center gap-4 p-5 rounded-2xl border-2 border-gray-200 bg-white hover:border-blue-400 hover:bg-blue-50 text-left transition-all duration-200 active:scale-[0.98] cursor-pointer group"
+          className="w-full flex items-center gap-4 p-5 rounded-2xl border-2 border-hairline bg-surface hover:border-teal-500 hover:bg-blue-50 dark:hover:bg-[#0D223A] text-left transition-all duration-200 active:scale-[0.98] cursor-pointer group"
         >
-          <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center shrink-0 group-hover:bg-blue-200 transition-colors">
-            <svg className="w-6 h-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <div className="w-12 h-12 rounded-xl bg-blue-100 dark:bg-[#0D223A] flex items-center justify-center shrink-0 group-hover:bg-blue-200 dark:group-hover:bg-[#0D223A] transition-colors">
+            <svg className="w-6 h-6 text-accent-fg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-base font-bold text-gray-900">Fixed date</p>
-            <p className="text-sm text-gray-500 mt-0.5 leading-snug">Set the date and time and invite people to RSVP.</p>
+            <p className="text-base font-bold text-heading">Fixed date</p>
+            <p className="text-sm text-muted mt-0.5 leading-snug">Set the date and time and invite people to RSVP.</p>
           </div>
-          <svg className="w-5 h-5 text-gray-300 group-hover:text-blue-500 shrink-0 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <svg className="w-5 h-5 text-faint2 group-hover:text-accent-fg shrink-0 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
           </svg>
         </button>
@@ -358,7 +358,7 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
       {enableFixedEvents && (
         <div className="flex items-center justify-between">
           <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold ${
-            eventType === 'fixed' ? 'bg-blue-100 text-blue-700' : 'bg-violet-100 text-violet-700'
+            eventType === 'fixed' ? 'bg-blue-100 dark:bg-[#0D223A] text-accent-fg' : 'bg-social-100 dark:bg-[#1C1939] text-social-fg'
           }`}>
             {eventType === 'fixed' ? (
               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -376,7 +376,7 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
           <button
             type="button"
             onClick={() => setEventType(null)}
-            className="text-xs text-gray-400 hover:text-gray-600 transition-colors cursor-pointer px-2 py-1"
+            className="text-xs text-faint hover:text-secondary transition-colors cursor-pointer px-2 py-1"
           >
             Change
           </button>
@@ -386,7 +386,7 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
       {/* === Section 1: Event Details === */}
       <div className="space-y-4 stagger-children">
         <div>
-          <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1.5">
+          <label htmlFor="name" className="block text-sm font-medium text-body mb-1.5">
             {copy.form.event_label}
           </label>
           <input
@@ -403,7 +403,7 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
         </div>
 
         <div>
-          <label htmlFor="organizerName" className="block text-sm font-medium text-gray-700 mb-1.5">
+          <label htmlFor="organizerName" className="block text-sm font-medium text-body mb-1.5">
             {copy.form.name_label}
           </label>
           <input
@@ -420,8 +420,8 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
 
 
         <div>
-          <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1.5">
-            Description <span className="text-gray-400 font-normal">(optional)</span>
+          <label htmlFor="description" className="block text-sm font-medium text-body mb-1.5">
+            Description <span className="text-faint font-normal">(optional)</span>
           </label>
           <input
             id="description"
@@ -435,8 +435,8 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">
-            Location <span className="text-gray-400 font-normal">(optional)</span>
+          <label className="block text-sm font-medium text-body mb-1.5">
+            Location <span className="text-faint font-normal">(optional)</span>
           </label>
           <LocationInput value={location} onChange={setLocation} inputClassName={inputClass} />
         </div>
@@ -444,13 +444,13 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
       </div>
 
       {/* Subtle divider */}
-      <div className="border-t border-gray-100" />
+      <div className="border-t border-hairline-soft" />
 
       {/* === Section 2a: Fixed time scheduling === */}
       {eventType === 'fixed' && (
         <div className="space-y-4 animate-fade-in">
           <div>
-            <label htmlFor="fixedDate" className="block text-sm font-medium text-gray-700 mb-1.5">
+            <label htmlFor="fixedDate" className="block text-sm font-medium text-body mb-1.5">
               Event date
             </label>
             <input
@@ -466,7 +466,7 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label htmlFor="fixedTime" className="block text-sm font-medium text-gray-700 mb-1.5">
+              <label htmlFor="fixedTime" className="block text-sm font-medium text-body mb-1.5">
                 Start time
               </label>
               <select
@@ -493,7 +493,7 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
               </select>
             </div>
             <div>
-              <label htmlFor="fixedEndTime" className="block text-sm font-medium text-gray-700 mb-1.5">
+              <label htmlFor="fixedEndTime" className="block text-sm font-medium text-body mb-1.5">
                 End time
               </label>
               <select
@@ -520,7 +520,7 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
           </div>
 
           <div>
-            <label htmlFor="fixedTimezone" className="block text-sm font-medium text-gray-700 mb-1.5">
+            <label htmlFor="fixedTimezone" className="block text-sm font-medium text-body mb-1.5">
               Timezone
             </label>
             <select
@@ -544,7 +544,7 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
               <button
                 type="button"
                 onClick={() => setShowOptional(true)}
-                className="w-full flex items-center justify-center gap-1.5 py-2 text-xs font-medium text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
+                className="w-full flex items-center justify-center gap-1.5 py-2 text-xs font-medium text-faint hover:text-secondary transition-colors cursor-pointer"
               >
                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -555,15 +555,15 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
 
             {showOptional && (
               <div className="space-y-4 animate-slide-down">
-                <div className="border-t border-gray-100 pt-4">
-                  <p className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-3">Additional options</p>
+                <div className="border-t border-hairline-soft pt-4">
+                  <p className="text-xs font-medium text-faint uppercase tracking-wider mb-3">Additional options</p>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                    Additional Details <span className="text-gray-400 font-normal">(optional)</span>
+                  <label className="block text-sm font-medium text-body mb-1.5">
+                    Additional Details <span className="text-faint font-normal">(optional)</span>
                   </label>
-                  <Suspense fallback={<div className="h-32 rounded-xl border border-gray-300 bg-gray-50 animate-pulse" />}>
+                  <Suspense fallback={<div className="h-32 rounded-xl border border-strong bg-subtle animate-pulse" />}>
                     <RichTextEditor
                       value={body}
                       onChange={setBody}
@@ -582,16 +582,16 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
       {eventType === 'availability' && (
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-body mb-2">
               {copy.form.dates_label}
             </label>
             {renderCalendar()}
             {selectedDates.length > 0 && (
               <div className="mt-2 flex items-center gap-1.5 animate-fade-in">
-                <svg className="w-3.5 h-3.5 text-violet-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <svg className="w-3.5 h-3.5 text-social-fg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                 </svg>
-                <p className="text-sm text-violet-600 font-medium">
+                <p className="text-sm text-social-fg font-medium">
                   {selectedDates.length} day{selectedDates.length !== 1 ? 's' : ''} selected
                 </p>
               </div>
@@ -600,7 +600,7 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label htmlFor="timeStart" className="block text-sm font-medium text-gray-700 mb-1.5">
+              <label htmlFor="timeStart" className="block text-sm font-medium text-body mb-1.5">
                 {copy.form.earliest_label}
               </label>
               <select id="timeStart" value={timeStart} onChange={(e) => setTimeStart(e.target.value)} className={selectClass}>
@@ -610,7 +610,7 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
               </select>
             </div>
             <div>
-              <label htmlFor="timeEnd" className="block text-sm font-medium text-gray-700 mb-1.5">
+              <label htmlFor="timeEnd" className="block text-sm font-medium text-body mb-1.5">
                 {copy.form.latest_label}
               </label>
               <select id="timeEnd" value={timeEnd} onChange={(e) => setTimeEnd(e.target.value)} className={selectClass}>
@@ -622,7 +622,7 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
           </div>
 
           <div>
-            <label htmlFor="timezone" className="block text-sm font-medium text-gray-700 mb-1.5">
+            <label htmlFor="timezone" className="block text-sm font-medium text-body mb-1.5">
               Timezone
             </label>
             <select
@@ -641,7 +641,7 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
           </div>
 
           <div>
-            <label htmlFor="duration" className="block text-sm font-medium text-gray-700 mb-1.5">
+            <label htmlFor="duration" className="block text-sm font-medium text-body mb-1.5">
               {copy.form.duration_label}
             </label>
             <select
@@ -658,9 +658,9 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
 
           {/* Minimum responses — always visible, not hidden behind More options */}
           <div>
-            <label htmlFor="minResponses" className="block text-sm font-medium text-gray-700 mb-1.5">
+            <label htmlFor="minResponses" className="block text-sm font-medium text-body mb-1.5">
               Responses needed to pick a time{' '}
-              <span className="text-gray-400 font-normal">(including yours, optional)</span>
+              <span className="text-faint font-normal">(including yours, optional)</span>
             </label>
             {!minResponsesCustom ? (
               <select
@@ -699,14 +699,14 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
                 <button
                   type="button"
                   onClick={() => { setMinResponsesCustom(false); setMinResponses(''); }}
-                  className="shrink-0 px-3 py-2 text-xs text-gray-400 hover:text-gray-600 border border-gray-200 rounded-xl transition-colors cursor-pointer"
+                  className="shrink-0 px-3 py-2 text-xs text-faint hover:text-secondary border border-hairline rounded-xl transition-colors cursor-pointer"
                 >
                   Reset
                 </button>
               </div>
             )}
             {minResponses && parseInt(minResponses, 10) >= 1 && (
-              <p className="text-xs text-gray-400 mt-1">
+              <p className="text-xs text-faint mt-1">
                 The Pick a Time panel will wait until {minResponses}{' '}
                 {parseInt(minResponses, 10) === 1 ? 'person has' : 'people have'} responded, including you.
               </p>
@@ -719,7 +719,7 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
               <button
                 type="button"
                 onClick={() => setShowOptional(true)}
-                className="w-full flex items-center justify-center gap-1.5 py-2 text-xs font-medium text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
+                className="w-full flex items-center justify-center gap-1.5 py-2 text-xs font-medium text-faint hover:text-secondary transition-colors cursor-pointer"
               >
                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -730,13 +730,13 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
 
             {showOptional && (
               <div className="space-y-4 animate-slide-down">
-                <div className="border-t border-gray-100 pt-4">
-                  <p className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-3">Additional options</p>
+                <div className="border-t border-hairline-soft pt-4">
+                  <p className="text-xs font-medium text-faint uppercase tracking-wider mb-3">Additional options</p>
                 </div>
 
                 <div>
-                  <label htmlFor="deadline" className="block text-sm font-medium text-gray-700 mb-1.5">
-                    Respond by <span className="text-gray-400 font-normal">(optional)</span>
+                  <label htmlFor="deadline" className="block text-sm font-medium text-body mb-1.5">
+                    Respond by <span className="text-faint font-normal">(optional)</span>
                   </label>
                   <input
                     id="deadline"
@@ -749,8 +749,8 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
                 </div>
 
                 <div>
-                  <label htmlFor="maxParticipants" className="block text-sm font-medium text-gray-700 mb-1.5">
-                    Max participants <span className="text-gray-400 font-normal">(optional)</span>
+                  <label htmlFor="maxParticipants" className="block text-sm font-medium text-body mb-1.5">
+                    Max participants <span className="text-faint font-normal">(optional)</span>
                   </label>
                   <input
                     id="maxParticipants"
@@ -763,17 +763,17 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
                     className={inputClass}
                   />
                   {maxParticipants && parseInt(maxParticipants, 10) > 0 && (
-                    <p className="text-xs text-gray-400 mt-1">
+                    <p className="text-xs text-faint mt-1">
                       New participants will be blocked after {maxParticipants} have joined
                     </p>
                   )}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                    Additional Details <span className="text-gray-400 font-normal">(optional)</span>
+                  <label className="block text-sm font-medium text-body mb-1.5">
+                    Additional Details <span className="text-faint font-normal">(optional)</span>
                   </label>
-                  <Suspense fallback={<div className="h-32 rounded-xl border border-gray-300 bg-gray-50 animate-pulse" />}>
+                  <Suspense fallback={<div className="h-32 rounded-xl border border-strong bg-subtle animate-pulse" />}>
                     <RichTextEditor
                       value={body}
                       onChange={setBody}
@@ -789,7 +789,7 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
       )}
 
       {error && (
-        <p className="text-red-500 text-sm animate-fade-in">{error}</p>
+        <p className="text-red-500 dark:text-red-400 text-sm animate-fade-in">{error}</p>
       )}
 
       {/* Progress indicator + Submit */}
@@ -800,8 +800,8 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
               key={i}
               className={`h-1 flex-1 rounded-full transition-all duration-500 ${
                 i < filledSteps
-                  ? eventType === 'fixed' ? 'bg-blue-400' : 'bg-violet-400'
-                  : 'bg-gray-100'
+                  ? eventType === 'fixed' ? 'bg-teal-500' : 'bg-social-500'
+                  : 'bg-fill'
               }`}
             />
           ))}
@@ -814,9 +814,9 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
             relative w-full py-3.5 px-4 font-semibold rounded-2xl transition-all duration-300
             ${isReady && !loading
               ? eventType === 'fixed'
-                ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-200/50 hover:shadow-xl hover:shadow-blue-200/60 active:scale-[0.97] cursor-pointer'
-                : 'bg-violet-600 text-white hover:bg-violet-700 shadow-lg shadow-violet-200/50 hover:shadow-xl hover:shadow-violet-200/60 active:scale-[0.97] cursor-pointer'
-              : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                ? 'bg-teal-500 text-white hover:bg-teal-600 shadow-lg shadow-blue-200/50 hover:shadow-xl hover:shadow-blue-200/60 active:scale-[0.97] cursor-pointer'
+                : 'bg-social-500 text-white hover:bg-social-600 shadow-lg shadow-violet-200/50 hover:shadow-xl hover:shadow-violet-200/60 active:scale-[0.97] cursor-pointer'
+              : 'bg-fill text-faint cursor-not-allowed'
             }
           `}
         >

@@ -476,9 +476,9 @@ export default function AdminDashboard() {
   };
 
   const inputClass =
-    'w-full px-4 py-2.5 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-transparent text-gray-900 text-sm';
-  const labelClass = 'block text-sm font-medium text-gray-700 mb-1';
-  const helpClass = 'text-xs text-gray-400 mt-1';
+    'w-full px-4 py-2.5 rounded-lg border border-hairline focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-transparent text-heading text-sm';
+  const labelClass = 'block text-sm font-medium text-body mb-1';
+  const helpClass = 'text-xs text-faint mt-1';
 
   const renderSEO = () => (
     <div className="space-y-5">
@@ -589,8 +589,8 @@ export default function AdminDashboard() {
 
       {/* Logo display options — only shown when a logo is uploaded */}
       {settings.branding.logo_url && (
-        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-4">
-          <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Logo Display Options</p>
+        <div className="bg-subtle border border-hairline rounded-lg p-4 space-y-4">
+          <p className="text-xs font-medium text-muted uppercase tracking-wide">Logo Display Options</p>
 
           <div>
             <label className={labelClass}>Logo Height (px)</label>
@@ -604,7 +604,7 @@ export default function AdminDashboard() {
                 onChange={(e) => updateSection('branding', 'logo_height', Number(e.target.value))}
                 className="flex-1 accent-teal-500"
               />
-              <span className="text-sm text-gray-600 w-12 text-right">{settings.branding.logo_height || 40}px</span>
+              <span className="text-sm text-secondary w-12 text-right">{settings.branding.logo_height || 40}px</span>
             </div>
             <p className={helpClass}>Controls the logo size on the homepage. Event pages use 70% of this value.</p>
           </div>
@@ -615,18 +615,18 @@ export default function AdminDashboard() {
                 type="checkbox"
                 checked={settings.branding.hide_home_title || false}
                 onChange={(e) => updateSection('branding', 'hide_home_title', e.target.checked)}
-                className="w-4 h-4 rounded border-gray-300 text-teal-500 focus:ring-teal-400"
+                className="w-4 h-4 rounded border-strong text-teal-500 focus:ring-teal-400"
               />
-              <span className="text-sm text-gray-700">Hide homepage title</span>
+              <span className="text-sm text-body">Hide homepage title</span>
             </label>
             <label className="flex items-center gap-2 cursor-pointer">
               <input
                 type="checkbox"
                 checked={settings.branding.hide_home_subtitle || false}
                 onChange={(e) => updateSection('branding', 'hide_home_subtitle', e.target.checked)}
-                className="w-4 h-4 rounded border-gray-300 text-teal-500 focus:ring-teal-400"
+                className="w-4 h-4 rounded border-strong text-teal-500 focus:ring-teal-400"
               />
-              <span className="text-sm text-gray-700">Hide homepage subtitle</span>
+              <span className="text-sm text-body">Hide homepage subtitle</span>
             </label>
             <p className={helpClass}>When checked, the title/subtitle text is hidden so only the logo shows.</p>
           </div>
@@ -640,7 +640,7 @@ export default function AdminDashboard() {
             type="color"
             value={settings.branding.accent_color}
             onChange={(e) => updateSection('branding', 'accent_color', e.target.value)}
-            className="w-10 h-10 rounded-lg border border-gray-200 cursor-pointer"
+            className="w-10 h-10 rounded-lg border border-hairline cursor-pointer"
           />
           <input
             className={inputClass}
@@ -668,14 +668,14 @@ export default function AdminDashboard() {
 
     return (
       <div className="space-y-3">
-        <div className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 mb-4">
+        <div className="bg-subtle border border-hairline rounded-lg px-4 py-3 mb-4">
           <div className="flex items-start gap-2">
-            <svg className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+            <svg className="w-4 h-4 text-faint mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
             </svg>
-            <p className="text-xs text-gray-500">
-              Use <code className="bg-white px-1.5 py-0.5 rounded border border-gray-200 font-mono text-[11px]">{'{{placeholder}}'}</code> syntax for dynamic values.
-              For example, <code className="bg-white px-1.5 py-0.5 rounded border border-gray-200 font-mono text-[11px]">{'{{name}}'}</code> will be
+            <p className="text-xs text-muted">
+              Use <code className="bg-surface px-1.5 py-0.5 rounded border border-hairline font-mono text-[11px]">{'{{placeholder}}'}</code> syntax for dynamic values.
+              For example, <code className="bg-surface px-1.5 py-0.5 rounded border border-hairline font-mono text-[11px]">{'{{name}}'}</code> will be
               replaced with the actual participant or organizer name at render time.
             </p>
           </div>
@@ -687,15 +687,15 @@ export default function AdminDashboard() {
           const groupValues = (settings.copy[group.key] || {}) as Record<string, string>;
 
           return (
-            <div key={group.key} className="border border-gray-200 rounded-lg overflow-hidden">
+            <div key={group.key} className="border border-hairline rounded-lg overflow-hidden">
               <button
                 type="button"
                 onClick={() => toggleGroup(group.key)}
-                className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 hover:bg-gray-100 transition-colors text-left"
+                className="w-full flex items-center justify-between px-4 py-3 bg-subtle hover:bg-fill transition-colors text-left"
               >
-                <span className="text-sm font-medium text-gray-700">{group.label}</span>
+                <span className="text-sm font-medium text-body">{group.label}</span>
                 <svg
-                  className={`w-4 h-4 text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                  className={`w-4 h-4 text-faint transition-transform ${isExpanded ? 'rotate-180' : ''}`}
                   fill="none"
                   viewBox="0 0 24 24"
                   strokeWidth={1.5}
@@ -728,7 +728,7 @@ export default function AdminDashboard() {
                       )}
                       {field.variables && field.variables.length > 0 && (
                         <div className="flex items-center gap-1.5 mt-1.5">
-                          <span className="text-[10px] text-gray-400 uppercase tracking-wide">Variables:</span>
+                          <span className="text-[10px] text-faint uppercase tracking-wide">Variables:</span>
                           {field.variables.map((v) => (
                             <button
                               key={v}
@@ -790,43 +790,43 @@ export default function AdminDashboard() {
       </div>
 
       {settings.monetization.buymeacoffee_url && (
-        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-3">
-          <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Visibility</p>
+        <div className="bg-subtle border border-hairline rounded-lg p-4 space-y-3">
+          <p className="text-xs font-medium text-muted uppercase tracking-wide">Visibility</p>
           <label className="flex items-center gap-2 cursor-pointer">
             <input
               type="checkbox"
               checked={settings.monetization.show_on_home !== false}
               onChange={(e) => updateSection('monetization', 'show_on_home', e.target.checked)}
-              className="w-4 h-4 rounded border-gray-300 text-teal-500 focus:ring-teal-400"
+              className="w-4 h-4 rounded border-strong text-teal-500 focus:ring-teal-400"
             />
-            <span className="text-sm text-gray-700">Show on homepage footer</span>
+            <span className="text-sm text-body">Show on homepage footer</span>
           </label>
           <label className="flex items-center gap-2 cursor-pointer">
             <input
               type="checkbox"
               checked={settings.monetization.show_on_event !== false}
               onChange={(e) => updateSection('monetization', 'show_on_event', e.target.checked)}
-              className="w-4 h-4 rounded border-gray-300 text-teal-500 focus:ring-teal-400"
+              className="w-4 h-4 rounded border-strong text-teal-500 focus:ring-teal-400"
             />
-            <span className="text-sm text-gray-700">Show on event page footer</span>
+            <span className="text-sm text-body">Show on event page footer</span>
           </label>
           <label className="flex items-center gap-2 cursor-pointer">
             <input
               type="checkbox"
               checked={settings.monetization.show_on_success !== false}
               onChange={(e) => updateSection('monetization', 'show_on_success', e.target.checked)}
-              className="w-4 h-4 rounded border-gray-300 text-teal-500 focus:ring-teal-400"
+              className="w-4 h-4 rounded border-strong text-teal-500 focus:ring-teal-400"
             />
-            <span className="text-sm text-gray-700">Show after availability submitted (&quot;all set&quot; moment)</span>
+            <span className="text-sm text-body">Show after availability submitted (&quot;all set&quot; moment)</span>
           </label>
           <label className="flex items-center gap-2 cursor-pointer">
             <input
               type="checkbox"
               checked={settings.monetization.show_on_rsvp !== false}
               onChange={(e) => updateSection('monetization', 'show_on_rsvp', e.target.checked)}
-              className="w-4 h-4 rounded border-gray-300 text-teal-500 focus:ring-teal-400"
+              className="w-4 h-4 rounded border-strong text-teal-500 focus:ring-teal-400"
             />
-            <span className="text-sm text-gray-700">Show after RSVP submitted (fixed-date events)</span>
+            <span className="text-sm text-body">Show after RSVP submitted (fixed-date events)</span>
           </label>
           <p className={helpClass}>Control where donation prompts appear. The &quot;all set&quot; moment is the highest-conversion placement — users just got value and feel grateful.</p>
         </div>
@@ -918,8 +918,8 @@ export default function AdminDashboard() {
   const renderAppSettings = () => (
     <div className="space-y-5">
       {/* Fixed-time events feature toggle */}
-      <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-3">
-        <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Features</p>
+      <div className="bg-subtle border border-hairline rounded-lg p-4 space-y-3">
+        <p className="text-xs font-medium text-muted uppercase tracking-wide">Features</p>
         <label className="flex items-center gap-3 cursor-pointer">
           <div className="relative">
             <input
@@ -928,11 +928,11 @@ export default function AdminDashboard() {
               checked={settings.app.enable_fixed_events !== false}
               onChange={(e) => updateSection('app', 'enable_fixed_events', e.target.checked)}
             />
-            <div className={`w-10 h-6 rounded-full transition-colors duration-200 ${settings.app.enable_fixed_events !== false ? 'bg-teal-500' : 'bg-gray-300'}`} />
+            <div className={`w-10 h-6 rounded-full transition-colors duration-200 ${settings.app.enable_fixed_events !== false ? 'bg-teal-500' : 'bg-strong'}`} />
             <div className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full shadow transition-transform duration-200 ${settings.app.enable_fixed_events !== false ? 'translate-x-4' : 'translate-x-0'}`} />
           </div>
           <div>
-            <p className="text-sm font-medium text-gray-700">Fixed-Time Events</p>
+            <p className="text-sm font-medium text-body">Fixed-Time Events</p>
             <p className={helpClass}>When enabled, organizers can create RSVP-style events with a set date and time instead of polling availability.</p>
           </div>
         </label>
@@ -986,16 +986,16 @@ export default function AdminDashboard() {
 
   const renderLegal = () => (
     <div className="space-y-8">
-      <p className="text-sm text-gray-500">
+      <p className="text-sm text-muted">
         Write your legal policies below. Toggle each one on to show it as a link in the site footer and make its page publicly accessible.
       </p>
 
       {/* Privacy Policy */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <label className="text-sm font-semibold text-gray-800">Privacy Policy</label>
+          <label className="text-sm font-semibold text-heading">Privacy Policy</label>
           <label className="flex items-center gap-2 cursor-pointer">
-            <span className="text-xs text-gray-500">Show in footer</span>
+            <span className="text-xs text-muted">Show in footer</span>
             <div className="relative">
               <input
                 type="checkbox"
@@ -1003,7 +1003,7 @@ export default function AdminDashboard() {
                 checked={settings.legal?.show_privacy ?? true}
                 onChange={(e) => updateSection('legal', 'show_privacy', e.target.checked)}
               />
-              <div className={`w-9 h-5 rounded-full transition-colors ${settings.legal?.show_privacy ? 'bg-teal-500' : 'bg-gray-200'}`} />
+              <div className={`w-9 h-5 rounded-full transition-colors ${settings.legal?.show_privacy ? 'bg-teal-500' : 'bg-fill2'}`} />
               <div className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${settings.legal?.show_privacy ? 'translate-x-4' : ''}`} />
             </div>
           </label>
@@ -1021,9 +1021,9 @@ export default function AdminDashboard() {
       {/* Terms of Use */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <label className="text-sm font-semibold text-gray-800">Terms of Use</label>
+          <label className="text-sm font-semibold text-heading">Terms of Use</label>
           <label className="flex items-center gap-2 cursor-pointer">
-            <span className="text-xs text-gray-500">Show in footer</span>
+            <span className="text-xs text-muted">Show in footer</span>
             <div className="relative">
               <input
                 type="checkbox"
@@ -1031,7 +1031,7 @@ export default function AdminDashboard() {
                 checked={settings.legal?.show_terms ?? true}
                 onChange={(e) => updateSection('legal', 'show_terms', e.target.checked)}
               />
-              <div className={`w-9 h-5 rounded-full transition-colors ${settings.legal?.show_terms ? 'bg-teal-500' : 'bg-gray-200'}`} />
+              <div className={`w-9 h-5 rounded-full transition-colors ${settings.legal?.show_terms ? 'bg-teal-500' : 'bg-fill2'}`} />
               <div className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${settings.legal?.show_terms ? 'translate-x-4' : ''}`} />
             </div>
           </label>
@@ -1049,9 +1049,9 @@ export default function AdminDashboard() {
       {/* Cookie Policy */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <label className="text-sm font-semibold text-gray-800">Cookie Policy</label>
+          <label className="text-sm font-semibold text-heading">Cookie Policy</label>
           <label className="flex items-center gap-2 cursor-pointer">
-            <span className="text-xs text-gray-500">Show in footer</span>
+            <span className="text-xs text-muted">Show in footer</span>
             <div className="relative">
               <input
                 type="checkbox"
@@ -1059,7 +1059,7 @@ export default function AdminDashboard() {
                 checked={settings.legal?.show_cookies ?? false}
                 onChange={(e) => updateSection('legal', 'show_cookies', e.target.checked)}
               />
-              <div className={`w-9 h-5 rounded-full transition-colors ${settings.legal?.show_cookies ? 'bg-teal-500' : 'bg-gray-200'}`} />
+              <div className={`w-9 h-5 rounded-full transition-colors ${settings.legal?.show_cookies ? 'bg-teal-500' : 'bg-fill2'}`} />
               <div className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${settings.legal?.show_cookies ? 'translate-x-4' : ''}`} />
             </div>
           </label>
@@ -1082,14 +1082,14 @@ export default function AdminDashboard() {
     if (usageLoading) {
       return (
         <div className="space-y-4">
-          {[1,2,3,4].map(i => <div key={i} className="h-20 bg-gray-100 animate-pulse rounded-xl" />)}
+          {[1,2,3,4].map(i => <div key={i} className="h-20 bg-fill animate-pulse rounded-xl" />)}
         </div>
       );
     }
     if (usageError) {
       return (
         <div className="text-center py-10 space-y-3">
-          <p className="text-red-500 text-sm">{usageError}</p>
+          <p className="text-red-500 dark:text-red-400 text-sm">{usageError}</p>
           <button onClick={fetchUsage} className="text-sm text-teal-600 underline cursor-pointer">Try again</button>
         </div>
       );
@@ -1104,20 +1104,20 @@ export default function AdminDashboard() {
     const maxParticipantBar = Math.max(...dailyActivity.map(d => d.participants), 1);
 
     const Stat = ({ label, value, sub, accent = false }: { label: string; value: string | number; sub?: string; accent?: boolean }) => (
-      <div className="bg-gray-50 rounded-xl p-4">
-        <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-1">{label}</p>
-        <p className={`text-2xl font-bold ${accent ? 'text-violet-600' : 'text-teal-600'}`}>{value}</p>
-        {sub && <p className="text-xs text-gray-400 mt-0.5">{sub}</p>}
+      <div className="bg-subtle rounded-xl p-4">
+        <p className="text-xs font-medium text-faint uppercase tracking-wide mb-1">{label}</p>
+        <p className={`text-2xl font-bold ${accent ? 'text-social-fg' : 'text-teal-600'}`}>{value}</p>
+        {sub && <p className="text-xs text-faint mt-0.5">{sub}</p>}
       </div>
     );
 
     const AdoptionBar = ({ label, pct, count }: { label: string; pct: number; count: number }) => (
       <div>
         <div className="flex justify-between text-xs mb-1">
-          <span className="text-gray-600 font-medium">{label}</span>
-          <span className="text-gray-400">{count.toLocaleString()} ({pct}%)</span>
+          <span className="text-secondary font-medium">{label}</span>
+          <span className="text-faint">{count.toLocaleString()} ({pct}%)</span>
         </div>
-        <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+        <div className="h-2 bg-fill2 rounded-full overflow-hidden">
           <div className="h-full bg-teal-400 rounded-full transition-all" style={{ width: `${pct}%` }} />
         </div>
       </div>
@@ -1130,7 +1130,7 @@ export default function AdminDashboard() {
 
         {/* Header */}
         <div className="flex items-center justify-between">
-          <p className="text-xs text-gray-400">Updated {new Date(usageData.generatedAt).toLocaleTimeString()}</p>
+          <p className="text-xs text-faint">Updated {new Date(usageData.generatedAt).toLocaleTimeString()}</p>
           <button onClick={fetchUsage} disabled={usageLoading}
             className="flex items-center gap-1.5 text-xs text-teal-600 hover:text-teal-800 font-medium cursor-pointer disabled:opacity-50">
             <svg className={`w-3.5 h-3.5 ${usageLoading ? 'animate-spin' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -1142,7 +1142,7 @@ export default function AdminDashboard() {
 
         {/* ── Summary stats ── */}
         <div>
-          <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Overview</h3>
+          <h3 className="text-xs font-semibold text-faint uppercase tracking-wider mb-3">Overview</h3>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <Stat label="Total Events" value={summary.totalEvents.toLocaleString()} sub={`${summary.events30d} last 30 days`} />
             <Stat label="Participants" value={summary.totalParticipants.toLocaleString()} sub={`avg ${summary.avgParticipants} per event`} />
@@ -1153,8 +1153,8 @@ export default function AdminDashboard() {
 
         {/* ── FUNNEL ── most important section */}
         <div>
-          <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Conversion Funnel</h3>
-          <div className="bg-gray-50 rounded-xl p-5 space-y-3">
+          <h3 className="text-xs font-semibold text-faint uppercase tracking-wider mb-3">Conversion Funnel</h3>
+          <div className="bg-subtle rounded-xl p-5 space-y-3">
             {[
               {
                 label: 'Events Created',
@@ -1174,22 +1174,22 @@ export default function AdminDashboard() {
                 label: 'Time Finalized',
                 value: funnel.finalized,
                 pct: funnel.finalizedOfParticipated,
-                color: 'bg-violet-500',
+                color: 'bg-social-500',
                 desc: `${funnel.finalizedOfParticipated}% of participated — ${funnel.finalizedOfTotal}% overall`,
               },
             ].map(({ label, value, pct, color, desc }) => (
               <div key={label}>
                 <div className="flex items-center justify-between text-sm mb-1.5">
-                  <span className="font-semibold text-gray-800">{label}</span>
-                  <span className="font-bold text-gray-700">{value.toLocaleString()}</span>
+                  <span className="font-semibold text-heading">{label}</span>
+                  <span className="font-bold text-body">{value.toLocaleString()}</span>
                 </div>
-                <div className="h-5 bg-gray-200 rounded-lg overflow-hidden">
+                <div className="h-5 bg-fill2 rounded-lg overflow-hidden">
                   <div className={`h-full ${color} rounded-lg transition-all flex items-center pl-2`}
                     style={{ width: `${Math.max(pct, 2)}%` }}>
                     {pct >= 12 && <span className="text-white text-xs font-bold">{pct}%</span>}
                   </div>
                 </div>
-                <p className="text-xs text-gray-400 mt-1">{desc}</p>
+                <p className="text-xs text-faint mt-1">{desc}</p>
               </div>
             ))}
           </div>
@@ -1197,57 +1197,57 @@ export default function AdminDashboard() {
 
         {/* ── Two-column: Abandonment + Finalization time ── */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="bg-gray-50 rounded-xl p-4 space-y-2">
-            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Abandonment Rate</h3>
-            <p className="text-3xl font-bold text-red-500">{abandonment.rate}%</p>
-            <p className="text-xs text-gray-500">
+          <div className="bg-subtle rounded-xl p-4 space-y-2">
+            <h3 className="text-xs font-semibold text-muted uppercase tracking-wider">Abandonment Rate</h3>
+            <p className="text-3xl font-bold text-red-500 dark:text-red-400">{abandonment.rate}%</p>
+            <p className="text-xs text-muted">
               {abandonment.abandoned} of {abandonment.eligible} eligible events (48h+ old, 0 participants)
             </p>
-            <p className="text-xs text-gray-400 italic">
+            <p className="text-xs text-faint italic">
               {abandonment.rate < 20 ? '✓ Healthy — most events get shared' :
                abandonment.rate < 40 ? '↗ Moderate — some organizers aren\'t sharing' :
                '⚠ High — many events never get a response'}
             </p>
           </div>
 
-          <div className="bg-gray-50 rounded-xl p-4 space-y-2">
-            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Time to Finalize</h3>
+          <div className="bg-subtle rounded-xl p-4 space-y-2">
+            <h3 className="text-xs font-semibold text-muted uppercase tracking-wider">Time to Finalize</h3>
             {finalizationTime.count > 0 ? (
               <>
                 <p className="text-3xl font-bold text-teal-600">{formatHours(finalizationTime.median)}</p>
-                <p className="text-xs text-gray-500">median · based on {finalizationTime.count} finalized events</p>
-                <p className="text-xs text-gray-400">
+                <p className="text-xs text-muted">median · based on {finalizationTime.count} finalized events</p>
+                <p className="text-xs text-faint">
                   25th–75th pct: {formatHours(finalizationTime.p25)} – {formatHours(finalizationTime.p75)}
                 </p>
               </>
             ) : (
-              <p className="text-sm text-gray-400 italic">No finalized events yet</p>
+              <p className="text-sm text-faint italic">No finalized events yet</p>
             )}
           </div>
         </div>
 
         {/* ── Group size distribution ── */}
         <div>
-          <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Group Size Distribution</h3>
-          <div className="bg-gray-50 rounded-xl p-4 space-y-3">
+          <h3 className="text-xs font-semibold text-faint uppercase tracking-wider mb-3">Group Size Distribution</h3>
+          <div className="bg-subtle rounded-xl p-4 space-y-3">
             {groupSizeDistribution.map(({ bucket, count, pct }) => (
               <div key={bucket}>
                 <div className="flex justify-between text-xs mb-1">
-                  <span className="text-gray-600 font-medium">
+                  <span className="text-secondary font-medium">
                     {bucket === '0' ? 'No participants (abandoned)' :
                      bucket === '1' ? '1 participant' :
                      `${bucket} participants`}
                   </span>
-                  <span className="text-gray-400">{count.toLocaleString()} ({pct}%)</span>
+                  <span className="text-faint">{count.toLocaleString()} ({pct}%)</span>
                 </div>
-                <div className="h-2.5 bg-gray-200 rounded-full overflow-hidden">
+                <div className="h-2.5 bg-fill2 rounded-full overflow-hidden">
                   <div
                     className={`h-full rounded-full transition-all ${
                       bucket === '0' ? 'bg-red-300' :
                       bucket === '1' ? 'bg-amber-300' :
                       bucket === '2-3' ? 'bg-teal-300' :
                       bucket === '4-6' ? 'bg-teal-400' :
-                      bucket === '7-10' ? 'bg-teal-500' : 'bg-violet-500'
+                      bucket === '7-10' ? 'bg-teal-500' : 'bg-social-500'
                     }`}
                     style={{ width: `${Math.max(pct, count > 0 ? 2 : 0)}%` }}
                   />
@@ -1255,7 +1255,7 @@ export default function AdminDashboard() {
               </div>
             ))}
             {summary.totalEvents > 0 && (
-              <p className="text-xs text-gray-400 pt-1 border-t border-gray-200">
+              <p className="text-xs text-faint pt-1 border-t border-hairline">
                 Sweet spot (4–10 participants): {
                   ((groupSizeDistribution.find(b => b.bucket === '4-6')?.count ?? 0) +
                    (groupSizeDistribution.find(b => b.bucket === '7-10')?.count ?? 0)).toLocaleString()
@@ -1273,8 +1273,8 @@ export default function AdminDashboard() {
 
         {/* ── Feature adoption + Device breakdown ── */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="bg-gray-50 rounded-xl p-4 space-y-3">
-            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Feature Adoption</h3>
+          <div className="bg-subtle rounded-xl p-4 space-y-3">
+            <h3 className="text-xs font-semibold text-muted uppercase tracking-wider">Feature Adoption</h3>
             <AdoptionBar label="Location set" pct={featureAdoption.location.pct} count={featureAdoption.location.count} />
             <AdoptionBar label="Description" pct={featureAdoption.description.pct} count={featureAdoption.description.count} />
             <AdoptionBar label="Rich text details" pct={featureAdoption.richText.pct} count={featureAdoption.richText.count} />
@@ -1285,63 +1285,63 @@ export default function AdminDashboard() {
 
           <div className="space-y-4">
             {/* Device breakdown */}
-            <div className="bg-gray-50 rounded-xl p-4 space-y-3">
-              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Device Breakdown</h3>
+            <div className="bg-subtle rounded-xl p-4 space-y-3">
+              <h3 className="text-xs font-semibold text-muted uppercase tracking-wider">Device Breakdown</h3>
               {deviceBreakdown.hasData ? (
                 <>
                   {[
-                    { label: 'Mobile', pct: deviceBreakdown.mobilePct, count: deviceBreakdown.mobile, color: 'bg-violet-400' },
+                    { label: 'Mobile', pct: deviceBreakdown.mobilePct, count: deviceBreakdown.mobile, color: 'bg-social-500' },
                     { label: 'Desktop', pct: deviceBreakdown.desktopPct, count: deviceBreakdown.desktop, color: 'bg-teal-400' },
                   ].map(({ label, pct, count, color }) => (
                     <div key={label}>
                       <div className="flex justify-between text-xs mb-1">
-                        <span className="text-gray-600 font-medium">{label}</span>
-                        <span className="text-gray-400">{count.toLocaleString()} ({pct}%)</span>
+                        <span className="text-secondary font-medium">{label}</span>
+                        <span className="text-faint">{count.toLocaleString()} ({pct}%)</span>
                       </div>
-                      <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                      <div className="h-2 bg-fill2 rounded-full overflow-hidden">
                         <div className={`h-full ${color} rounded-full`} style={{ width: `${pct}%` }} />
                       </div>
                     </div>
                   ))}
-                  <p className="text-xs text-gray-400 italic">
+                  <p className="text-xs text-faint italic">
                     {deviceBreakdown.mobilePct >= 60 ? '✓ Majority mobile — your core use case' :
                      deviceBreakdown.mobilePct >= 40 ? 'Mixed — solid mobile and desktop usage' :
                      'Desktop-heavy — consider mobile UX improvements'}
                   </p>
                 </>
               ) : (
-                <p className="text-xs text-gray-400 italic">Run migration to enable device tracking</p>
+                <p className="text-xs text-faint italic">Run migration to enable device tracking</p>
               )}
             </div>
 
             {/* Repeat organizers */}
-            <div className="bg-gray-50 rounded-xl p-4 space-y-2">
-              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Returning Organizers</h3>
+            <div className="bg-subtle rounded-xl p-4 space-y-2">
+              <h3 className="text-xs font-semibold text-muted uppercase tracking-wider">Returning Organizers</h3>
               <p className="text-2xl font-bold text-teal-600">{repeatOrganizers.rate}%</p>
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-muted">
                 {repeatOrganizers.returning} of {repeatOrganizers.total} named organizers created 2+ events
               </p>
-              <p className="text-xs text-gray-400 italic">Approximate — based on organizer name matching</p>
+              <p className="text-xs text-faint italic">Approximate — based on organizer name matching</p>
             </div>
           </div>
         </div>
 
         {/* ── Event type + RSVP breakdown ── */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="bg-gray-50 rounded-xl p-4 space-y-3">
-            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Event Types</h3>
+          <div className="bg-subtle rounded-xl p-4 space-y-3">
+            <h3 className="text-xs font-semibold text-muted uppercase tracking-wider">Event Types</h3>
             {[
               { label: 'Find-a-Time', count: summary.availEvents, color: 'bg-teal-400' },
-              { label: 'Fixed Date/Time', count: summary.fixedEvents, color: 'bg-violet-400' },
+              { label: 'Fixed Date/Time', count: summary.fixedEvents, color: 'bg-social-500' },
             ].map(({ label, count, color }) => {
               const pct = summary.totalEvents > 0 ? Math.round((count / summary.totalEvents) * 100) : 0;
               return (
                 <div key={label}>
                   <div className="flex justify-between text-xs mb-1">
-                    <span className="text-gray-600 font-medium">{label}</span>
-                    <span className="text-gray-400">{count.toLocaleString()} ({pct}%)</span>
+                    <span className="text-secondary font-medium">{label}</span>
+                    <span className="text-faint">{count.toLocaleString()} ({pct}%)</span>
                   </div>
-                  <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                  <div className="h-2 bg-fill2 rounded-full overflow-hidden">
                     <div className={`h-full ${color} rounded-full`} style={{ width: `${pct}%` }} />
                   </div>
                 </div>
@@ -1350,21 +1350,21 @@ export default function AdminDashboard() {
           </div>
 
           {summary.rsvpTotal > 0 && (
-            <div className="bg-gray-50 rounded-xl p-4 space-y-3">
-              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">RSVP Responses</h3>
+            <div className="bg-subtle rounded-xl p-4 space-y-3">
+              <h3 className="text-xs font-semibold text-muted uppercase tracking-wider">RSVP Responses</h3>
               {[
                 { label: 'Going', count: summary.rsvpYes, color: 'bg-green-400' },
                 { label: 'Maybe', count: summary.rsvpMaybe, color: 'bg-amber-400' },
-                { label: "Can't Make It", count: summary.rsvpNo, color: 'bg-gray-400' },
+                { label: "Can't Make It", count: summary.rsvpNo, color: 'bg-strong' },
               ].map(({ label, count, color }) => {
                 const pct = summary.rsvpTotal > 0 ? Math.round((count / summary.rsvpTotal) * 100) : 0;
                 return (
                   <div key={label}>
                     <div className="flex justify-between text-xs mb-1">
-                      <span className="text-gray-600 font-medium">{label}</span>
-                      <span className="text-gray-400">{count.toLocaleString()} ({pct}%)</span>
+                      <span className="text-secondary font-medium">{label}</span>
+                      <span className="text-faint">{count.toLocaleString()} ({pct}%)</span>
                     </div>
-                    <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                    <div className="h-2 bg-fill2 rounded-full overflow-hidden">
                       <div className={`h-full ${color} rounded-full`} style={{ width: `${pct}%` }} />
                     </div>
                   </div>
@@ -1378,10 +1378,10 @@ export default function AdminDashboard() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {[
             { title: 'Events Created — Last 30 Days', key: 'events' as const, max: maxEventBar, color: 'bg-teal-400 hover:bg-teal-500' },
-            { title: 'Participants Joined — Last 30 Days', key: 'participants' as const, max: maxParticipantBar, color: 'bg-violet-400 hover:bg-violet-500' },
+            { title: 'Participants Joined — Last 30 Days', key: 'participants' as const, max: maxParticipantBar, color: 'bg-social-500 hover:bg-social-600' },
           ].map(({ title, key, max, color }) => (
-            <div key={key} className="bg-gray-50 rounded-xl p-4 space-y-3">
-              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{title}</h3>
+            <div key={key} className="bg-subtle rounded-xl p-4 space-y-3">
+              <h3 className="text-xs font-semibold text-muted uppercase tracking-wider">{title}</h3>
               <div className="flex items-end gap-[2px] h-20">
                 {dailyActivity.map(({ date, ...counts }) => {
                   const val = counts[key];
@@ -1391,7 +1391,7 @@ export default function AdminDashboard() {
                     <div key={date} className="flex-1 group relative flex items-end" style={{ height: '100%' }}>
                       <div className={`w-full ${color} rounded-sm transition-colors cursor-default`} style={{ height: `${h}%` }} />
                       {val > 0 && (
-                        <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-[10px] px-1.5 py-0.5 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+                        <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-[#101828] dark:bg-[#232B36] text-white text-[10px] px-1.5 py-0.5 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
                           {label}: {val}
                         </div>
                       )}
@@ -1399,7 +1399,7 @@ export default function AdminDashboard() {
                   );
                 })}
               </div>
-              <div className="flex justify-between text-[10px] text-gray-400">
+              <div className="flex justify-between text-[10px] text-faint">
                 <span>{dailyActivity[0]?.date ? new Date(dailyActivity[0].date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : ''}</span>
                 <span>Today</span>
               </div>
@@ -1410,12 +1410,12 @@ export default function AdminDashboard() {
         {/* ── Top timezones (compact) ── */}
         {topTimezones.length > 0 && (
           <div>
-            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Top Timezones</h3>
+            <h3 className="text-xs font-semibold text-faint uppercase tracking-wider mb-3">Top Timezones</h3>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {topTimezones.map(({ tz, count, pct }) => (
-                <div key={tz} className="bg-gray-50 rounded-lg px-3 py-2 flex justify-between items-center">
-                  <span className="text-xs text-gray-600 font-mono truncate">{tz}</span>
-                  <span className="text-xs text-gray-400 ml-2 shrink-0">{count} ({pct}%)</span>
+                <div key={tz} className="bg-subtle rounded-lg px-3 py-2 flex justify-between items-center">
+                  <span className="text-xs text-secondary font-mono truncate">{tz}</span>
+                  <span className="text-xs text-faint ml-2 shrink-0">{count} ({pct}%)</span>
                 </div>
               ))}
             </div>
@@ -1424,47 +1424,47 @@ export default function AdminDashboard() {
 
         {/* ── Recent events table ── */}
         <div>
-          <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Recent Events</h3>
-          <div className="rounded-xl border border-gray-200 overflow-hidden">
+          <h3 className="text-xs font-semibold text-faint uppercase tracking-wider mb-3">Recent Events</h3>
+          <div className="rounded-xl border border-hairline overflow-hidden">
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-gray-50 border-b border-gray-200">
-                  <th className="text-left px-4 py-2.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">Event</th>
-                  <th className="text-left px-4 py-2.5 text-xs font-semibold text-gray-500 uppercase tracking-wider hidden sm:table-cell">Type</th>
-                  <th className="text-center px-3 py-2.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">Ppl</th>
-                  <th className="text-left px-3 py-2.5 text-xs font-semibold text-gray-500 uppercase tracking-wider hidden md:table-cell">Status</th>
-                  <th className="text-left px-3 py-2.5 text-xs font-semibold text-gray-500 uppercase tracking-wider hidden lg:table-cell">Created</th>
+                <tr className="bg-subtle border-b border-hairline">
+                  <th className="text-left px-4 py-2.5 text-xs font-semibold text-muted uppercase tracking-wider">Event</th>
+                  <th className="text-left px-4 py-2.5 text-xs font-semibold text-muted uppercase tracking-wider hidden sm:table-cell">Type</th>
+                  <th className="text-center px-3 py-2.5 text-xs font-semibold text-muted uppercase tracking-wider">Ppl</th>
+                  <th className="text-left px-3 py-2.5 text-xs font-semibold text-muted uppercase tracking-wider hidden md:table-cell">Status</th>
+                  <th className="text-left px-3 py-2.5 text-xs font-semibold text-muted uppercase tracking-wider hidden lg:table-cell">Created</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-hairline-soft">
                 {recentEvents.map(e => (
-                  <tr key={e.id} className="hover:bg-gray-50 transition-colors">
+                  <tr key={e.id} className="hover:bg-subtle transition-colors">
                     <td className="px-4 py-3">
                       <a href={`/e/${e.slug}`} target="_blank" rel="noopener noreferrer"
-                        className="font-medium text-gray-800 hover:text-teal-600 transition-colors block truncate max-w-[160px]">
+                        className="font-medium text-heading hover:text-teal-600 transition-colors block truncate max-w-[160px]">
                         {e.name}
                       </a>
-                      {e.organizer_name && <span className="text-xs text-gray-400 block">{e.organizer_name}{e.organizer_email ? ` · ${e.organizer_email}` : ''}</span>}
+                      {e.organizer_name && <span className="text-xs text-faint block">{e.organizer_name}{e.organizer_email ? ` · ${e.organizer_email}` : ''}</span>}
                     </td>
                     <td className="px-4 py-3 hidden sm:table-cell">
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${e.event_type === 'fixed' ? 'bg-violet-100 text-violet-700' : 'bg-teal-100 text-teal-700'}`}>
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${e.event_type === 'fixed' ? 'bg-social-100 dark:bg-[#1C1939] text-social-fg' : 'bg-teal-100 text-teal-700'}`}>
                         {e.event_type === 'fixed' ? 'Fixed' : 'Find-a-Time'}
                       </span>
                     </td>
                     <td className="px-3 py-3 text-center">
-                      <span className="text-sm font-semibold text-gray-700">{e.participant_count}</span>
+                      <span className="text-sm font-semibold text-body">{e.participant_count}</span>
                     </td>
                     <td className="px-3 py-3 hidden md:table-cell">
                       {e.finalized_time ? (
-                        <span className="inline-flex items-center gap-1 text-xs text-green-600 font-medium">
+                        <span className="inline-flex items-center gap-1 text-xs text-success-fg font-medium">
                           <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
                           Done
                         </span>
                       ) : (
-                        <span className="text-xs text-gray-400">Open</span>
+                        <span className="text-xs text-faint">Open</span>
                       )}
                     </td>
-                    <td className="px-3 py-3 text-xs text-gray-400 hidden lg:table-cell whitespace-nowrap">
+                    <td className="px-3 py-3 text-xs text-faint hidden lg:table-cell whitespace-nowrap">
                       {new Date(e.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                     </td>
                   </tr>
@@ -1494,16 +1494,16 @@ export default function AdminDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-gray-400">Loading...</div>
+      <div className="min-h-screen flex items-center justify-center bg-subtle">
+        <div className="text-faint">Loading...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-subtle">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
+      <header className="bg-surface border-b border-hairline sticky top-0 z-10">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 bg-teal-500 rounded-lg flex items-center justify-center">
@@ -1512,16 +1512,16 @@ export default function AdminDashboard() {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
             </div>
-            <h1 className="text-lg font-bold text-gray-900">
+            <h1 className="text-lg font-bold text-heading">
               Admin Panel
               {settings.seo.site_name && settings.seo.site_name !== 'Scheduler' && (
-                <span className="text-gray-400 font-normal text-sm ml-2">| {settings.seo.site_name}</span>
+                <span className="text-faint font-normal text-sm ml-2">| {settings.seo.site_name}</span>
               )}
             </h1>
           </div>
           <button
             onClick={handleLogout}
-            className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 transition-colors"
+            className="flex items-center gap-1.5 text-sm text-muted hover:text-body transition-colors"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />
@@ -1546,7 +1546,7 @@ export default function AdminDashboard() {
                   className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
                     activeTab === tab.key
                       ? 'bg-teal-50 text-teal-700'
-                      : 'text-gray-600 hover:bg-gray-100'
+                      : 'text-secondary hover:bg-fill'
                   }`}
                 >
                   {TAB_ICONS[tab.key]}
@@ -1558,8 +1558,8 @@ export default function AdminDashboard() {
 
           {/* Content Area */}
           <div className="flex-1 min-w-0">
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-5">
+            <div className="bg-surface rounded-xl border border-hairline p-6">
+              <h2 className="text-lg font-semibold text-heading mb-5">
                 {TABS.find((t) => t.key === activeTab)?.label}
               </h2>
 
@@ -1567,7 +1567,7 @@ export default function AdminDashboard() {
 
               {/* Save Bar — hidden on read-only tabs */}
               {activeTab !== 'usage' && (
-              <div className="mt-8 pt-5 border-t border-gray-100 flex items-center justify-between">
+              <div className="mt-8 pt-5 border-t border-hairline-soft flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <button
                     onClick={handleSave}
@@ -1579,14 +1579,14 @@ export default function AdminDashboard() {
                   {hasChanges && (
                     <button
                       onClick={handleDiscard}
-                      className="px-4 py-2 text-sm text-gray-500 hover:text-gray-700 transition-colors"
+                      className="px-4 py-2 text-sm text-muted hover:text-body transition-colors"
                     >
                       Discard
                     </button>
                   )}
                 </div>
                 {saveMessage && (
-                  <p className={`text-sm ${saveMessage.includes('success') ? 'text-green-600' : 'text-red-500'}`}>
+                  <p className={`text-sm ${saveMessage.includes('success') ? 'text-success-fg' : 'text-red-500 dark:text-red-400'}`}>
                     {saveMessage}
                   </p>
                 )}

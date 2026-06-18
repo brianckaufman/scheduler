@@ -169,13 +169,13 @@ export default function LocationInput({ value, onChange, inputClassName = '' }: 
   };
 
   const tabBase   = 'flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5';
-  const tabActive = 'bg-white text-gray-800 shadow-sm';
-  const tabIdle   = 'text-gray-500 hover:text-gray-700';
+  const tabActive = 'bg-surface text-heading shadow-sm';
+  const tabIdle   = 'text-muted hover:text-body';
 
   return (
     <div className="space-y-2">
       {/* Type selector tabs */}
-      <div className="flex gap-1 bg-gray-100 p-1 rounded-xl">
+      <div className="flex gap-1 bg-fill p-1 rounded-xl">
         <button type="button" onClick={() => handleTypeChange('place')}
           className={`${tabBase} ${locType === 'place' ? tabActive : tabIdle}`}>
           {/* Map pin — links to Google Maps */}
@@ -229,7 +229,7 @@ export default function LocationInput({ value, onChange, inputClassName = '' }: 
             {/* Spinner while fetching */}
             {fetching && (
               <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                <svg className="w-4 h-4 text-gray-300 animate-spin" fill="none" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 text-faint2 animate-spin" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth={4} />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
                 </svg>
@@ -248,7 +248,7 @@ export default function LocationInput({ value, onChange, inputClassName = '' }: 
                     width: dropdownPos.width,
                     zIndex: 9999,
                   }}
-                  className="bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden"
+                  className="bg-surface border border-hairline rounded-xl shadow-xl overflow-hidden"
                 >
                   {predictions.map((p, i) => (
                     <li key={p.place_id}>
@@ -256,17 +256,17 @@ export default function LocationInput({ value, onChange, inputClassName = '' }: 
                         type="button"
                         onMouseDown={(e) => { e.preventDefault(); handleSelectPrediction(p); }}
                         className={`w-full text-left px-3 py-2.5 text-sm flex items-center gap-2.5 transition-colors cursor-pointer ${
-                          i === activeIndex ? 'bg-violet-50 text-violet-900' : 'text-gray-700 hover:bg-gray-50'
+                          i === activeIndex ? 'bg-social-50 dark:bg-[#1C1939] text-social-fg' : 'text-body hover:bg-subtle'
                         }`}
                       >
-                        <svg className="w-3.5 h-3.5 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                        <svg className="w-3.5 h-3.5 text-faint shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
                           <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" />
                           <circle cx="12" cy="9" r="2.5" />
                         </svg>
                         <span className="flex flex-col min-w-0">
                           <span className="truncate font-medium">{p.structured_formatting?.main_text ?? p.description}</span>
                           {p.structured_formatting?.secondary_text && (
-                            <span className="truncate text-xs text-gray-400 font-normal">{p.structured_formatting.secondary_text}</span>
+                            <span className="truncate text-xs text-faint font-normal">{p.structured_formatting.secondary_text}</span>
                           )}
                         </span>
                       </button>
@@ -292,7 +292,7 @@ export default function LocationInput({ value, onChange, inputClassName = '' }: 
                 maxLength={150}
                 className={inputClassName}
               />
-              <p className="flex items-center gap-1 text-xs text-gray-400">
+              <p className="flex items-center gap-1 text-xs text-faint">
                 <svg className="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                 </svg>
@@ -329,7 +329,7 @@ export default function LocationInput({ value, onChange, inputClassName = '' }: 
             className={inputClassName}
           />
           {virtualUrl && (
-            <p className="flex items-center gap-1 text-xs text-gray-400">
+            <p className="flex items-center gap-1 text-xs text-faint">
               <svg className="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
               </svg>

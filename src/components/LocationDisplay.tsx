@@ -32,7 +32,7 @@ const ExternalIcon = ({ size = 3 }: { size?: number }) => (
 export default function LocationDisplay({
   location,
   className = '',
-  textClassName = 'text-sm text-gray-700',
+  textClassName = 'text-sm text-body',
 }: LocationDisplayProps) {
   const parsed = parseLocation(location);
 

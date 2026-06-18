@@ -1,12 +1,16 @@
 @import "tailwindcss";
 
-/* ── Dynamic accent color palette ──
+/* Class-based dark mode: `dark:` variants key off a `.dark` ancestor on <html>,
+   set by the no-flash theme script in layout.tsx. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ── Dynamic accent color palette (WeGather brand blue) ──
    The root layout sets --accent-base from admin settings.
    We generate a full shade scale using color-mix() so every
-   Tailwind `teal-*` class automatically uses the custom color. */
+   Tailwind `teal-*` class automatically uses the brand color. */
 
 :root {
-  --accent-base: #7c3aed; /* default violet-600, overridden by admin branding */
+  --accent-base: #0373F6; /* WeGather brand blue, overridable by admin branding */
   --accent-50:  color-mix(in oklch, var(--accent-base)  5%, white);
   --accent-100: color-mix(in oklch, var(--accent-base) 12%, white);
   --accent-200: color-mix(in oklch, var(--accent-base) 25%, white);
@@ -17,10 +21,97 @@
   --accent-700: color-mix(in oklch, var(--accent-base) 70%, black);
   --accent-800: color-mix(in oklch, var(--accent-base) 55%, black);
   --accent-900: color-mix(in oklch, var(--accent-base) 40%, black);
+
+  /* ── Secondary accent (brand violet) — social actions: share, RSVP, save ── */
+  --secondary-50:  #F6F6FF;
+  --secondary-100: #EAEAFF;
+  --secondary-200: #D4D1FF;
+  --secondary-300: #B4ADFE;
+  --secondary-400: #8F7DF8;
+  --secondary-500: #6B34EE;
+  --secondary-600: #5528C0;
+  --secondary-700: #3F1C93;
+  --secondary-800: #2B1169;
+  --secondary-900: #190742;
+
+  /* ── Semantic theme tokens (light values). Flip under .dark below. ──
+     Components use the utilities mapped from these in @theme inline,
+     so dark mode is centralized here. */
+  --t-page:      #F9FAFB;
+  --t-surface:   #FFFFFF;
+  --t-subtle:    #F9FAFB;
+  --t-fill:      #F3F4F6;
+  --t-fill2:     #E5E7EB;
+  --t-hairline:        #E5E7EB;
+  --t-hairline-soft:   #F3F4F6;
+  --t-border-strong:   #D1D5DC;
+  --t-heading:   #101828;
+  --t-body:      #364153;
+  --t-secondary: #4A5565;
+  --t-muted:     #6A7282;
+  --t-faint:     #99A1AF;
+  --t-faint2:    #D1D5DC;
+  /* social (violet) foreground follows the step rule: 600 on light */
+  --t-social-fg: var(--secondary-600);
+  /* accent foreground follows the step rule: 600 on light */
+  --t-accent-fg: var(--accent-600);
+  /* success text + win states */
+  --t-success-fg:  #0F753A;
+  --t-success-ring: #3ADB65;
+  /* overlap grid surfaces */
+  --t-grid-empty:  #F3F4F6;
+  --t-grid-others: #E5E7EB;
+  --t-grid-mine:   #D1D5DB;
+  --t-grid-full:   #EAF8EC;
+  --t-best-ring:   var(--accent-500);
+  /* toast */
+  --t-toast-bg:   #101828;
+  /* heat (overlap fill) base — alpha applied per-cell */
+  --t-heat-rgb:   3, 210, 163;
+  --t-heat-floor: 0.14;
+  /* scrim */
+  --t-scrim: rgba(0,0,0,0.45);
+
+  /* ── Brand gradient (cool sweep: emerald → blue → violet) ── */
+  --brand-gradient:       linear-gradient(135deg, #03D2A3 0%, #0373F6 52%, #6B34EE 100%);
+  --brand-gradient-hover: linear-gradient(135deg, #02A983 0%, #025CC7 52%, #5528C0 100%);
+  --brand-gradient-ui:    linear-gradient(135deg, #0373F6 0%, #6B34EE 100%);
+  --brand-wash:           linear-gradient(135deg, #F6FDFA 0%, #F3F8FF 50%, #F6F6FF 100%);
+}
+
+.dark {
+  --t-page:      #0F151B;
+  --t-surface:   #171D26;
+  --t-subtle:    #1A212B;
+  --t-fill:      #1E2630;
+  --t-fill2:     #2E3742;
+  --t-hairline:        #252C36;
+  --t-hairline-soft:   #1E2630;
+  --t-border-strong:   #313A45;
+  --t-heading:   #F3F4F6;
+  --t-body:      #E5E7EB;
+  --t-secondary: #99A1AF;
+  --t-muted:     #99A1AF;
+  --t-faint:     #6A7282;
+  --t-faint2:    #4A5565;
+  --t-social-fg: var(--secondary-400);
+  --t-accent-fg: var(--accent-400);
+  --t-success-fg:  #7AD392;
+  --t-success-ring: #3ADB65;
+  --t-grid-empty:  #252C36;
+  --t-grid-others: #2E3742;
+  --t-grid-mine:   #39424E;
+  --t-grid-full:   #123428;
+  --t-best-ring:   var(--accent-400);
+  --t-toast-bg:   #232B36;
+  --t-heat-floor: 0.18;
+  --t-scrim: rgba(0,0,0,0.6);
+  --brand-wash: linear-gradient(135deg, #131A22 0%, #141A28 50%, #16121F 100%);
 }
 
 @theme inline {
   --font-sans: var(--font-poppins);
+  /* Accent (brand blue) drives every teal-* class */
   --color-teal-50:  var(--accent-50);
   --color-teal-100: var(--accent-100);
   --color-teal-200: var(--accent-200);
@@ -31,7 +122,47 @@
   --color-teal-700: var(--accent-700);
   --color-teal-800: var(--accent-800);
   --color-teal-900: var(--accent-900);
+
+  /* Brand violet, available as violet-* AND social-* */
+  --color-social-50:  var(--secondary-50);
+  --color-social-100: var(--secondary-100);
+  --color-social-200: var(--secondary-200);
+  --color-social-300: var(--secondary-300);
+  --color-social-400: var(--secondary-400);
+  --color-social-500: var(--secondary-500);
+  --color-social-600: var(--secondary-600);
+  --color-social-700: var(--secondary-700);
+  --color-social-800: var(--secondary-800);
+  --color-social-900: var(--secondary-900);
+
+  /* Semantic theme tokens → utilities (auto-flip with .dark) */
+  --color-page:          var(--t-page);
+  --color-surface:       var(--t-surface);
+  --color-subtle:        var(--t-subtle);
+  --color-fill:          var(--t-fill);
+  --color-fill2:         var(--t-fill2);
+  --color-hairline:      var(--t-hairline);
+  --color-hairline-soft: var(--t-hairline-soft);
+  --color-strong:        var(--t-border-strong);
+  --color-heading:       var(--t-heading);
+  --color-body:          var(--t-body);
+  --color-secondary:     var(--t-secondary);
+  --color-muted:         var(--t-muted);
+  --color-faint:         var(--t-faint);
+  --color-faint2:        var(--t-faint2);
+  --color-social-fg:     var(--t-social-fg);
+  --color-accent-fg:     var(--t-accent-fg);
+  --color-success-fg:    var(--t-success-fg);
 }
+
+/* Base canvas flips with the theme */
+html { background: var(--t-page); }
+body { color: var(--t-body); }
+
+/* Brand gradient helpers */
+.bg-brand-gradient { background: var(--brand-gradient); }
+.bg-brand-gradient-ui { background: var(--brand-gradient-ui); }
+.bg-brand-wash { background: var(--brand-wash); }
 
 .time-grid {
   -webkit-user-select: none;
@@ -157,6 +288,10 @@
   background-size: 200% 100%;
   animation: shimmer 1.5s ease-in-out infinite;
 }
+.dark .skeleton-shimmer {
+  background: linear-gradient(90deg, #1e2630 25%, #2e3742 50%, #1e2630 75%);
+  background-size: 200% 100%;
+}
 
 /* Checkmark animation for copy success */
 .checkmark-draw {
@@ -165,12 +300,15 @@
   animation: checkmark-draw 0.3s ease-out both;
 }
 
-/* Slot cell hover (desktop only): darker gray bg + border, no shadow */
+/* Slot cell hover (desktop only): darker bg + border, no shadow */
 @media (hover: hover) {
   .slot-cell:hover {
     background-color: #d1d5db !important; /* gray-300 */
-    ring-color: #9ca3af; /* gray-400 */
     box-shadow: inset 0 0 0 2px #9ca3af; /* gray-400 border */
+  }
+  .dark .slot-cell:hover {
+    background-color: #2e3742 !important;
+    box-shadow: inset 0 0 0 2px #4a5565;
   }
   /* Don't override selected/match states on hover */
   .slot-cell.slot-selected:hover,
@@ -252,7 +390,8 @@
 .prose-editor li { margin: 0.1rem 0; }
 .prose-editor strong { font-weight: 600; }
 .prose-editor em { font-style: italic; }
-.prose-editor a { color: #7c3aed; text-decoration: underline; }
+.prose-editor a { color: #025CC7; text-decoration: underline; }
+.dark .prose-editor a { color: #62A1FD; }
 .prose-editor p.is-editor-empty:first-child::before {
   content: attr(data-placeholder);
   color: #9ca3af;
@@ -268,5 +407,7 @@
 .rich-text-display li  { margin: 0.1rem 0; }
 .rich-text-display strong { font-weight: 600; }
 .rich-text-display em  { font-style: italic; }
-.rich-text-display a   { color: #7c3aed; text-decoration: underline; }
-.rich-text-display a:hover { color: #6d28d9; }
+.rich-text-display a   { color: #025CC7; text-decoration: underline; }
+.rich-text-display a:hover { color: #014598; }
+.dark .rich-text-display a { color: #62A1FD; }
+.dark .rich-text-display a:hover { color: #9BC3FF; }

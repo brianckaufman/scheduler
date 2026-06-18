@@ -53,21 +53,21 @@ const FrownFace = () => (
 const RSVP_CONFIG = {
   yes: {
     icon: <SmileFace />,
-    activeClass: 'bg-green-500 text-white border-green-500 shadow-md shadow-green-200',
-    hoverClass: 'hover:border-green-400 hover:bg-green-50 hover:text-green-700',
+    activeClass: 'bg-green-500 text-white border-green-500 dark:border-[#123428] shadow-md shadow-green-200',
+    hoverClass: 'hover:border-green-400 hover:bg-green-50 dark:hover:bg-[#112D25] hover:text-success-fg',
     dotClass: 'bg-green-400',
   },
   maybe: {
     icon: <MaybeFace />,
-    activeClass: 'bg-amber-400 text-white border-amber-400 shadow-md shadow-amber-200',
-    hoverClass: 'hover:border-amber-300 hover:bg-amber-50 hover:text-amber-700',
+    activeClass: 'bg-amber-400 text-white border-amber-400 dark:border-[#3a2f17] shadow-md shadow-amber-200',
+    hoverClass: 'hover:border-amber-300 dark:hover:border-[#3a2f17] hover:bg-amber-50 dark:hover:bg-[#302817] hover:text-amber-700 dark:hover:text-amber-400',
     dotClass: 'bg-amber-400',
   },
   no: {
     icon: <FrownFace />,
-    activeClass: 'bg-gray-400 text-white border-gray-400 shadow-md shadow-gray-200',
-    hoverClass: 'hover:border-gray-300 hover:bg-gray-50 hover:text-gray-600',
-    dotClass: 'bg-gray-400',
+    activeClass: 'bg-strong text-white border-strong shadow-md shadow-fill2',
+    hoverClass: 'hover:border-strong hover:bg-subtle hover:text-secondary',
+    dotClass: 'bg-strong',
   },
 } as const;
 
@@ -99,20 +99,20 @@ function AccordionSection({
 }) {
   const isEmpty = count === 0;
   return (
-    <div className="border-b border-gray-100 last:border-b-0">
+    <div className="border-b border-hairline-soft last:border-b-0">
       <button
         type="button"
         onClick={onToggle}
         className={`w-full flex items-center justify-between py-2.5 text-left transition-colors cursor-pointer rounded-lg ${
-          isEmpty && dimWhenEmpty ? 'opacity-40' : 'hover:bg-gray-50'
+          isEmpty && dimWhenEmpty ? 'opacity-40' : 'hover:bg-subtle'
         }`}
       >
         <div className="flex items-center gap-2">
-          <span className={`w-2 h-2 rounded-full shrink-0 ${!isEmpty && dotClass ? dotClass : 'bg-gray-200'}`} />
-          <span className={`text-sm font-medium ${isEmpty && dimWhenEmpty ? 'text-gray-400' : 'text-gray-700'}`}>{label}</span>
-          <span className={`text-xs font-semibold tabular-nums ${isEmpty && dimWhenEmpty ? 'text-gray-300' : 'text-gray-400'}`}>{count}</span>
+          <span className={`w-2 h-2 rounded-full shrink-0 ${!isEmpty && dotClass ? dotClass : 'bg-fill2'}`} />
+          <span className={`text-sm font-medium ${isEmpty && dimWhenEmpty ? 'text-faint' : 'text-body'}`}>{label}</span>
+          <span className={`text-xs font-semibold tabular-nums ${isEmpty && dimWhenEmpty ? 'text-faint2' : 'text-faint'}`}>{count}</span>
         </div>
-        <svg className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+        <svg className={`w-4 h-4 text-faint transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
           fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
         </svg>
@@ -190,18 +190,18 @@ function RsvpModal({
 
       {/* Mobile: bottom sheet. Desktop: centered dialog */}
       <div className="fixed inset-0 z-50 flex items-end justify-center md:items-center animate-slide-up">
-        <div className="relative w-full max-w-md bg-white shadow-2xl pb-safe md:pb-0 rounded-t-3xl md:rounded-3xl md:max-h-[90vh] md:overflow-y-auto">
+        <div className="relative w-full max-w-md bg-surface shadow-2xl pb-safe md:pb-0 rounded-t-3xl md:rounded-3xl md:max-h-[90vh] md:overflow-y-auto">
 
           {/* Drag handle — mobile only */}
           <div className="flex justify-center pt-3 pb-1 md:hidden">
-            <div className="w-10 h-1 rounded-full bg-gray-200" />
+            <div className="w-10 h-1 rounded-full bg-fill2" />
           </div>
 
           {/* Close button */}
           <button
             type="button"
             onClick={onClose}
-            className="absolute top-3 right-3 md:top-4 md:right-4 w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 text-gray-400 hover:bg-gray-200 hover:text-gray-600 transition-colors cursor-pointer z-10"
+            className="absolute top-3 right-3 md:top-4 md:right-4 w-8 h-8 flex items-center justify-center rounded-full bg-fill text-faint hover:bg-fill2 hover:text-secondary transition-colors cursor-pointer z-10"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -212,8 +212,8 @@ function RsvpModal({
 
             {/* Confirmation message */}
             <div className="text-center py-2">
-              <h2 className="text-xl font-bold text-gray-900">{content.headline}</h2>
-              <p className="text-sm text-gray-500 mt-1.5 leading-relaxed max-w-xs mx-auto">{content.subtext}</p>
+              <h2 className="text-xl font-bold text-heading">{content.headline}</h2>
+              <p className="text-sm text-muted mt-1.5 leading-relaxed max-w-xs mx-auto">{content.subtext}</p>
             </div>
 
             {/* Action buttons */}
@@ -223,7 +223,7 @@ function RsvpModal({
                   <button
                     type="button"
                     onClick={() => { onDownloadICS(); onClose(); }}
-                    className="w-full py-3 px-4 bg-violet-600 text-white text-sm font-semibold rounded-xl hover:bg-violet-700 transition-all duration-200 active:scale-[0.97] cursor-pointer flex items-center justify-center gap-2"
+                    className="w-full py-3 px-4 bg-social-500 text-white text-sm font-semibold rounded-xl hover:bg-social-600 transition-all duration-200 active:scale-[0.97] cursor-pointer flex items-center justify-center gap-2"
                   >
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
@@ -233,9 +233,9 @@ function RsvpModal({
                   <button
                     type="button"
                     onClick={() => { onCopyDetails(); onClose(); }}
-                    className="w-full py-2.5 px-4 border border-gray-200 text-sm font-medium rounded-xl text-gray-600 hover:bg-gray-50 transition-all duration-200 active:scale-[0.97] cursor-pointer flex items-center justify-center gap-2"
+                    className="w-full py-2.5 px-4 border border-hairline text-sm font-medium rounded-xl text-secondary hover:bg-subtle transition-all duration-200 active:scale-[0.97] cursor-pointer flex items-center justify-center gap-2"
                   >
-                    <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <svg className="w-4 h-4 text-faint" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M15.666 3.888A2.25 2.25 0 0013.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 01-.75.75H9.75a.75.75 0 01-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 01-2.25 2.25H6.75A2.25 2.25 0 014.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 011.927-.184" />
                     </svg>
                     Copy event details
@@ -246,18 +246,18 @@ function RsvpModal({
               <button
                 type="button"
                 onClick={handleShare}
-                className="w-full py-2.5 px-4 border border-gray-200 text-sm font-medium rounded-xl text-gray-600 hover:bg-gray-50 transition-all duration-200 active:scale-[0.97] cursor-pointer flex items-center justify-center gap-2"
+                className="w-full py-2.5 px-4 border border-hairline text-sm font-medium rounded-xl text-secondary hover:bg-subtle transition-all duration-200 active:scale-[0.97] cursor-pointer flex items-center justify-center gap-2"
               >
                 {shareCopied ? (
                   <>
-                    <svg className="w-4 h-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <svg className="w-4 h-4 text-green-500 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                     </svg>
-                    <span className="text-green-600">Invite copied!</span>
+                    <span className="text-success-fg">Invite copied!</span>
                   </>
                 ) : (
                   <>
-                    <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <svg className="w-4 h-4 text-faint" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
                     </svg>
                     Share this event
@@ -267,14 +267,14 @@ function RsvpModal({
             </div>
 
             {/* Divider */}
-            <div className="border-t border-gray-100" />
+            <div className="border-t border-hairline-soft" />
 
             {/* App promotion */}
             <div className="space-y-2.5">
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Planning something?</p>
+              <p className="text-xs font-semibold text-faint uppercase tracking-wider">Planning something?</p>
               <a
                 href="/"
-                className="w-full py-2.5 px-4 bg-gray-900 text-white text-sm font-semibold rounded-xl hover:bg-gray-800 transition-all duration-200 active:scale-[0.97] cursor-pointer flex items-center justify-center gap-2"
+                className="w-full py-2.5 px-4 bg-[#101828] dark:bg-[#232B36] text-white text-sm font-semibold rounded-xl hover:bg-[#101828] dark:hover:bg-[#232B36] transition-all duration-200 active:scale-[0.97] cursor-pointer flex items-center justify-center gap-2"
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
@@ -287,7 +287,7 @@ function RsvpModal({
                   href={monetization.buymeacoffee_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-full py-2.5 px-4 border border-amber-200 bg-amber-50 text-amber-700 text-sm font-medium rounded-xl hover:bg-amber-100 transition-all duration-200 active:scale-[0.97] cursor-pointer flex items-center justify-center gap-2"
+                  className="w-full py-2.5 px-4 border border-amber-200 dark:border-[#3a2f17] bg-amber-50 dark:bg-[#302817] text-amber-700 dark:text-amber-400 text-sm font-medium rounded-xl hover:bg-amber-100 dark:hover:bg-[#302817] transition-all duration-200 active:scale-[0.97] cursor-pointer flex items-center justify-center gap-2"
                 >
                   ☕ {monetization.donation_cta}
                 </a>
@@ -414,15 +414,15 @@ export default function RSVPView({ event, participantId, isOrganizer, organizerT
     <ul className="space-y-1 mt-0.5">
       {list.map((p) => (
         <li key={p.id} className="flex items-center justify-between group">
-          <span className={`text-sm ${p.id === participantId ? 'font-semibold text-gray-800' : 'text-gray-600'}`}>
+          <span className={`text-sm ${p.id === participantId ? 'font-semibold text-heading' : 'text-secondary'}`}>
             {formatDisplayName(p.name)}
-            {p.id === participantId && <span className="ml-1 text-xs text-gray-400 font-normal">you</span>}
+            {p.id === participantId && <span className="ml-1 text-xs text-faint font-normal">you</span>}
           </span>
           {isOrganizer && p.id !== participantId && (
             <button
               type="button"
               onClick={() => handleDeleteParticipant(p.id)}
-              className="text-xs text-gray-300 hover:text-red-400 transition-colors cursor-pointer opacity-0 group-hover:opacity-100 focus:opacity-100 ml-2 shrink-0"
+              className="text-xs text-faint2 hover:text-red-400 transition-colors cursor-pointer opacity-0 group-hover:opacity-100 focus:opacity-100 ml-2 shrink-0"
               title="Remove"
             >
               Remove
@@ -441,7 +441,7 @@ export default function RSVPView({ event, participantId, isOrganizer, organizerT
       <div className="space-y-5">
         {/* RSVP buttons */}
         <div>
-          <p className="text-sm font-semibold text-gray-700 mb-3">
+          <p className="text-sm font-semibold text-body mb-3">
             {myRsvp ? (rsvpCopy?.change ?? 'Change response') : (rsvpCopy?.heading ?? 'Can you make it?')}
           </p>
           <div className="grid grid-cols-3 gap-2">
@@ -457,7 +457,7 @@ export default function RSVPView({ event, participantId, isOrganizer, organizerT
                   className={`
                     flex flex-col items-center gap-1.5 py-3.5 px-2 rounded-2xl border-2 text-sm font-semibold
                     transition-all duration-200 active:scale-95 cursor-pointer
-                    ${isActive ? cfg.activeClass : `bg-white border-gray-200 text-gray-500 ${cfg.hoverClass}`}
+                    ${isActive ? cfg.activeClass : `bg-surface border-hairline text-muted ${cfg.hoverClass}`}
                     ${saving ? 'opacity-60 cursor-not-allowed' : ''}
                   `}
                 >
@@ -473,7 +473,7 @@ export default function RSVPView({ event, participantId, isOrganizer, organizerT
         {myRsvp === 'yes' && event.finalized_time && (
           <div className="space-y-2 animate-fade-in">
             <button type="button" onClick={handleDownloadICS}
-              className="w-full py-2.5 px-4 bg-violet-600 text-white text-sm font-semibold rounded-xl hover:bg-violet-700 shadow-sm transition-all duration-200 active:scale-[0.97] cursor-pointer flex items-center justify-center gap-2">
+              className="w-full py-2.5 px-4 bg-social-500 text-white text-sm font-semibold rounded-xl hover:bg-social-600 shadow-sm transition-all duration-200 active:scale-[0.97] cursor-pointer flex items-center justify-center gap-2">
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
               </svg>
@@ -481,7 +481,7 @@ export default function RSVPView({ event, participantId, isOrganizer, organizerT
             </button>
             <button type="button" onClick={handleCopyDetails}
               className={`w-full py-2 px-4 border text-sm font-medium rounded-xl transition-all duration-200 active:scale-[0.97] cursor-pointer flex items-center justify-center gap-2 ${
-                copied ? 'bg-violet-600 border-violet-600 text-white' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+                copied ? 'bg-social-500 border-social-500 text-white' : 'bg-surface border-hairline text-secondary hover:bg-subtle'
               }`}>
               {copied ? (
                 <><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>Copied!</>
@@ -494,7 +494,7 @@ export default function RSVPView({ event, participantId, isOrganizer, organizerT
 
         {/* Accordion RSVP list */}
         {participants.length > 0 && (
-          <div className="border-t border-gray-100 pt-1 animate-fade-in">
+          <div className="border-t border-hairline-soft pt-1 animate-fade-in">
             <AccordionSection label={rsvpCopy?.going_label ?? 'Going'} count={going.length}
               isOpen={openSections.has('yes')} onToggle={() => toggleSection('yes')}
               dotClass={RSVP_CONFIG.yes.dotClass} dimWhenEmpty>
@@ -520,7 +520,7 @@ export default function RSVPView({ event, participantId, isOrganizer, organizerT
         )}
 
         {participants.length === 0 && (
-          <p className="text-sm text-gray-400 italic pt-1 border-t border-gray-100">
+          <p className="text-sm text-faint italic pt-1 border-t border-hairline-soft">
             {rsvpCopy?.no_responses ?? 'No responses yet'}
           </p>
         )}

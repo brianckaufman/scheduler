@@ -39,7 +39,7 @@ export default function TimeSavedCelebration({
       : null;
 
   return (
-    <div className="animate-celebrate mt-4 bg-gray-50 border border-gray-100 rounded-2xl p-5 text-center">
+    <div className="animate-celebrate mt-4 bg-subtle border border-hairline-soft rounded-2xl p-5 text-center">
       <div className="flex items-center justify-center gap-2 mb-1.5">
         <svg
           className="w-5 h-5 text-green-500"
@@ -54,18 +54,18 @@ export default function TimeSavedCelebration({
             d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
           />
         </svg>
-        <p className="text-sm font-semibold text-gray-800">
+        <p className="text-sm font-semibold text-heading">
           {copy.event.all_set_title}
         </p>
       </div>
 
-      <p className="text-xs text-gray-500">
+      <p className="text-xs text-muted">
         {copy.event.all_set_desc}
       </p>
 
       {/* Time-saved quip */}
       {quip && (
-        <p className="text-xs text-gray-400 mt-2 italic">
+        <p className="text-xs text-faint mt-2 italic">
           {quip}
         </p>
       )}

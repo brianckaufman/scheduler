@@ -40,7 +40,7 @@ export default function RichTextDisplay({
   return (
     <div className="mt-3">
       <div
-        className={`rich-text-display text-sm text-gray-600 leading-relaxed${
+        className={`rich-text-display text-sm text-secondary leading-relaxed${
           isLong && !expanded ? ' line-clamp-5' : ''
         }`}
         // Content is sanitized via sanitizeHtml() before DB storage
@@ -51,7 +51,7 @@ export default function RichTextDisplay({
         <button
           type="button"
           onClick={() => setExpanded((v) => !v)}
-          className="mt-1.5 text-xs font-medium text-gray-400 hover:text-gray-600 transition-colors cursor-pointer flex items-center gap-1"
+          className="mt-1.5 text-xs font-medium text-faint hover:text-secondary transition-colors cursor-pointer flex items-center gap-1"
         >
           {expanded ? (
             <>

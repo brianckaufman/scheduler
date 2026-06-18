@@ -27,33 +27,33 @@ export default function SlotTooltip({ slotKey, overlapMap, participants, onClose
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center" onClick={onClose}>
       <div className="absolute inset-0 bg-black/20" />
       <div
-        className="relative bg-white rounded-2xl shadow-lg p-4 mx-4 mb-4 sm:mb-0 w-full max-w-sm"
+        className="relative bg-surface rounded-2xl shadow-lg p-4 mx-4 mb-4 sm:mb-0 w-full max-w-sm"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-semibold text-gray-900">
+          <h3 className="text-sm font-semibold text-heading">
             {format(time, 'EEE, MMM d')} at {format(time, 'h:mm a')}
           </h3>
-          <button type="button" onClick={onClose} className="text-gray-400 hover:text-gray-600 text-lg leading-none">
+          <button type="button" onClick={onClose} className="text-faint hover:text-secondary text-lg leading-none">
             &times;
           </button>
         </div>
         {availableNames.length > 0 && (
           <div className="mb-2">
-            <p className="text-xs font-medium text-green-600 mb-1">Available ({availableNames.length})</p>
+            <p className="text-xs font-medium text-success-fg mb-1">Available ({availableNames.length})</p>
             <div className="flex flex-wrap gap-1">
               {availableNames.map((name) => (
-                <span key={name} className="text-xs bg-green-50 text-green-700 px-2 py-0.5 rounded-full">{name}</span>
+                <span key={name} className="text-xs bg-green-100 dark:bg-[#112D25] text-success-fg px-2 py-0.5 rounded-full">{name}</span>
               ))}
             </div>
           </div>
         )}
         {unavailableNames.length > 0 && (
           <div>
-            <p className="text-xs font-medium text-gray-400 mb-1">Not available ({unavailableNames.length})</p>
+            <p className="text-xs font-medium text-faint mb-1">Not available ({unavailableNames.length})</p>
             <div className="flex flex-wrap gap-1">
               {unavailableNames.map((name) => (
-                <span key={name} className="text-xs bg-gray-50 text-gray-400 px-2 py-0.5 rounded-full">{name}</span>
+                <span key={name} className="text-xs bg-fill text-secondary px-2 py-0.5 rounded-full">{name}</span>
               ))}
             </div>
           </div>

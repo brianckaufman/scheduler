@@ -17,7 +17,7 @@ const defaults: BrandingValues = {
   logo_height: 40,
   hide_home_title: false,
   hide_home_subtitle: false,
-  accent_color: '#7c3aed',
+  accent_color: '#0373F6',
   footer_text: 'Free forever. No sign-up. No spam.',
   site_name: 'Scheduler',
 };

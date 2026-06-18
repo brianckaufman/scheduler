@@ -119,18 +119,18 @@ export default function FinalizedBanner({ event, isOrganizer, organizerToken, on
   };
 
   return (
-    <div className="animate-fade-in-scale mb-4 bg-green-50 border border-green-200 rounded-2xl p-4">
+    <div className="animate-fade-in-scale mb-4 bg-green-50 dark:bg-[#112D25] border border-green-200 dark:border-[#123428] rounded-2xl p-4">
       <div className="text-center">
-        <p className="text-sm font-semibold text-green-800">
+        <p className="text-sm font-semibold text-success-fg">
           {event.event_type === 'fixed' && participantName
             ? `${firstName(participantName)}, you're invited!`
             : 'Time confirmed!'}
         </p>
-        <p className="text-lg font-bold text-green-900 mt-1">
+        <p className="text-lg font-bold text-success-fg mt-1">
           {format(start, 'EEEE, MMM d')} at {format(start, 'h:mm a')}
         </p>
         {event.location && (
-          <p className="text-sm text-green-700 mt-1">{locationLabel(parseLocation(event.location))}</p>
+          <p className="text-sm text-success-fg mt-1">{locationLabel(parseLocation(event.location))}</p>
         )}
       </div>
 
@@ -145,7 +145,7 @@ export default function FinalizedBanner({ event, isOrganizer, organizerToken, on
         </svg>
         Add to Calendar
       </button>
-      <p className="text-xs text-green-600 text-center mt-1">
+      <p className="text-xs text-success-fg text-center mt-1">
         Works with Apple Calendar, Google Calendar, Outlook, and more
       </p>
 
@@ -156,7 +156,7 @@ export default function FinalizedBanner({ event, isOrganizer, organizerToken, on
         className={`w-full mt-2 py-2 px-4 border text-sm font-medium rounded-xl text-center transition-all duration-200 active:scale-[0.97] cursor-pointer flex items-center justify-center gap-2 ${
           copied
             ? 'bg-green-600 border-green-600 text-white'
-            : 'bg-white border-green-300 text-green-700 hover:bg-green-50 hover:shadow-sm'
+            : 'bg-surface border-green-300 dark:border-[#123428] text-success-fg hover:bg-green-50 dark:hover:bg-[#112D25] hover:shadow-sm'
         }`}
       >
         {copied ? (
@@ -180,7 +180,7 @@ export default function FinalizedBanner({ event, isOrganizer, organizerToken, on
         <button
           type="button"
           onClick={handleUnfinalize}
-          className="w-full mt-2 py-1.5 text-xs text-green-600 hover:text-green-800 transition-colors cursor-pointer"
+          className="w-full mt-2 py-1.5 text-xs text-success-fg hover:opacity-80 transition-colors cursor-pointer"
         >
           Change time
         </button>

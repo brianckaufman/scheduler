@@ -29,14 +29,14 @@ export default function HomeTabs({ children }: HomeTabsProps) {
   return (
     <div className="animate-fade-in">
       {/* Tab bar */}
-      <div className="flex bg-gray-100 rounded-xl p-1 mb-4">
+      <div className="flex bg-fill rounded-xl p-1 mb-4">
         <button
           type="button"
           onClick={() => setActiveTab('new')}
           className={`flex-1 py-2 px-3 text-sm font-medium rounded-lg transition-all duration-200 cursor-pointer ${
             activeTab === 'new'
-              ? 'bg-white text-gray-900 shadow-sm'
-              : 'text-gray-500 hover:text-gray-700'
+              ? 'bg-surface text-heading shadow-sm'
+              : 'text-muted hover:text-body'
           }`}
         >
           <span className="flex items-center justify-center gap-1.5">
@@ -51,8 +51,8 @@ export default function HomeTabs({ children }: HomeTabsProps) {
           onClick={() => setActiveTab('events')}
           className={`flex-1 py-2 px-3 text-sm font-medium rounded-lg transition-all duration-200 cursor-pointer ${
             activeTab === 'events'
-              ? 'bg-white text-gray-900 shadow-sm'
-              : 'text-gray-500 hover:text-gray-700'
+              ? 'bg-surface text-heading shadow-sm'
+              : 'text-muted hover:text-body'
           }`}
         >
           <span className="flex items-center justify-center gap-1.5">
@@ -60,7 +60,7 @@ export default function HomeTabs({ children }: HomeTabsProps) {
               <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
             {greeting}
-            <span className="ml-0.5 px-1.5 py-0.5 bg-gray-200 text-gray-600 text-[10px] font-semibold rounded-full">
+            <span className="ml-0.5 px-1.5 py-0.5 bg-fill2 text-secondary text-[10px] font-semibold rounded-full">
               {events.length}
             </span>
           </span>

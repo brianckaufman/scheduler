@@ -415,8 +415,8 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
     <div className="space-y-6" onMouseUp={handleDragEnd} onMouseLeave={handleDragEnd}>
       {/* Always-visible status notice */}
       {overlapStatus === 'waiting' && !event.finalized_time && (
-        <div className="animate-fade-in bg-gray-50 rounded-xl px-4 py-3 space-y-2">
-        <div className="flex items-center justify-center gap-3 text-sm text-gray-500">
+        <div className="animate-fade-in bg-subtle rounded-xl px-4 py-3 space-y-2">
+        <div className="flex items-center justify-center gap-3 text-sm text-muted">
           <style>{`
             @keyframes person-arrive {
               0%, 15%  { opacity: 0.15; transform: translateY(2px) scale(0.85); }
@@ -443,23 +443,23 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
           {copy.grid.waiting}
         </div>
         {isOrganizer && (
-          <p className="text-center text-xs text-gray-400">
+          <p className="text-center text-xs text-faint">
             Share the link above so everyone can mark their availability.
           </p>
         )}
         </div>
       )}
       {overlapStatus === 'none' && !event.finalized_time && (
-        <div className="animate-fade-in bg-amber-50 rounded-xl p-4 text-center text-sm text-amber-700">
+        <div className="animate-fade-in bg-amber-50 dark:bg-[#302817] rounded-xl p-4 text-center text-sm text-amber-700 dark:text-amber-400">
           {copy.grid.no_overlap}
           {isOrganizer && (
-            <p className="text-xs text-amber-600 mt-1">Consider expanding the date range or time window.</p>
+            <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">Consider expanding the date range or time window.</p>
           )}
         </div>
       )}
       {overlapStatus === 'partial' && !event.finalized_time && (
-        <div className="animate-fade-in-scale bg-teal-50 rounded-xl p-4 text-center">
-          <p className="text-sm text-teal-800 font-medium">
+        <div className="animate-fade-in-scale bg-teal-50 dark:bg-[#0D223A] rounded-xl p-4 text-center">
+          <p className="text-sm text-accent-fg font-medium">
             No single time works for everyone yet — but the best time fits{' '}
             <span className="font-bold">{maxOverlap} of {totalParticipants}</span>.
           </p>
@@ -467,7 +467,7 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
             <button
               type="button"
               onClick={() => setShowTimePicker(true)}
-              className="mt-3 px-8 py-3 bg-blue-600 text-white text-base font-semibold rounded-full hover:bg-blue-700 shadow-md hover:shadow-lg transition-all duration-200 active:scale-95 cursor-pointer min-w-[180px]"
+              className="mt-3 px-8 py-3 bg-teal-500 text-white text-base font-semibold rounded-full hover:bg-teal-600 shadow-md hover:shadow-lg transition-all duration-200 active:scale-95 cursor-pointer min-w-[180px]"
             >
               {copy.grid.pick_time}
             </button>
@@ -479,20 +479,20 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
         </div>
       )}
       {overlapStatus === 'found' && !event.finalized_time && (
-        <div className="animate-fade-in-scale bg-green-50 rounded-xl p-4 text-center">
-          <p className="text-sm text-green-700 font-medium">
+        <div className="animate-fade-in-scale bg-green-50 dark:bg-[#112D25] rounded-xl p-4 text-center">
+          <p className="text-sm text-success-fg font-medium">
             {copy.grid.overlap_found}
           </p>
           {isOrganizer ? (
             <button
               type="button"
               onClick={() => setShowTimePicker(true)}
-              className="mt-3 px-8 py-3 bg-blue-600 text-white text-base font-semibold rounded-full hover:bg-blue-700 shadow-md hover:shadow-lg transition-all duration-200 active:scale-95 cursor-pointer min-w-[180px]"
+              className="mt-3 px-8 py-3 bg-teal-500 text-white text-base font-semibold rounded-full hover:bg-teal-600 shadow-md hover:shadow-lg transition-all duration-200 active:scale-95 cursor-pointer min-w-[180px]"
             >
               {copy.grid.pick_time}
             </button>
           ) : (
-            <p className="text-xs text-green-600 mt-1">
+            <p className="text-xs text-success-fg mt-1">
               {interpolate(copy.grid.waiting_organizer, { name: formatDisplayName(event.organizer_name || 'the organizer') })}
             </p>
           )}
@@ -510,7 +510,7 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
               className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 cursor-pointer ${
                 i === activeDay
                   ? 'bg-teal-500 text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  : 'bg-fill text-secondary hover:bg-fill2'
               }`}
             >
               {format(parseISO(date), 'EEE M/d')}
@@ -521,8 +521,8 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
 
       {/* How-to instruction bar — shown while event is still open */}
       {!event.finalized_time && (
-        <div className="flex items-center justify-center gap-2 rounded-xl bg-blue-50 px-4 py-2.5 text-sm text-blue-700">
-          <svg className="w-4 h-4 shrink-0 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <div className="flex items-center justify-center gap-2 rounded-xl bg-blue-50 dark:bg-[#0D223A] px-4 py-2.5 text-sm text-accent-fg">
+          <svg className="w-4 h-4 shrink-0 text-accent-fg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5" />
           </svg>
           <span>Tap the times you&apos;re free, then tap <strong>Save my availability</strong>.</span>
@@ -530,7 +530,7 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
       )}
 
       {/* Timezone indicator */}
-      <div className="flex items-center justify-center gap-1.5 text-xs font-medium text-gray-500 bg-gray-50 rounded-lg px-3 py-1.5 self-center mx-auto">
+      <div className="flex items-center justify-center gap-1.5 text-xs font-medium text-muted bg-subtle rounded-lg px-3 py-1.5 self-center mx-auto">
         <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
@@ -548,14 +548,14 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
           }}
         >
           {/* Sticky header row */}
-          <div className="sticky top-0 bg-white z-20" />
+          <div className="sticky top-0 bg-surface z-20" />
           {visibleDates.map((date) => {
             const daySlots = timeLabels.map((t) => slotGrid.get(`${date}|${t}`)).filter(Boolean) as string[];
             const allSelected = daySlots.length > 0 && daySlots.every((s) => mySlots.has(s));
             return (
               <div
                 key={date}
-                className="text-center text-xs font-medium text-gray-600 pb-1 sticky top-0 bg-white z-20"
+                className="text-center text-xs font-medium text-secondary pb-1 sticky top-0 bg-surface z-20"
               >
                 <div>{format(parseISO(date), 'EEE')}</div>
                 <div>{format(parseISO(date), 'M/d')}</div>
@@ -591,11 +591,11 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
               <div
                 key={`label-${time}`}
                 style={{ minHeight: `${cellHeight}px` }}
-                className="flex flex-col items-center justify-center sticky left-0 bg-white z-10"
+                className="flex flex-col items-center justify-center sticky left-0 bg-surface z-10"
               >
-                <span className="text-xs font-medium text-gray-600 leading-tight">{startLabel}</span>
+                <span className="text-xs font-medium text-secondary leading-tight">{startLabel}</span>
                 {slotStep > 15 && (
-                  <span className="text-xs text-gray-400 leading-tight">{endLabel}</span>
+                  <span className="text-xs text-faint leading-tight">{endLabel}</span>
                 )}
               </div>,
               ...visibleDates.map((date) => {
@@ -687,7 +687,7 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
               </>
             )}
           </button>
-          <p className="text-center text-xs text-gray-400">
+          <p className="text-center text-xs text-faint">
             {stagedAdds.size > 0 && stagedRemoves.size === 0 &&
               `${stagedAdds.size} time${stagedAdds.size !== 1 ? 's' : ''} selected — not saved yet`}
             {stagedAdds.size === 0 && stagedRemoves.size > 0 &&
@@ -704,13 +704,13 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
           className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 animate-fade-in"
           onClick={(e) => { if (e.target === e.currentTarget) setShowTimePicker(false); }}
         >
-          <div className="bg-white w-full max-w-md rounded-t-2xl sm:rounded-2xl shadow-xl animate-slide-up max-h-[85vh] overflow-y-auto">
-            <div className="sticky top-0 bg-white border-b border-gray-100 px-5 py-4 flex items-center justify-between rounded-t-2xl">
-              <h2 className="text-lg font-bold text-gray-900">{copy.grid.pick_time}</h2>
+          <div className="bg-surface w-full max-w-md rounded-t-2xl sm:rounded-2xl shadow-xl animate-slide-up max-h-[85vh] overflow-y-auto">
+            <div className="sticky top-0 bg-surface border-b border-hairline-soft px-5 py-4 flex items-center justify-between rounded-t-2xl">
+              <h2 className="text-lg font-bold text-heading">{copy.grid.pick_time}</h2>
               <button
                 type="button"
                 onClick={() => setShowTimePicker(false)}
-                className="p-1.5 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-colors cursor-pointer"
+                className="p-1.5 text-faint hover:text-secondary rounded-full hover:bg-fill transition-colors cursor-pointer"
               >
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -718,8 +718,8 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
               </button>
             </div>
             <div className="p-5 space-y-2">
-              <p className="text-sm text-gray-500 mb-4">
-                Choose the best time for <span className="font-medium text-gray-700">{event.name}</span>
+              <p className="text-sm text-muted mb-4">
+                Choose the best time for <span className="font-medium text-body">{event.name}</span>
               </p>
               <BestTimes
                 overlapMap={overlapMap}
@@ -738,9 +738,9 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
       )}
 
       {/* Participants & Legend */}
-      <div className="mt-2 pt-4 border-t border-gray-100 space-y-3">
+      <div className="mt-2 pt-4 border-t border-hairline-soft space-y-3">
         <div className="flex items-center justify-between">
-          <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+          <h3 className="text-xs font-semibold text-muted uppercase tracking-wide">
             {interpolate(copy.grid.participants_label, { count: participants.length })}
           </h3>
           <div className="flex items-center gap-2">
@@ -748,18 +748,18 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
             {overlapStatus === 'partial' ? (
               <div className="flex items-center gap-1">
                 <div className="w-3 h-3 rounded bg-teal-200 ring-2 ring-teal-500" />
-                <span className="text-xs text-gray-400">Best available</span>
+                <span className="text-xs text-faint">Best available</span>
               </div>
             ) : (
               <div className="flex items-center gap-1">
-                <div className="w-3 h-3 rounded bg-green-100 ring-1 ring-green-300" />
-                <span className="text-xs text-gray-400">{copy.grid.legend_all}</span>
+                <div className="w-3 h-3 rounded bg-green-100 dark:bg-[#112D25] ring-1 ring-green-300 dark:ring-[#123428]" />
+                <span className="text-xs text-faint">{copy.grid.legend_all}</span>
               </div>
             )}
             {totalParticipants > 6 && (
               <div className="flex items-center gap-1">
                 <div className="w-3 h-3 rounded" style={{ backgroundColor: 'rgba(20, 184, 166, 0.35)' }} />
-                <span className="text-xs text-gray-400">{copy.grid.legend_heat}</span>
+                <span className="text-xs text-faint">{copy.grid.legend_heat}</span>
               </div>
             )}
             {participants.length > 8 && (
@@ -784,9 +784,9 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
                   className="inline-block w-2.5 h-2.5 rounded-full shrink-0"
                   style={{ backgroundColor: participantColorMap.get(p.id) }}
                 />
-                <span className={`text-sm truncate ${p.id === participantId ? 'font-semibold text-gray-800' : 'text-gray-600'}`}>
+                <span className={`text-sm truncate ${p.id === participantId ? 'font-semibold text-heading' : 'text-secondary'}`}>
                   {formatDisplayName(p.name)}
-                  {p.id === participantId && <span className="ml-1 text-xs text-gray-400 font-normal">{copy.grid.you_suffix?.replace(/[()]/g, '').trim() ?? 'you'}</span>}
+                  {p.id === participantId && <span className="ml-1 text-xs text-faint font-normal">{copy.grid.you_suffix?.replace(/[()]/g, '').trim() ?? 'you'}</span>}
                 </span>
               </div>
               {isOrganizer && p.id !== participantId && (
@@ -797,7 +797,7 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
                       handleDeleteParticipant(p.id);
                     }
                   }}
-                  className="text-xs text-gray-300 hover:text-red-400 transition-colors cursor-pointer opacity-0 group-hover:opacity-100 focus:opacity-100 ml-2 shrink-0"
+                  className="text-xs text-faint2 hover:text-red-400 transition-colors cursor-pointer opacity-0 group-hover:opacity-100 focus:opacity-100 ml-2 shrink-0"
                   title={`Remove ${formatDisplayName(p.name)}`}
                 >
                   Remove
@@ -806,7 +806,7 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
             </li>
           ))}
           {participants.length > 8 && !showAllParticipants && (
-            <li className="text-xs text-gray-400 pl-[18px]">
+            <li className="text-xs text-faint pl-[18px]">
               +{participants.length - 6} more
             </li>
           )}
@@ -836,7 +836,7 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
               <div className="mt-3 space-y-4 animate-fade-in">
                 {breakdownByDate.map(({ date, slots }) => (
                   <div key={date}>
-                    <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+                    <h4 className="text-xs font-semibold text-muted uppercase tracking-wide mb-2">
                       {format(parseISO(date), 'EEEE, MMMM d')}
                     </h4>
                     <div className="space-y-1">
@@ -845,13 +845,13 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
                           key={slotKey}
                           className={`flex items-center gap-2 rounded-lg px-3 py-2 text-xs ${
                             count === totalParticipants
-                              ? 'bg-green-50 border border-green-100'
-                              : 'bg-gray-50'
+                              ? 'bg-green-50 dark:bg-[#112D25] border border-green-100 dark:border-[#123428]'
+                              : 'bg-subtle'
                           }`}
                         >
-                          <span className="shrink-0 font-medium text-gray-700 w-16">{time}</span>
-                          <span className="flex-1 text-gray-500 truncate">{names.join(', ')}</span>
-                          <span className={`shrink-0 font-semibold tabular-nums ${count === totalParticipants ? 'text-green-600' : 'text-gray-400'}`}>
+                          <span className="shrink-0 font-medium text-body w-16">{time}</span>
+                          <span className="flex-1 text-muted truncate">{names.join(', ')}</span>
+                          <span className={`shrink-0 font-semibold tabular-nums ${count === totalParticipants ? 'text-success-fg' : 'text-faint'}`}>
                             {count}/{totalParticipants}
                           </span>
                         </div>
@@ -863,7 +863,7 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
             )}
 
             {showBreakdown && breakdownByDate && breakdownByDate.length === 0 && (
-              <p className="mt-2 text-xs text-gray-400 animate-fade-in">
+              <p className="mt-2 text-xs text-faint animate-fade-in">
                 No availability recorded yet.
               </p>
             )}
@@ -875,7 +875,7 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
           <button
             type="button"
             onClick={handleExportCsv}
-            className="inline-flex items-center gap-1.5 text-xs text-gray-400 hover:text-teal-600 transition-colors cursor-pointer"
+            className="inline-flex items-center gap-1.5 text-xs text-faint hover:text-teal-600 transition-colors cursor-pointer"
           >
             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -888,8 +888,8 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
       {/* "Availability saved" floating toast — shows after each successful save */}
       {showSavedToast && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 pointer-events-none animate-fade-in-scale">
-          <div className="flex items-center gap-2 px-4 py-2.5 bg-gray-900 text-white text-sm font-medium rounded-full shadow-lg whitespace-nowrap">
-            <svg className="w-4 h-4 text-teal-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+          <div className="flex items-center gap-2 px-4 py-2.5 bg-[#101828] dark:bg-[#232B36] text-white text-sm font-medium rounded-full shadow-lg whitespace-nowrap">
+            <svg className="w-4 h-4 text-[#3ADB65] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
             </svg>
             Availability saved

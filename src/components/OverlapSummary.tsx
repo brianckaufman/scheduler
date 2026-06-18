@@ -52,7 +52,7 @@ export default function OverlapSummary({
 
   if (totalParticipants < 2) {
     return (
-      <div className="bg-gray-50 rounded-xl p-4 text-center text-sm text-gray-500">
+      <div className="bg-subtle rounded-xl p-4 text-center text-sm text-muted">
         Waiting for more participants to join...
       </div>
     );
@@ -60,20 +60,20 @@ export default function OverlapSummary({
 
   if (mergedRanges.length === 0) {
     return (
-      <div className="bg-amber-50 rounded-xl p-4 text-center text-sm text-amber-700">
+      <div className="bg-amber-50 dark:bg-[#302817] rounded-xl p-4 text-center text-sm text-amber-700 dark:text-amber-400">
         No times work for everyone yet. Keep adding your availability!
       </div>
     );
   }
 
   return (
-    <div className="bg-green-50 rounded-xl p-4">
-      <h3 className="text-sm font-semibold text-green-800 mb-2">
+    <div className="bg-green-50 dark:bg-[#112D25] rounded-xl p-4">
+      <h3 className="text-sm font-semibold text-success-fg mb-2">
         Everyone can meet:
       </h3>
       <ul className="space-y-1">
         {mergedRanges.map((range) => (
-          <li key={range.start} className="text-sm text-green-700">
+          <li key={range.start} className="text-sm text-success-fg">
             {format(new Date(range.start), 'EEE, MMM d')} &middot;{' '}
             {format(new Date(range.start), 'h:mm a')} &ndash;{' '}
             {format(new Date(range.end), 'h:mm a')}
