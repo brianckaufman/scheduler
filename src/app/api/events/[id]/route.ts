@@ -146,23 +146,28 @@ export async function PATCH(
       + ' at ' + finalDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
     const organizerName = data.organizer_name || 'The organizer';
 
-    // Web push (opted-in browsers)
-    sendPushNotifications(supabase, id, {
-      title: `${data.name}: Time Picked!`,
-      body: `${organizerName} picked ${timeStr}`,
-      url: `/e/${data.slug}`,
-    }).catch((err) => console.error('Push notification error:', err));
-
-    // Email (participants who provided an address)
     const origin = request.headers.get('origin')
       || process.env.NEXT_PUBLIC_SITE_URL
       || `https://${request.headers.get('host') || ''}`;
-    sendFinalizeEmails(supabase, id, {
-      eventName: data.name,
-      organizerName,
-      timeStr,
-      url: `${origin}/e/${data.slug}`,
-    }).catch((err) => console.error('Finalize email error:', err));
+
+    // Await both so the serverless function stays alive until the sends complete.
+    // (Fire-and-forget here gets dropped when the response returns on Vercel.)
+    // allSettled = one channel failing never blocks the other or the response.
+    await Promise.allSettled([
+      // Web push (opted-in browsers)
+      sendPushNotifications(supabase, id, {
+        title: `${data.name}: Time Picked!`,
+        body: `${organizerName} picked ${timeStr}`,
+        url: `/e/${data.slug}`,
+      }),
+      // Email (participants who provided an address)
+      sendFinalizeEmails(supabase, id, {
+        eventName: data.name,
+        organizerName,
+        timeStr,
+        url: `${origin}/e/${data.slug}`,
+      }),
+    ]);
   }
 
   return NextResponse.json(data);
