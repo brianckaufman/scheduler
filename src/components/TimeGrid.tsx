@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/client';
 import { useCopy, interpolate } from '@/contexts/CopyContext';
 import { formatDisplayName } from '@/lib/names';
 import { generateSlots, getSlotStep } from '@/lib/slots';
-import { computeOverlap, getFullOverlapSlots } from '@/lib/overlap';
+import { computeOverlap } from '@/lib/overlap';
 import { useRealtimeSlots } from '@/hooks/useRealtimeSlots';
 import { useRealtimeParticipants } from '@/hooks/useRealtimeParticipants';
 import TimeGridSlot, { PARTICIPANT_COLORS } from './TimeGridSlot';
@@ -269,12 +269,35 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
     if (tooltipTimeout.current) clearTimeout(tooltipTimeout.current);
   }, []);
 
-  // Overlap status
+  // Best available overlap: the highest number of people free at any one slot,
+  // and which slots hit that maximum. This drives both the status messaging and
+  // the "best available" highlight, so a near-miss (e.g. 10 of 12) still reads
+  // as strong overlap instead of "no overlap".
+  const { maxOverlap, bestSlotKeys } = useMemo(() => {
+    let max = 0;
+    for (const pSet of overlapMap.values()) {
+      if (pSet.size > max) max = pSet.size;
+    }
+    const best = new Set<string>();
+    if (max >= 2) {
+      for (const [key, pSet] of overlapMap.entries()) {
+        if (pSet.size === max) best.add(key);
+      }
+    }
+    return { maxOverlap: max, bestSlotKeys: best };
+  }, [overlapMap]);
+
+  // Overlap status:
+  //  - waiting: not enough people yet
+  //  - found:   at least one time works for everyone
+  //  - partial: best time works for some (≥2) but not all — still useful overlap
+  //  - none:    no two people share any time
   const overlapStatus = useMemo(() => {
     if (totalParticipants < 2) return 'waiting' as const;
-    const full = getFullOverlapSlots(overlapMap, totalParticipants);
-    return full.length > 0 ? 'found' as const : 'none' as const;
-  }, [overlapMap, totalParticipants]);
+    if (maxOverlap >= totalParticipants) return 'found' as const;
+    if (maxOverlap >= 2) return 'partial' as const;
+    return 'none' as const;
+  }, [totalParticipants, maxOverlap]);
 
   // Delete participant handler (organizer only)
   const handleDeleteParticipant = useCallback(async (pid: string) => {
@@ -434,6 +457,27 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
           )}
         </div>
       )}
+      {overlapStatus === 'partial' && !event.finalized_time && (
+        <div className="animate-fade-in-scale bg-teal-50 rounded-xl p-4 text-center">
+          <p className="text-sm text-teal-800 font-medium">
+            No single time works for everyone yet — but the best time fits{' '}
+            <span className="font-bold">{maxOverlap} of {totalParticipants}</span>.
+          </p>
+          {isOrganizer ? (
+            <button
+              type="button"
+              onClick={() => setShowTimePicker(true)}
+              className="mt-3 px-8 py-3 bg-blue-600 text-white text-base font-semibold rounded-full hover:bg-blue-700 shadow-md hover:shadow-lg transition-all duration-200 active:scale-95 cursor-pointer min-w-[180px]"
+            >
+              {copy.grid.pick_time}
+            </button>
+          ) : (
+            <p className="text-xs text-teal-600 mt-1">
+              The darkest times below have the most people free.
+            </p>
+          )}
+        </div>
+      )}
       {overlapStatus === 'found' && !event.finalized_time && (
         <div className="animate-fade-in-scale bg-green-50 rounded-xl p-4 text-center">
           <p className="text-sm text-green-700 font-medium">
@@ -567,6 +611,9 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
                   othersCount -= 1;
                 }
                 const isAllMatch = totalParticipants > 1 && othersCount === totalParticipants;
+                // In partial mode, flag the slots with the most people free so the
+                // best available option stands out even when it isn't everyone.
+                const isBest = overlapStatus === 'partial' && !isAllMatch && bestSlotKeys.has(slotKey);
 
                 // Build color dots for this slot
                 const slotParticipantColors: string[] = [];
@@ -589,6 +636,7 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
                     othersCount={othersCount}
                     totalParticipants={totalParticipants}
                     isAllMatch={isAllMatch}
+                    isBest={isBest}
                     participantColors={slotParticipantColors}
                     onToggle={handleToggle}
                     onDragStart={handleDragStart}
@@ -696,11 +744,18 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
             {interpolate(copy.grid.participants_label, { count: participants.length })}
           </h3>
           <div className="flex items-center gap-2">
-            {/* Legend inline */}
-            <div className="flex items-center gap-1">
-              <div className="w-3 h-3 rounded bg-green-100 ring-1 ring-green-300" />
-              <span className="text-xs text-gray-400">{copy.grid.legend_all}</span>
-            </div>
+            {/* Legend inline — adapts to whether a full-overlap time exists */}
+            {overlapStatus === 'partial' ? (
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-3 rounded bg-teal-200 ring-2 ring-teal-500" />
+                <span className="text-xs text-gray-400">Best available</span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-3 rounded bg-green-100 ring-1 ring-green-300" />
+                <span className="text-xs text-gray-400">{copy.grid.legend_all}</span>
+              </div>
+            )}
             {totalParticipants > 6 && (
               <div className="flex items-center gap-1">
                 <div className="w-3 h-3 rounded" style={{ backgroundColor: 'rgba(20, 184, 166, 0.35)' }} />

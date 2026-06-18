@@ -104,7 +104,7 @@ export default function BestTimes({
                 {format(start, 'EEE, MMM d')} &middot; {format(start, 'h:mm a')}
               </p>
               <p className="text-xs text-gray-500 truncate">
-                {block.count}/{totalParticipants} responded &middot; {names.join(', ')}
+                {block.count} of {totalParticipants} free &middot; {names.join(', ')}
               </p>
             </div>
 

@@ -60,6 +60,7 @@ interface TimeGridSlotProps {
   othersCount: number;
   totalParticipants: number;
   isAllMatch: boolean;
+  isBest?: boolean;
   participantColors: string[];
   onToggle: (slotKey: string) => void;
   onDragStart: (slotKey: string) => void;
@@ -74,6 +75,7 @@ function TimeGridSlotInner({
   othersCount,
   totalParticipants,
   isAllMatch,
+  isBest,
   participantColors,
   onToggle,
   onDragStart,
@@ -112,6 +114,12 @@ function TimeGridSlotInner({
     heatStyle = { backgroundColor: '#d1d5db' }; // gray-300
   } else if (othersCount > 0) {
     bgClass = 'bg-gray-200';
+  }
+
+  // Best-available slot (most people free, but not everyone): make it pop with a
+  // teal ring so the strongest option is obvious even without a full overlap.
+  if (isBest && !isAllMatch) {
+    extra = 'ring-2 ring-teal-500';
   }
 
   // Desktop drag
