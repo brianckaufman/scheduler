@@ -138,7 +138,9 @@ export async function POST(request: NextRequest) {
   let safeMinResponses: number | null = null;
   if (minResponses !== undefined && minResponses !== null && minResponses !== '') {
     const num = Number(minResponses);
-    if (Number.isInteger(num) && num >= 1 && num <= 1000) {
+    // Floor is 2 — the DB CHECK requires >= 2, and a minimum of 1 is meaningless
+    // (the first response always satisfies it). Anything below 2 = no minimum.
+    if (Number.isInteger(num) && num >= 2 && num <= 1000) {
       safeMinResponses = num;
     }
   }

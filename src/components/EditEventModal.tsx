@@ -244,9 +244,9 @@ export default function EditEventModal({ event, organizerToken, onClose, onSave,
                   className={selectClass}
                 >
                   <option value="">No minimum</option>
-                  {Array.from({ length: 15 }, (_, i) => i + 1).map((n) => (
+                  {Array.from({ length: 14 }, (_, i) => i + 2).map((n) => (
                     <option key={n} value={n}>
-                      {n} {n === 1 ? 'person' : 'people'}
+                      {n} people
                     </option>
                   ))}
                   <option value="custom">Enter a number...</option>
@@ -258,7 +258,7 @@ export default function EditEventModal({ event, organizerToken, onClose, onSave,
                     inputMode="numeric"
                     value={minResponses}
                     onChange={(e) => setMinResponses(e.target.value.replace(/\D/g, '').slice(0, 3))}
-                    placeholder="e.g. 25"
+                    placeholder="e.g. 25 (minimum 2)"
                     className={inputClass}
                     autoFocus
                   />
@@ -271,10 +271,9 @@ export default function EditEventModal({ event, organizerToken, onClose, onSave,
                   </button>
                 </div>
               )}
-              {minResponses && parseInt(minResponses, 10) >= 1 && (
+              {minResponses && parseInt(minResponses, 10) >= 2 && (
                 <p className="text-xs text-faint mt-1">
-                  The Pick a Time panel will wait until {minResponses}{' '}
-                  {parseInt(minResponses, 10) === 1 ? 'person has' : 'people have'} responded, including you.
+                  The Pick a Time panel will wait until {minResponses} people have responded, including you.
                 </p>
               )}
             </div>
