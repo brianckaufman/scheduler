@@ -19,6 +19,7 @@ export default function ParticipantEntry({ event, onJoin }: ParticipantEntryProp
   const branding = useBranding();
   const [step, setStep] = useState<1 | 2>(1);
   const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -47,7 +48,11 @@ export default function ParticipantEntry({ event, onJoin }: ParticipantEntryProp
     const res = await fetch('/api/participants', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ event_id: event.id, name: trimmed }),
+      body: JSON.stringify({
+        event_id: event.id,
+        name: trimmed,
+        ...(email.trim() && { email: email.trim() }),
+      }),
     });
 
     const data = await res.json();
@@ -284,6 +289,27 @@ export default function ParticipantEntry({ event, onJoin }: ParticipantEntryProp
                   </div>
                 ))}
               </div>
+
+              {!isFixed && (
+                <div className="mb-5">
+                  <label className="block text-sm font-medium text-secondary mb-1.5">
+                    Email <span className="font-normal text-faint">— optional</span>
+                  </label>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="you@example.com"
+                    autoComplete="email"
+                    inputMode="email"
+                    maxLength={254}
+                    className={`w-full px-4 py-3.5 rounded-xl border border-hairline focus:outline-none focus:ring-2 ${accentRing} focus:border-transparent text-base text-heading placeholder-faint`}
+                  />
+                  <p className="text-xs text-faint mt-1.5">
+                    We&apos;ll email you once {firstName(event.organizer_name || 'the organizer')} picks the final time. No spam, ever.
+                  </p>
+                </div>
+              )}
 
               {error && <p className="text-red-500 text-sm mb-3">{error}</p>}
 

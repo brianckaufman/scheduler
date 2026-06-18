@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { sendPushNotifications } from '@/lib/push';
+import { sendFinalizeEmails } from '@/lib/email';
 import { sanitizeText, sanitizeName, sanitizeHtml } from '@/lib/sanitize';
 
 function getClientIp(request: NextRequest): string {
@@ -138,17 +139,30 @@ export async function PATCH(
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  // Send push notifications when a time is finalized (not when un-finalizing)
+  // Notify participants when a time is finalized (not when un-finalizing)
   if (updates.finalized_time && data) {
     const finalDate = new Date(updates.finalized_time);
     const timeStr = finalDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
       + ' at ' + finalDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+    const organizerName = data.organizer_name || 'The organizer';
 
+    // Web push (opted-in browsers)
     sendPushNotifications(supabase, id, {
       title: `${data.name}: Time Picked!`,
-      body: `${data.organizer_name || 'The organizer'} picked ${timeStr}`,
+      body: `${organizerName} picked ${timeStr}`,
       url: `/e/${data.slug}`,
     }).catch((err) => console.error('Push notification error:', err));
+
+    // Email (participants who provided an address)
+    const origin = request.headers.get('origin')
+      || process.env.NEXT_PUBLIC_SITE_URL
+      || `https://${request.headers.get('host') || ''}`;
+    sendFinalizeEmails(supabase, id, {
+      eventName: data.name,
+      organizerName,
+      timeStr,
+      url: `${origin}/e/${data.slug}`,
+    }).catch((err) => console.error('Finalize email error:', err));
   }
 
   return NextResponse.json(data);

@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
   }
 
-  const { event_id, name } = body;
+  const { event_id, name, email } = body;
 
   if (!event_id || !isValidUUID(event_id)) {
     return NextResponse.json({ error: 'Invalid event ID' }, { status: 400 });
@@ -39,6 +39,17 @@ export async function POST(request: NextRequest) {
   const safeName = sanitizeName(name);
   if (!safeName) {
     return NextResponse.json({ error: 'Name is required' }, { status: 400 });
+  }
+
+  // Optional email for finalize notifications. Validate loosely; ignore if invalid.
+  let safeEmail: string | null = null;
+  if (typeof email === 'string' && email.trim()) {
+    const e = email.trim().toLowerCase();
+    if (e.length <= 254 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)) {
+      safeEmail = e;
+    } else {
+      return NextResponse.json({ error: 'Please enter a valid email, or leave it blank.' }, { status: 400 });
+    }
   }
 
   const supabase = await createClient();
@@ -102,6 +113,9 @@ export async function POST(request: NextRequest) {
     .insert({
       event_id,
       name: safeName,
+      // email requires supabase-participant-email-migration.sql to be run first.
+      // Conditional spread keeps inserts working until then (only included when provided).
+      ...(safeEmail && { email: safeEmail }),
       // device_type requires supabase-analytics-migration.sql to be run first
       // ...(deviceType && { device_type: deviceType }),
     })

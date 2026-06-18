@@ -27,6 +27,7 @@ export interface Participant {
   name: string;
   created_at: string;
   rsvp: RsvpValue | null;
+  email?: string | null;
 }
 
 export interface AvailabilitySlot {
