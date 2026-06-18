@@ -25,12 +25,12 @@ export default function ParticipantEntry({ event, onJoin }: ParticipantEntryProp
   const isFixed = event.event_type === 'fixed';
   const deadlinePassed = event.response_deadline && isPast(new Date(event.response_deadline));
 
-  // Fixed events use indigo/blue; availability events use the app accent (teal CSS var → violet)
-  const headerGradient = isFixed ? 'from-indigo-500 to-indigo-700' : 'from-violet-500 to-violet-700';
-  const accentRing   = isFixed ? 'focus:ring-indigo-400' : 'focus:ring-social-500';
-  const accentBtn    = isFixed ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-social-500 hover:bg-social-600';
-  const accentNum    = isFixed ? 'bg-indigo-50 text-indigo-600' : 'bg-social-50 dark:bg-[#1C1939] text-social-fg';
-  const accentSubtleText = isFixed ? 'text-indigo-100' : 'text-violet-100';
+  // Fixed events use the brand accent (blue); availability events use brand social (violet)
+  const headerGradient = isFixed ? 'from-teal-500 to-teal-700' : 'from-social-500 to-social-700';
+  const accentRing   = isFixed ? 'focus:ring-teal-500' : 'focus:ring-social-500';
+  const accentBtn    = isFixed ? 'bg-teal-500 hover:bg-teal-600' : 'bg-social-500 hover:bg-social-600';
+  const accentNum    = isFixed ? 'bg-teal-50 dark:bg-[#0D223A] text-accent-fg' : 'bg-social-50 dark:bg-[#1C1939] text-social-fg';
+  const accentSubtleText = isFixed ? 'text-teal-100' : 'text-social-100';
 
   const handleJoin = async () => {
     if (!name.trim()) return;
@@ -139,7 +139,7 @@ export default function ParticipantEntry({ event, onJoin }: ParticipantEntryProp
                   return (
                     <>
                       <div className="flex items-center gap-3">
-                        <svg className="w-5 h-5 text-indigo-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <svg className="w-5 h-5 text-accent-fg shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
                         </svg>
                         <span className="text-base font-semibold text-heading">
@@ -147,7 +147,7 @@ export default function ParticipantEntry({ event, onJoin }: ParticipantEntryProp
                         </span>
                       </div>
                       <div className="flex items-center gap-3">
-                        <svg className="w-5 h-5 text-indigo-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <svg className="w-5 h-5 text-accent-fg shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                         <span className="text-base text-body">
@@ -251,9 +251,9 @@ export default function ParticipantEntry({ event, onJoin }: ParticipantEntryProp
                     />
                   </div>
                 ) : (
-                  <div className={`mx-auto w-14 h-14 rounded-2xl ${isFixed ? 'bg-indigo-50' : 'bg-social-50 dark:bg-[#1C1939]'} flex items-center justify-center mb-3`}>
+                  <div className={`mx-auto w-14 h-14 rounded-2xl ${isFixed ? 'bg-teal-50 dark:bg-[#0D223A]' : 'bg-social-50 dark:bg-[#1C1939]'} flex items-center justify-center mb-3`}>
                     {isFixed ? (
-                      <svg className="w-7 h-7 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <svg className="w-7 h-7 text-accent-fg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                       </svg>
                     ) : (

@@ -15,7 +15,8 @@ interface Particle {
   shape: 'circle' | 'square' | 'strip';
 }
 
-const COLORS = ['#7c3aed', '#8b5cf6', '#a78bfa', '#f59e0b', '#34d399', '#fb7185', '#38bdf8', '#fbbf24'];
+// Brand confetti: blue, violet, emerald, spring green + warm accents
+const COLORS = ['#0373F6', '#6B34EE', '#03D2A3', '#3ADB65', '#62A1FD', '#8F7DF8', '#F59E0B', '#F43F5E'];
 
 function createParticles(count: number): Particle[] {
   return Array.from({ length: count }, (_, i) => ({

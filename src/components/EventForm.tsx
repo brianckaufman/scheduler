@@ -191,7 +191,7 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
                   py-2 rounded-lg text-sm font-medium transition-all duration-150
                   ${!inMonth ? 'invisible' : ''}
                   ${past ? 'text-faint2 cursor-not-allowed' : 'cursor-pointer active:scale-90'}
-                  ${selected ? 'bg-social-500 text-white shadow-sm shadow-violet-200 animate-pop' : ''}
+                  ${selected ? 'bg-social-500 text-white shadow-sm shadow-social-200 animate-pop' : ''}
                   ${!selected && !past && inMonth ? 'text-body hover:bg-fill' : ''}
                   ${isToday(day) && !selected ? 'ring-1 ring-social-500' : ''}
                 `}
@@ -814,8 +814,8 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
             relative w-full py-3.5 px-4 font-semibold rounded-2xl transition-all duration-300
             ${isReady && !loading
               ? eventType === 'fixed'
-                ? 'bg-teal-500 text-white hover:bg-teal-600 shadow-lg shadow-blue-200/50 hover:shadow-xl hover:shadow-blue-200/60 active:scale-[0.97] cursor-pointer'
-                : 'bg-social-500 text-white hover:bg-social-600 shadow-lg shadow-violet-200/50 hover:shadow-xl hover:shadow-violet-200/60 active:scale-[0.97] cursor-pointer'
+                ? 'bg-teal-500 text-white hover:bg-teal-600 shadow-lg shadow-teal-200/50 hover:shadow-xl hover:shadow-teal-200/60 active:scale-[0.97] cursor-pointer'
+                : 'bg-social-500 text-white hover:bg-social-600 shadow-lg shadow-social-200/50 hover:shadow-xl hover:shadow-social-200/60 active:scale-[0.97] cursor-pointer'
               : 'bg-fill text-faint cursor-not-allowed'
             }
           `}

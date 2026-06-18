@@ -646,7 +646,7 @@ export default function AdminDashboard() {
             className={inputClass}
             value={settings.branding.accent_color}
             onChange={(e) => updateSection('branding', 'accent_color', e.target.value)}
-            placeholder="#7c3aed"
+            placeholder="#0373F6"
           />
         </div>
         <p className={helpClass}>Primary accent color used throughout the app</p>

@@ -758,7 +758,7 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
             )}
             {totalParticipants > 6 && (
               <div className="flex items-center gap-1">
-                <div className="w-3 h-3 rounded" style={{ backgroundColor: 'rgba(20, 184, 166, 0.35)' }} />
+                <div className="w-3 h-3 rounded" style={{ backgroundColor: 'rgba(var(--t-heat-rgb), 0.5)' }} />
                 <span className="text-xs text-faint">{copy.grid.legend_heat}</span>
               </div>
             )}

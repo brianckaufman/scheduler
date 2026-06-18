@@ -16,7 +16,7 @@ export default function OGImage() {
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          background: 'linear-gradient(135deg, #faf5ff 0%, #ede9fe 50%, #f5f3ff 100%)',
+          background: 'linear-gradient(135deg, #F6FDFA 0%, #F3F8FF 50%, #F6F6FF 100%)',
           fontFamily: 'system-ui, sans-serif',
         }}
       >
@@ -26,12 +26,12 @@ export default function OGImage() {
             width: 120,
             height: 120,
             borderRadius: 28,
-            background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
+            background: 'linear-gradient(135deg, #0373F6, #6B34EE)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             marginBottom: 32,
-            boxShadow: '0 20px 60px rgba(124,58,237,0.3)',
+            boxShadow: '0 20px 60px rgba(3,115,246,0.3)',
           }}
         >
           <svg width="64" height="64" viewBox="0 0 24 24" fill="none">
@@ -50,7 +50,7 @@ export default function OGImage() {
           style={{
             fontSize: 72,
             fontWeight: 800,
-            color: '#134e4a',
+            color: '#001B45',
             letterSpacing: '-2px',
             marginBottom: 16,
           }}
@@ -62,7 +62,7 @@ export default function OGImage() {
         <div
           style={{
             fontSize: 32,
-            color: '#0f766e',
+            color: '#025CC7',
             fontWeight: 500,
             letterSpacing: '-0.5px',
           }}
@@ -86,7 +86,7 @@ export default function OGImage() {
                 background: 'white',
                 borderRadius: 100,
                 fontSize: 22,
-                color: '#134e4a',
+                color: '#025CC7',
                 fontWeight: 600,
                 boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
               }}
