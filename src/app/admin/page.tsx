@@ -31,7 +31,6 @@ interface UsageData {
     richText: { count: number; pct: number };
     deadline: { count: number; pct: number };
     maxParticipants: { count: number; pct: number };
-    email: { count: number; pct: number };
   };
   deviceBreakdown: {
     mobile: number; desktop: number; unknown: number;
@@ -42,8 +41,8 @@ interface UsageData {
   recentEvents: {
     id: string; name: string; slug: string; event_type: string;
     finalized_time: string | null; created_at: string;
-    organizer_name: string | null; organizer_email: string | null;
-    timezone: string; participant_count: number; device_type: string | null;
+    organizer_name: string | null;
+    timezone: string; participant_count: number;
   }[];
   topTimezones: { tz: string; count: number; pct: number }[];
   generatedAt: string;
@@ -1280,7 +1279,6 @@ export default function AdminDashboard() {
             <AdoptionBar label="Rich text details" pct={featureAdoption.richText.pct} count={featureAdoption.richText.count} />
             <AdoptionBar label="Response deadline" pct={featureAdoption.deadline.pct} count={featureAdoption.deadline.count} />
             <AdoptionBar label="Max participants" pct={featureAdoption.maxParticipants.pct} count={featureAdoption.maxParticipants.count} />
-            <AdoptionBar label="Email captured" pct={featureAdoption.email.pct} count={featureAdoption.email.count} />
           </div>
 
           <div className="space-y-4">
@@ -1444,7 +1442,7 @@ export default function AdminDashboard() {
                         className="font-medium text-heading hover:text-teal-600 transition-colors block truncate max-w-[160px]">
                         {e.name}
                       </a>
-                      {e.organizer_name && <span className="text-xs text-faint block">{e.organizer_name}{e.organizer_email ? ` · ${e.organizer_email}` : ''}</span>}
+                      {e.organizer_name && <span className="text-xs text-faint block">{e.organizer_name}</span>}
                     </td>
                     <td className="px-4 py-3 hidden sm:table-cell">
                       <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${e.event_type === 'fixed' ? 'bg-social-100 dark:bg-[#1C1939] text-social-fg' : 'bg-teal-100 text-teal-700'}`}>

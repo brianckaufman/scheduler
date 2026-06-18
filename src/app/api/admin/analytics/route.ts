@@ -37,10 +37,14 @@ export async function GET() {
       slotsCount,
       recentEventsList,
     ] = await Promise.all([
-      // All events with all needed columns for aggregation
+      // All events with all needed columns for aggregation.
+      // NOTE: do NOT select organizer_email / device_type here — those columns
+      // only exist in supabase-analytics-migration.sql, which has not been run.
+      // Selecting a non-existent column makes PostgREST fail the WHOLE query
+      // (data: null), which would zero out the entire dashboard.
       supabase
         .from('events')
-        .select('id, event_type, finalized_time, created_at, timezone, description, body, location, response_deadline, max_participants, organizer_name, organizer_email, device_type')
+        .select('id, event_type, finalized_time, created_at, timezone, description, body, location, response_deadline, max_participants, organizer_name')
         .order('created_at', { ascending: false }),
 
       supabase
@@ -55,7 +59,7 @@ export async function GET() {
 
       supabase
         .from('participants')
-        .select('id, event_id, rsvp, created_at, device_type')
+        .select('id, event_id, rsvp, created_at')
         .order('created_at', { ascending: false }),
 
       supabase
@@ -64,10 +68,21 @@ export async function GET() {
 
       supabase
         .from('events')
-        .select('id, name, slug, event_type, finalized_time, created_at, organizer_name, organizer_email, timezone, location, device_type')
+        .select('id, name, slug, event_type, finalized_time, created_at, organizer_name, timezone, location')
         .order('created_at', { ascending: false })
         .limit(20),
     ]);
+
+    // Surface query failures instead of silently returning an empty dashboard.
+    // (A single bad/missing column makes PostgREST null the whole result, which
+    // previously zeroed every metric.)
+    for (const [label, res] of [
+      ['events', eventsAll],
+      ['participants', participantsAll],
+      ['recentEvents', recentEventsList],
+    ] as const) {
+      if (res.error) console.error(`[analytics] "${label}" query failed:`, res.error.message);
+    }
 
     const allEvents = eventsAll.data ?? [];
     const allParticipants = participantsAll.data ?? [];
@@ -152,25 +167,19 @@ export async function GET() {
       richText:       feat(e => !!e.body),
       deadline:       feat(e => !!e.response_deadline),
       maxParticipants: feat(e => !!e.max_participants),
-      email:          feat(e => !!e.organizer_email),
     };
 
     // ── Device breakdown ─────────────────────────────────────────────────────
-    // Combine participant device_type (more data points) + event organizer device
-    const allDevices = [
-      ...allParticipants.map(p => p.device_type),
-      ...allEvents.map(e => e.device_type),
-    ].filter(Boolean);
-    const deviceMobile = allDevices.filter(d => d === 'mobile').length;
-    const deviceDesktop = allDevices.filter(d => d === 'desktop').length;
-    const deviceTotal = deviceMobile + deviceDesktop;
+    // device_type lives only in supabase-analytics-migration.sql (not run) and is
+    // not currently written by the app, so there is no device data to report.
+    // Reported as "no data" so the panel renders gracefully instead of breaking.
     const deviceBreakdown = {
-      mobile: deviceMobile,
-      desktop: deviceDesktop,
-      unknown: allDevices.filter(d => d === 'unknown').length,
-      hasData: deviceTotal > 0,
-      mobilePct: deviceTotal > 0 ? Math.round((deviceMobile / deviceTotal) * 100) : 0,
-      desktopPct: deviceTotal > 0 ? Math.round((deviceDesktop / deviceTotal) * 100) : 0,
+      mobile: 0,
+      desktop: 0,
+      unknown: 0,
+      hasData: false,
+      mobilePct: 0,
+      desktopPct: 0,
     };
 
     // ── Repeat organizer rate (approximate via organizer_name) ───────────────
