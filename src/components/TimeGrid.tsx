@@ -37,9 +37,10 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
   const { slots: allSlots, removeByParticipant: removeSlotsForParticipant } = useRealtimeSlots(event.id);
   const { participants, removeParticipant } = useRealtimeParticipants(event.id);
 
-  // Optimistic local toggles
-  const [pendingAdds, setPendingAdds] = useState<Set<string>>(new Set());
-  const [pendingRemoves, setPendingRemoves] = useState<Set<string>>(new Set());
+  // Staged local toggles — not sent to the DB until the user hits Save
+  const [stagedAdds, setStagedAdds] = useState<Set<string>>(new Set());
+  const [stagedRemoves, setStagedRemoves] = useState<Set<string>>(new Set());
+  const [isSaving, setIsSaving] = useState(false);
 
   // Drag state
   const [isDragging, setIsDragging] = useState(false);
@@ -50,13 +51,15 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
   const [activeDay, setActiveDay] = useState<number>(0);
   const [isMobile, setIsMobile] = useState(false);
 
-  // "Availability saved" one-time confirmation
+  // "Availability saved" confirmation toast
   const [showSavedToast, setShowSavedToast] = useState(false);
   const savedToastTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
-  const hasShownSavedToast = useRef(false);
 
   // Time picker modal (organizer only)
   const [showTimePicker, setShowTimePicker] = useState(false);
+
+  // Organizer breakdown: who is free at each slot
+  const [showBreakdown, setShowBreakdown] = useState(false);
 
   // Expandable participant list for large groups
   const [showAllParticipants, setShowAllParticipants] = useState(false);
@@ -84,7 +87,6 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
 
   // Step size and cell height adapt to event duration
   const slotStep = getSlotStep(durationMinutes);
-  // Taller cells for longer slots so the visual weight matches the time commitment
   const cellHeight = slotStep === 15 ? 24 : slotStep === 30 ? 32 : 48;
 
   const { dates, timeLabels, slotGrid } = useMemo(() => {
@@ -120,12 +122,15 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
     return set;
   }, [allSlots, participantId]);
 
+  // Display state: server-confirmed slots + local staged adds - local staged removes
   const mySlots = useMemo(() => {
     const set = new Set(serverMySlots);
-    for (const key of pendingAdds) set.add(key);
-    for (const key of pendingRemoves) set.delete(key);
+    for (const key of stagedAdds) set.add(key);
+    for (const key of stagedRemoves) set.delete(key);
     return set;
-  }, [serverMySlots, pendingAdds, pendingRemoves]);
+  }, [serverMySlots, stagedAdds, stagedRemoves]);
+
+  const hasStagedChanges = stagedAdds.size > 0 || stagedRemoves.size > 0;
 
   // Report slot count changes to parent (for "all set" feedback)
   const mySlotCount = mySlots.size;
@@ -139,24 +144,6 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
     onParticipantCountChange?.(participantCount);
   }, [participantCount, onParticipantCountChange]);
 
-  // Clean up pending state when server catches up
-  useEffect(() => {
-    setPendingAdds((prev) => {
-      const next = new Set(prev);
-      for (const key of prev) {
-        if (serverMySlots.has(key)) next.delete(key);
-      }
-      return next.size === prev.size ? prev : next;
-    });
-    setPendingRemoves((prev) => {
-      const next = new Set(prev);
-      for (const key of prev) {
-        if (!serverMySlots.has(key)) next.delete(key);
-      }
-      return next.size === prev.size ? prev : next;
-    });
-  }, [serverMySlots]);
-
   const totalParticipants = participants.length;
 
   const participantColorMap = useMemo(() => {
@@ -167,45 +154,68 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
     return map;
   }, [participants]);
 
-  const toggleSlot = useCallback(
-    async (slotKey: string, forceMode?: 'add' | 'remove') => {
-      const supabase = createClient();
-      const shouldRemove = forceMode === 'remove' || (!forceMode && mySlots.has(slotKey));
+  // Stage a slot toggle locally — no DB call until Save is tapped
+  const toggleSlot = useCallback((slotKey: string, forceMode?: 'add' | 'remove') => {
+    const isCurrentlySelected = mySlots.has(slotKey);
+    const shouldRemove = forceMode === 'remove' || (!forceMode && isCurrentlySelected);
 
-      if (shouldRemove) {
-        setPendingRemoves((prev) => new Set(prev).add(slotKey));
-        setPendingAdds((prev) => { const n = new Set(prev); n.delete(slotKey); return n; });
+    if (shouldRemove) {
+      setStagedRemoves((prev) => new Set(prev).add(slotKey));
+      setStagedAdds((prev) => { const n = new Set(prev); n.delete(slotKey); return n; });
+    } else {
+      setStagedAdds((prev) => new Set(prev).add(slotKey));
+      setStagedRemoves((prev) => { const n = new Set(prev); n.delete(slotKey); return n; });
+    }
+  }, [mySlots]);
 
-        const matching = allSlots.find(
-          (s) => s.participant_id === participantId && new Date(s.slot_start).toISOString() === slotKey
+  // Batch-save all staged changes to the database
+  const handleSave = useCallback(async () => {
+    if (isSaving || !hasStagedChanges) return;
+    setIsSaving(true);
+
+    const supabase = createClient();
+    // Only insert slots not already in DB; only delete slots that are in DB
+    const toInsert = [...stagedAdds].filter((s) => !serverMySlots.has(s));
+    const toDelete = [...stagedRemoves].filter((s) => serverMySlots.has(s));
+
+    try {
+      if (toInsert.length > 0) {
+        await supabase.from('availability_slots').insert(
+          toInsert.map((slotKey) => ({
+            event_id: event.id,
+            participant_id: participantId,
+            slot_start: slotKey,
+          }))
         );
-        if (matching) {
-          const { error } = await supabase.from('availability_slots').delete().eq('id', matching.id);
-          if (error) setPendingRemoves((prev) => { const n = new Set(prev); n.delete(slotKey); return n; });
-        } else {
-          const { error } = await supabase.from('availability_slots').delete()
-            .eq('participant_id', participantId).eq('slot_start', slotKey);
-          if (error) setPendingRemoves((prev) => { const n = new Set(prev); n.delete(slotKey); return n; });
-        }
-      } else {
-        setPendingAdds((prev) => new Set(prev).add(slotKey));
-        setPendingRemoves((prev) => { const n = new Set(prev); n.delete(slotKey); return n; });
+      }
 
-        const { error } = await supabase.from('availability_slots').insert({
-          event_id: event.id, participant_id: participantId, slot_start: slotKey,
-        });
-        if (error) {
-          setPendingAdds((prev) => { const n = new Set(prev); n.delete(slotKey); return n; });
-        } else if (!hasShownSavedToast.current) {
-          hasShownSavedToast.current = true;
-          setShowSavedToast(true);
-          clearTimeout(savedToastTimer.current);
-          savedToastTimer.current = setTimeout(() => setShowSavedToast(false), 3000);
+      if (toDelete.length > 0) {
+        // Delete by the DB row ids we know about; fall back to slot_start match
+        const idsToDelete = allSlots
+          .filter((s) => s.participant_id === participantId &&
+            toDelete.includes(new Date(s.slot_start).toISOString()))
+          .map((s) => s.id);
+
+        if (idsToDelete.length > 0) {
+          await supabase.from('availability_slots').delete().in('id', idsToDelete);
+        } else {
+          await supabase.from('availability_slots').delete()
+            .eq('participant_id', participantId).in('slot_start', toDelete);
         }
       }
-    },
-    [mySlots, allSlots, participantId, event.id]
-  );
+
+      setStagedAdds(new Set());
+      setStagedRemoves(new Set());
+
+      setShowSavedToast(true);
+      clearTimeout(savedToastTimer.current);
+      savedToastTimer.current = setTimeout(() => setShowSavedToast(false), 3000);
+    } catch (err) {
+      console.error('Save failed:', err);
+    } finally {
+      setIsSaving(false);
+    }
+  }, [isSaving, hasStagedChanges, stagedAdds, stagedRemoves, serverMySlots, allSlots, event.id, participantId]);
 
   // Simple toggle for mobile taps (onClick)
   const handleToggle = useCallback((slotKey: string) => {
@@ -298,6 +308,86 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
   // Timezone label
   const timezoneLabel = useMemo(() => getTimezoneLabel(event.timezone), [event.timezone]);
 
+  // Per-slot availability breakdown (organizer only, built lazily when panel opens)
+  const breakdownByDate = useMemo(() => {
+    if (!isOrganizer || !showBreakdown) return null;
+    const participantMap = new Map(participants.map((p) => [p.id, formatDisplayName(p.name)]));
+
+    return dates
+      .map((date) => {
+        const slotsForDate = timeLabels
+          .map((time) => slotGrid.get(`${date}|${time}`))
+          .filter(Boolean) as string[];
+
+        const slotData = slotsForDate
+          .map((slotKey) => {
+            const pSet = overlapMap.get(slotKey);
+            const names = pSet ? Array.from(pSet).map((id) => participantMap.get(id) || '?') : [];
+            return { slotKey, time: format(new Date(slotKey), 'h:mm a'), names, count: names.length };
+          })
+          .filter((s) => s.count > 0);
+
+        return { date, slots: slotData };
+      })
+      .filter((d) => d.slots.length > 0);
+  }, [isOrganizer, showBreakdown, participants, dates, timeLabels, slotGrid, overlapMap]);
+
+  // Enhanced CSV export: event metadata block + per-participant availability matrix
+  const handleExportCsv = useCallback(() => {
+    const esc = (v: string) =>
+      v.includes(',') || v.includes('"') || v.includes('\n')
+        ? `"${v.replace(/"/g, '""')}"`
+        : v;
+
+    // All slot keys across all participants, sorted chronologically
+    const allSlotKeys = [...new Set(
+      allSlots.map((s) => new Date(s.slot_start).toISOString())
+    )].sort();
+
+    const slotLabels = allSlotKeys.map((k) => format(new Date(k), 'EEE MMM d, h:mm a'));
+
+    const rows: string[] = [];
+
+    // Event metadata block
+    rows.push(`Event,${esc(event.name)}`);
+    if (event.organizer_name) rows.push(`Organizer,${esc(event.organizer_name)}`);
+    rows.push(`Dates,${esc(event.dates.map((d) => format(parseISO(d), 'EEE MMM d yyyy')).join('; '))}`);
+    rows.push(`Time window,${event.time_start} - ${event.time_end}`);
+    rows.push(`Timezone,${event.timezone}`);
+    rows.push(`Duration,${durationMinutes} minutes`);
+    rows.push(
+      event.finalized_time
+        ? `Finalized time,${esc(format(new Date(event.finalized_time), 'EEE MMM d yyyy h:mm a'))}`
+        : `Finalized time,Not yet set`
+    );
+    rows.push(`Total participants,${participants.length}`);
+    rows.push('');
+
+    // Matrix: Name | # slots | one column per slot
+    rows.push(['Name', 'Slots selected', ...slotLabels.map(esc)].join(','));
+
+    for (const p of participants) {
+      const pSlots = new Set(
+        allSlots
+          .filter((s) => s.participant_id === p.id)
+          .map((s) => new Date(s.slot_start).toISOString())
+      );
+      const cells = allSlotKeys.map((k) => (pSlots.has(k) ? '✓' : ''));
+      rows.push([esc(p.name), String(pSlots.size), ...cells].join(','));
+    }
+
+    const csv = rows.join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${event.name.replace(/[^a-zA-Z0-9 ]/g, '').replace(/\s+/g, '-')}-availability.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, [allSlots, participants, event, durationMinutes]);
+
   return (
     <div className="space-y-6" onMouseUp={handleDragEnd} onMouseLeave={handleDragEnd}>
       {/* Always-visible status notice */}
@@ -382,6 +472,16 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
               {format(parseISO(date), 'EEE M/d')}
             </button>
           ))}
+        </div>
+      )}
+
+      {/* How-to instruction bar — shown while event is still open */}
+      {!event.finalized_time && (
+        <div className="flex items-center justify-center gap-2 rounded-xl bg-blue-50 px-4 py-2.5 text-sm text-blue-700">
+          <svg className="w-4 h-4 shrink-0 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5" />
+          </svg>
+          <span>Tap the times you&apos;re free, then tap <strong>Save my availability</strong>.</span>
         </div>
       )}
 
@@ -513,6 +613,43 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
         />
       )}
 
+      {/* Save my availability — visible when there are unsaved staged changes */}
+      {hasStagedChanges && !event.finalized_time && (
+        <div className="animate-fade-in-scale space-y-1.5">
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={isSaving}
+            className="w-full py-3.5 bg-teal-500 hover:bg-teal-600 text-white font-semibold rounded-2xl text-base shadow-md hover:shadow-lg transition-all duration-200 active:scale-95 cursor-pointer disabled:opacity-60 flex items-center justify-center gap-2"
+          >
+            {isSaving ? (
+              <>
+                <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+                Saving…
+              </>
+            ) : (
+              <>
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                </svg>
+                Save my availability
+              </>
+            )}
+          </button>
+          <p className="text-center text-xs text-gray-400">
+            {stagedAdds.size > 0 && stagedRemoves.size === 0 &&
+              `${stagedAdds.size} time${stagedAdds.size !== 1 ? 's' : ''} selected — not saved yet`}
+            {stagedAdds.size === 0 && stagedRemoves.size > 0 &&
+              `${stagedRemoves.size} time${stagedRemoves.size !== 1 ? 's' : ''} removed — not saved yet`}
+            {stagedAdds.size > 0 && stagedRemoves.size > 0 &&
+              `${stagedAdds.size} added, ${stagedRemoves.size} removed — not saved yet`}
+          </p>
+        </div>
+      )}
+
       {/* Time Picker Modal (organizer only) */}
       {showTimePicker && (
         <div
@@ -620,37 +757,69 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
           )}
         </ul>
 
+        {/* Organizer-only: who's free when breakdown */}
+        {isOrganizer && participants.length > 0 && (
+          <div className="pt-1">
+            <button
+              type="button"
+              onClick={() => setShowBreakdown((v) => !v)}
+              className="flex items-center gap-1.5 text-xs font-medium text-teal-600 hover:text-teal-800 transition-colors cursor-pointer"
+            >
+              <svg
+                className={`w-3.5 h-3.5 transition-transform duration-200 ${showBreakdown ? 'rotate-90' : ''}`}
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2.5}
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+              </svg>
+              {showBreakdown ? 'Hide' : 'Show'} who&apos;s free when
+            </button>
+
+            {showBreakdown && breakdownByDate && breakdownByDate.length > 0 && (
+              <div className="mt-3 space-y-4 animate-fade-in">
+                {breakdownByDate.map(({ date, slots }) => (
+                  <div key={date}>
+                    <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+                      {format(parseISO(date), 'EEEE, MMMM d')}
+                    </h4>
+                    <div className="space-y-1">
+                      {slots.map(({ slotKey, time, names, count }) => (
+                        <div
+                          key={slotKey}
+                          className={`flex items-center gap-2 rounded-lg px-3 py-2 text-xs ${
+                            count === totalParticipants
+                              ? 'bg-green-50 border border-green-100'
+                              : 'bg-gray-50'
+                          }`}
+                        >
+                          <span className="shrink-0 font-medium text-gray-700 w-16">{time}</span>
+                          <span className="flex-1 text-gray-500 truncate">{names.join(', ')}</span>
+                          <span className={`shrink-0 font-semibold tabular-nums ${count === totalParticipants ? 'text-green-600' : 'text-gray-400'}`}>
+                            {count}/{totalParticipants}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {showBreakdown && breakdownByDate && breakdownByDate.length === 0 && (
+              <p className="mt-2 text-xs text-gray-400 animate-fade-in">
+                No availability recorded yet.
+              </p>
+            )}
+          </div>
+        )}
+
         {/* Export CSV (organizer only) */}
         {isOrganizer && participants.length > 0 && (
           <button
             type="button"
-            onClick={() => {
-              const header = 'Name,Available Times\n';
-              const rows = participants.map((p) => {
-                const pSlots = allSlots
-                  .filter((s) => s.participant_id === p.id)
-                  .map((s) => {
-                    const d = new Date(s.slot_start);
-                    return format(d, 'EEE MMM d, h:mm a');
-                  })
-                  .sort()
-                  .join('; ');
-                const safeName = p.name.includes(',') ? `"${p.name}"` : p.name;
-                const safeSlots = pSlots.includes(',') ? `"${pSlots}"` : pSlots;
-                return `${safeName},${safeSlots}`;
-              }).join('\n');
-
-              const csv = header + rows;
-              const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-              const url = URL.createObjectURL(blob);
-              const a = document.createElement('a');
-              a.href = url;
-              a.download = `${event.name.replace(/[^a-zA-Z0-9 ]/g, '').replace(/\s+/g, '-')}-participants.csv`;
-              document.body.appendChild(a);
-              a.click();
-              document.body.removeChild(a);
-              URL.revokeObjectURL(url);
-            }}
+            onClick={handleExportCsv}
             className="inline-flex items-center gap-1.5 text-xs text-gray-400 hover:text-teal-600 transition-colors cursor-pointer"
           >
             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -661,7 +830,7 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
         )}
       </div>
 
-      {/* "Availability saved" floating toast — shows once on first slot selection */}
+      {/* "Availability saved" floating toast — shows after each successful save */}
       {showSavedToast && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 pointer-events-none animate-fade-in-scale">
           <div className="flex items-center gap-2 px-4 py-2.5 bg-gray-900 text-white text-sm font-medium rounded-full shadow-lg whitespace-nowrap">
