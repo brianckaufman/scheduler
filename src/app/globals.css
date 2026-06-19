@@ -159,6 +159,14 @@
 html { background: var(--t-page); }
 body { color: var(--t-body); }
 
+/* Theme-aware logo swap — deterministic via real .dark specificity (the
+   Tailwind `dark:` variant uses :where() which has zero specificity and can't
+   reliably override `block`/`hidden`). Only applied when a dark logo exists. */
+.logo-light { display: block; }
+.logo-dark  { display: none; }
+.dark .logo-light { display: none; }
+.dark .logo-dark  { display: block; }
+
 /* Brand gradient helpers */
 .bg-brand-gradient { background: var(--brand-gradient); }
 .bg-brand-gradient-ui { background: var(--brand-gradient-ui); }

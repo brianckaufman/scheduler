@@ -13,9 +13,9 @@ interface LogoProps {
  * the `.dark` theme is active. Falls back to the light logo in both modes when
  * no dark logo is uploaded. Renders nothing if no logo is configured.
  *
- * Both <img>s are emitted and toggled with `dark:` utilities so the correct one
- * shows instantly with the theme (no flash, no JS), matching the class-based
- * dark mode set pre-paint in layout.tsx.
+ * Both <img>s are emitted and toggled by the `.logo-light` / `.logo-dark` rules
+ * in globals.css, which key off `.dark` on <html> with real specificity (no JS,
+ * no flash), matching the class-based dark mode set pre-paint in layout.tsx.
  */
 export default function Logo({ height, className }: LogoProps) {
   const branding = useBranding();
@@ -33,7 +33,7 @@ export default function Logo({ height, className }: LogoProps) {
         src={lightSrc}
         alt={branding.site_name}
         style={style}
-        className={`${base} ${darkSrc ? 'block dark:hidden' : ''}`}
+        className={`${base} ${darkSrc ? 'logo-light' : ''}`}
       />
       {darkSrc && (
         // eslint-disable-next-line @next/next/no-img-element
@@ -41,7 +41,7 @@ export default function Logo({ height, className }: LogoProps) {
           src={darkSrc}
           alt={branding.site_name}
           style={style}
-          className={`${base} hidden dark:block`}
+          className={`${base} logo-dark`}
         />
       )}
     </>
