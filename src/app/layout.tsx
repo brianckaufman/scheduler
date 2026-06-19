@@ -10,13 +10,14 @@ import { createClient } from '@/lib/supabase/server';
 import { BrandingProvider } from '@/contexts/BrandingContext';
 import { MonetizationProvider } from '@/contexts/MonetizationContext';
 import JsonLd, { buildWebAppJsonLd } from '@/components/JsonLd';
-import ThemeToggle from '@/components/ThemeToggle';
+import ThemeManager from '@/components/ThemeManager';
 import AccountMenu from '@/components/AccountMenu';
 import CookieConsent from '@/components/CookieConsent';
 import { optimizedOgImageUrl, optimizedFaviconUrl } from '@/lib/image';
 
-/** Runs before paint to set the .dark class with no flash of the wrong theme. */
-const THEME_INIT_SCRIPT = `(function(){try{var t=localStorage.getItem('theme');var d=t?t==='dark':window.matchMedia('(prefers-color-scheme: dark)').matches;if(d)document.documentElement.classList.add('dark');}catch(e){}})();`;
+/** Runs before paint to set the .dark class with no flash of the wrong theme.
+ *  theme = 'light' | 'dark' | 'system' (default). 'system' follows the OS. */
+const THEME_INIT_SCRIPT = `(function(){try{var t=localStorage.getItem('theme')||'system';var d=t==='dark'||((t==='system'||t==='')&&window.matchMedia('(prefers-color-scheme: dark)').matches);if(d)document.documentElement.classList.add('dark');}catch(e){}})();`;
 
 const poppins = Poppins({
   variable: '--font-poppins',
@@ -213,7 +214,7 @@ export default async function RootLayout({
             }}
           >
             <CopyProvider copy={settings.copy}>
-              <ThemeToggle />
+              <ThemeManager />
               <AccountMenu />
               {children}
               <CookieConsent />

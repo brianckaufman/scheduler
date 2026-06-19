@@ -28,6 +28,7 @@ import type { Event } from '@/types';
 
 interface EventViewProps {
   event: Event;
+  organizerAvatar?: string | null;
 }
 
 /** Return a short timezone label like "PST", "EST", "GMT+5" for a given IANA timezone. */
@@ -39,7 +40,7 @@ function getTzAbbr(isoDateStr: string, tz: string): string {
   } catch { return tz; }
 }
 
-export default function EventView({ event: initialEvent }: EventViewProps) {
+export default function EventView({ event: initialEvent, organizerAvatar }: EventViewProps) {
   const copy = useCopy();
   const branding = useBranding();
   const monetization = useMonetization();
@@ -285,9 +286,14 @@ export default function EventView({ event: initialEvent }: EventViewProps) {
                   {/* Organizer */}
                   {event.organizer_name && (
                     <div className="flex items-center gap-3">
-                      <svg className="w-4 h-4 text-faint shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                      </svg>
+                      {organizerAvatar ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={organizerAvatar} alt="" className="w-6 h-6 rounded-full object-cover shrink-0 ring-1 ring-hairline" />
+                      ) : (
+                        <svg className="w-4 h-4 text-faint shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
+                      )}
                       <span className="text-sm text-secondary">
                         {interpolate(copy.event.organized_by, { name: formatDisplayName(event.organizer_name) })}
                       </span>
@@ -310,9 +316,14 @@ export default function EventView({ event: initialEvent }: EventViewProps) {
                 <div className="space-y-2 mt-3">
                   {event.organizer_name && (
                     <div className="flex items-center gap-3">
-                      <svg className="w-4 h-4 text-faint shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                      </svg>
+                      {organizerAvatar ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={organizerAvatar} alt="" className="w-6 h-6 rounded-full object-cover shrink-0 ring-1 ring-hairline" />
+                      ) : (
+                        <svg className="w-4 h-4 text-faint shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
+                      )}
                       <span className="text-sm text-secondary">
                         {interpolate(copy.event.organized_by, { name: formatDisplayName(event.organizer_name) })}
                       </span>

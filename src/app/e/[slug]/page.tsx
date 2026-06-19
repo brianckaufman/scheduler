@@ -66,5 +66,13 @@ export default async function EventPage({ params }: EventPageProps) {
 
   if (!event) notFound();
 
-  return <EventView event={event} />;
+  // Organizer's public profile (avatar) — adds a trust cue to the event header.
+  let organizerAvatar: string | null = null;
+  if (event.user_id) {
+    const { data: prof } = await supabase
+      .from('profiles').select('avatar_url').eq('id', event.user_id).maybeSingle();
+    organizerAvatar = prof?.avatar_url ?? null;
+  }
+
+  return <EventView event={event} organizerAvatar={organizerAvatar} />;
 }

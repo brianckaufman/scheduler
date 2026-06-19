@@ -25,7 +25,7 @@ export default function AccountMenu() {
     return (
       <Link
         href="/login"
-        className="fixed top-3 right-14 z-50 flex h-9 items-center rounded-full bg-surface border border-hairline px-3.5 text-sm font-medium text-secondary hover:text-body hover:border-strong transition-colors"
+        className="fixed top-3 right-3 z-50 flex h-9 items-center rounded-full bg-surface border border-hairline px-3.5 text-sm font-medium text-secondary hover:text-body hover:border-strong transition-colors"
       >
         Log in
       </Link>
@@ -44,7 +44,7 @@ export default function AccountMenu() {
   };
 
   return (
-    <div ref={ref} className="fixed top-3 right-14 z-50">
+    <div ref={ref} className="fixed top-3 right-3 z-50">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}

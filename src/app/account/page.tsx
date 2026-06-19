@@ -4,6 +4,8 @@ import { format } from 'date-fns';
 import { createClient } from '@/lib/supabase/server';
 import ProfileEditor from '@/components/account/ProfileEditor';
 import RemoveSavedButton from '@/components/account/RemoveSavedButton';
+import AvatarUpload from '@/components/account/AvatarUpload';
+import ThemeSetting from '@/components/account/ThemeSetting';
 
 export const dynamic = 'force-dynamic';
 
@@ -52,7 +54,7 @@ export default async function AccountPage() {
   const meta = user.user_metadata || {};
 
   const [{ data: profile }, { data: created }, { data: joinedRaw }, { data: savedRaw }] = await Promise.all([
-    supabase.from('profiles').select('display_name').eq('id', user.id).maybeSingle(),
+    supabase.from('profiles').select('display_name, avatar_url').eq('id', user.id).maybeSingle(),
     supabase.from('events')
       .select('id, slug, name, event_type, finalized_time, created_at')
       .eq('user_id', user.id).order('created_at', { ascending: false }),
@@ -82,6 +84,7 @@ export default async function AccountPage() {
     .filter((e): e is EventLite => !!e);
 
   const displayName = profile?.display_name || meta.display_name || meta.full_name || meta.name || '';
+  const avatarUrl = profile?.avatar_url || meta.avatar_url || meta.picture || null;
 
   return (
     <div className="min-h-screen bg-subtle">
@@ -91,8 +94,10 @@ export default async function AccountPage() {
           <Link href="/" className="text-sm text-accent-fg font-medium hover:underline">Create event</Link>
         </div>
 
-        <section className="bg-surface rounded-2xl border border-hairline-soft p-4 space-y-3">
+        <section className="bg-surface rounded-2xl border border-hairline-soft p-4 space-y-4">
+          <AvatarUpload initialUrl={avatarUrl} name={displayName || user.email || 'You'} />
           <ProfileEditor initial={displayName} />
+          <ThemeSetting />
           <p className="text-xs text-faint pt-1 border-t border-hairline-soft">
             Signed in as <span className="text-muted">{user.email}</span>
           </p>
