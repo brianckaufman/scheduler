@@ -109,11 +109,16 @@ export async function POST(request: NextRequest) {
     ? 'mobile'
     : 'desktop';
 
+  // Link to the logged-in user if there is one (anonymous join still works).
+  const { data: { user } } = await supabase.auth.getUser();
+
   const { data, error } = await supabase
     .from('participants')
     .insert({
       event_id,
       name: safeName,
+      // user_id requires supabase-accounts-migration.sql to be run first.
+      ...(user?.id && { user_id: user.id }),
       // email requires supabase-participant-email-migration.sql to be run first.
       // Conditional spread keeps inserts working until then (only included when provided).
       ...(safeEmail && { email: safeEmail }),

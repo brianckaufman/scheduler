@@ -4,10 +4,13 @@ import './globals.css';
 import { getSettings } from '@/lib/settings';
 import { AnalyticsScripts } from '@/components/AnalyticsScripts';
 import { CopyProvider } from '@/contexts/CopyContext';
+import { AuthProvider } from '@/contexts/AuthContext';
+import { createClient } from '@/lib/supabase/server';
 import { BrandingProvider } from '@/contexts/BrandingContext';
 import { MonetizationProvider } from '@/contexts/MonetizationContext';
 import JsonLd, { buildWebAppJsonLd } from '@/components/JsonLd';
 import ThemeToggle from '@/components/ThemeToggle';
+import AccountMenu from '@/components/AccountMenu';
 import { optimizedOgImageUrl, optimizedFaviconUrl } from '@/lib/image';
 
 /** Runs before paint to set the .dark class with no flash of the wrong theme. */
@@ -133,6 +136,16 @@ export default async function RootLayout({
 }>) {
   const settings = await getSettings();
   const accentColor = settings.branding.accent_color || '#0373F6';
+
+  // Resolve the logged-in user server-side so AuthProvider seeds without a flash.
+  let initialUser = null;
+  try {
+    const supabase = await createClient();
+    const { data } = await supabase.auth.getUser();
+    initialUser = data.user;
+  } catch {
+    /* anonymous */
+  }
   const siteName = settings.seo.site_name || 'Scheduler';
   const siteUrl = settings.seo.site_url || process.env.NEXT_PUBLIC_SITE_URL || '';
   const ogDesc = settings.seo.og_description || 'Find a time that works for everyone. No accounts needed.';
@@ -167,6 +180,7 @@ export default async function RootLayout({
             />
           </noscript>
         )}
+        <AuthProvider initialUser={initialUser}>
         <BrandingProvider
           branding={{
             logo_url: settings.branding.logo_url,
@@ -192,10 +206,12 @@ export default async function RootLayout({
           >
             <CopyProvider copy={settings.copy}>
               <ThemeToggle />
+              <AccountMenu />
               {children}
             </CopyProvider>
           </MonetizationProvider>
         </BrandingProvider>
+        </AuthProvider>
       </body>
     </html>
   );

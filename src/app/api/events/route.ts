@@ -177,6 +177,10 @@ export async function POST(request: NextRequest) {
   const slug = generateSlug();
   const organizerToken = generateToken();
 
+  // Link to the logged-in user if there is one (anonymous creation still works).
+  const { data: { user } } = await supabase.auth.getUser();
+  const userId = user?.id ?? null;
+
   // Only include optional nullable columns when they have values — avoids
   // "column not found in schema cache" errors if migrations haven't been run yet.
   const insertPayload = {
@@ -199,6 +203,8 @@ export async function POST(request: NextRequest) {
     ...(responseDeadline && { response_deadline: responseDeadline }),
     ...(safeMaxParticipants && { max_participants: safeMaxParticipants }),
     ...(safeMinResponses && { min_responses: safeMinResponses }),
+    // user_id requires supabase-accounts-migration.sql to be run first.
+    ...(userId && { user_id: userId }),
     // device_type requires supabase-analytics-migration.sql to be run first
     // ...(organizerDevice && { device_type: organizerDevice }),
   };
@@ -223,6 +229,7 @@ export async function POST(request: NextRequest) {
         event_id: data.id,
         name: safeOrganizerName,
         ...(safeEventType === 'fixed' ? { rsvp: 'yes' } : {}),
+        ...(userId && { user_id: userId }),
       })
       .select('id')
       .single();

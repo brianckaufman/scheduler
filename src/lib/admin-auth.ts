@@ -1,5 +1,26 @@
 import { cookies } from 'next/headers';
 import { createHmac, timingSafeEqual } from 'crypto';
+import { createClient } from '@/lib/supabase/server';
+
+/** Allowlisted super-admin emails (comma-separated env, defaults to brian). */
+function getAdminEmails(): string[] {
+  return (process.env.ADMIN_EMAILS || 'brian@tippingmedia.com')
+    .split(',')
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
+}
+
+/** True if the current Supabase-auth user's email is allowlisted as admin. */
+export async function isAdminEmail(): Promise<boolean> {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    const email = user?.email?.toLowerCase();
+    return !!email && getAdminEmails().includes(email);
+  } catch {
+    return false;
+  }
+}
 
 const COOKIE_NAME = 'admin_session';
 const SESSION_DURATION = 60 * 60 * 24; // 24 hours
@@ -149,10 +170,12 @@ export async function setAdminSession(): Promise<void> {
 }
 
 export async function isAdminAuthenticated(): Promise<boolean> {
+  // 1. Password session cookie (fallback / emergency access).
   const cookieStore = await cookies();
   const session = cookieStore.get(COOKIE_NAME);
-  if (!session?.value) return false;
-  return verifyToken(session.value);
+  if (session?.value && verifyToken(session.value)) return true;
+  // 2. Allowlisted Supabase user (e.g. brian@tippingmedia.com via Google).
+  return await isAdminEmail();
 }
 
 export async function clearAdminSession(): Promise<void> {

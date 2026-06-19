@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import GoogleButton from '@/components/auth/GoogleButton';
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -71,6 +72,17 @@ export default function AdminLoginPage() {
               {loading ? 'Signing in...' : 'Sign In'}
             </button>
           </form>
+
+          <div className="flex items-center gap-3 my-5">
+            <div className="h-px flex-1 bg-hairline" />
+            <span className="text-xs text-faint">or</span>
+            <div className="h-px flex-1 bg-hairline" />
+          </div>
+
+          <GoogleButton next="/admin" label="Continue with Google" />
+          <p className="text-xs text-faint text-center mt-3">
+            Admin access via Google is limited to allowlisted accounts.
+          </p>
         </div>
       </div>
     </div>
