@@ -20,7 +20,6 @@ import BookmarkPrompt from '@/components/BookmarkPrompt';
 import ConfettiCelebration from '@/components/ConfettiCelebration';
 import { useCreatedEvents } from '@/hooks/useCreatedEvents';
 import Logo from '@/components/Logo';
-import SaveEventButton from '@/components/SaveEventButton';
 import RichTextDisplay from '@/components/RichTextDisplay';
 import LocationDisplay from '@/components/LocationDisplay';
 import { formatDisplayName, firstName } from '@/lib/names';
@@ -211,9 +210,6 @@ export default function EventView({ event: initialEvent, organizerAvatar }: Even
 
         <div className="mb-4">
           <ShareLink event={event} isOrganizer={isOrganizer} />
-          <div className="flex justify-end mt-2">
-            <SaveEventButton eventId={event.id} />
-          </div>
         </div>
 
         {/* Main card: event details + grid/RSVP */}

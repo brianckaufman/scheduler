@@ -458,25 +458,15 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
           )}
         </div>
       )}
-      {overlapStatus === 'partial' && !event.finalized_time && (
-        <div className="animate-fade-in-scale bg-teal-50 dark:bg-[#0D223A] rounded-xl p-4 text-center">
-          <p className="text-sm text-accent-fg font-medium">
-            No single time works for everyone yet — but the best time fits{' '}
-            <span className="font-bold">{maxOverlap} of {totalParticipants}</span>.
-          </p>
-          {isOrganizer ? (
-            <button
-              type="button"
-              onClick={() => setShowTimePicker(true)}
-              className="mt-3 px-8 py-3 bg-teal-500 text-white text-base font-semibold rounded-full hover:bg-teal-600 shadow-md hover:shadow-lg transition-all duration-200 active:scale-95 cursor-pointer min-w-[180px]"
-            >
-              {copy.grid.pick_time}
-            </button>
-          ) : (
-            <p className="text-xs text-teal-600 mt-1">
-              The darkest times below have the most people free.
-            </p>
-          )}
+      {overlapStatus === 'partial' && !event.finalized_time && isOrganizer && (
+        <div className="flex justify-center animate-fade-in">
+          <button
+            type="button"
+            onClick={() => setShowTimePicker(true)}
+            className="px-8 py-3 bg-teal-500 text-white text-base font-semibold rounded-full hover:bg-teal-600 shadow-md hover:shadow-lg transition-all duration-200 active:scale-95 cursor-pointer min-w-[180px]"
+          >
+            {copy.grid.pick_time}
+          </button>
         </div>
       )}
       {overlapStatus === 'found' && !event.finalized_time && (
@@ -517,16 +507,6 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
               {format(parseISO(date), 'EEE M/d')}
             </button>
           ))}
-        </div>
-      )}
-
-      {/* How-to instruction bar — shown while event is still open */}
-      {!event.finalized_time && (
-        <div className="flex items-center justify-center gap-2 rounded-xl bg-blue-50 dark:bg-[#0D223A] px-4 py-2.5 text-sm text-accent-fg">
-          <svg className="w-4 h-4 shrink-0 text-accent-fg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5" />
-          </svg>
-          <span>Tap the times you&apos;re free, then tap <strong>Save my availability</strong>.</span>
         </div>
       )}
 
@@ -766,15 +746,6 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
                 <span className="text-xs text-faint">{copy.grid.legend_heat}</span>
               </div>
             )}
-            {participants.length > 8 && (
-              <button
-                type="button"
-                onClick={() => setShowAllParticipants((v) => !v)}
-                className="text-xs text-teal-500 hover:text-teal-700 font-medium cursor-pointer ml-1"
-              >
-                {showAllParticipants ? copy.grid.show_less : copy.grid.show_all}
-              </button>
-            )}
           </div>
         </div>
         <ul className="space-y-1">
@@ -809,9 +780,15 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
               )}
             </li>
           ))}
-          {participants.length > 8 && !showAllParticipants && (
-            <li className="text-xs text-faint pl-[18px]">
-              +{participants.length - 6} more
+          {participants.length > 8 && (
+            <li>
+              <button
+                type="button"
+                onClick={() => setShowAllParticipants((v) => !v)}
+                className="text-xs font-medium text-teal-500 hover:text-teal-700 transition-colors cursor-pointer pl-[18px]"
+              >
+                {showAllParticipants ? copy.grid.show_less : `+${participants.length - 6} more`}
+              </button>
             </li>
           )}
         </ul>

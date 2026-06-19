@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 
 /** Save/unsave the current event to the logged-in user's account. */
-export default function SaveEventButton({ eventId }: { eventId: string }) {
+export default function SaveEventButton({ eventId, className }: { eventId: string; className?: string }) {
   const { user, loading } = useAuth();
   const [saved, setSaved] = useState<boolean | null>(null);
   const [busy, setBusy] = useState(false);
@@ -32,20 +32,23 @@ export default function SaveEventButton({ eventId }: { eventId: string }) {
     setBusy(false);
   };
 
+  // Default styling for standalone use; ShareLink passes its shared button style.
+  const base = className
+    ? `${className} border ${saved ? 'border-strong text-accent-fg bg-subtle' : 'border-hairline text-body hover:bg-subtle'}`
+    : `inline-flex items-center gap-1.5 text-xs font-medium transition-colors ${saved ? 'text-accent-fg' : 'text-faint hover:text-secondary'}`;
+
   return (
     <button
       type="button"
       onClick={toggle}
       disabled={busy || saved === null}
-      className={`inline-flex items-center gap-1.5 text-xs font-medium transition-colors cursor-pointer disabled:opacity-50 ${
-        saved ? 'text-accent-fg' : 'text-faint hover:text-secondary'
-      }`}
+      className={`${base} cursor-pointer disabled:opacity-50`}
       title={saved ? 'Saved to your account' : 'Save to your account'}
     >
-      <svg className="w-3.5 h-3.5" fill={saved ? 'currentColor' : 'none'} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <svg className="w-4 h-4" fill={saved ? 'currentColor' : 'none'} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
       </svg>
-      {saved ? 'Saved' : 'Save event'}
+      {saved ? 'Saved' : 'Save'}
     </button>
   );
 }
