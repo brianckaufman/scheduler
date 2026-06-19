@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { Poppins } from 'next/font/google';
+import { cookies } from 'next/headers';
 import './globals.css';
 import { getSettings } from '@/lib/settings';
 import { AnalyticsScripts } from '@/components/AnalyticsScripts';
@@ -11,6 +12,7 @@ import { MonetizationProvider } from '@/contexts/MonetizationContext';
 import JsonLd, { buildWebAppJsonLd } from '@/components/JsonLd';
 import ThemeToggle from '@/components/ThemeToggle';
 import AccountMenu from '@/components/AccountMenu';
+import CookieConsent from '@/components/CookieConsent';
 import { optimizedOgImageUrl, optimizedFaviconUrl } from '@/lib/image';
 
 /** Runs before paint to set the .dark class with no flash of the wrong theme. */
@@ -137,6 +139,11 @@ export default async function RootLayout({
   const settings = await getSettings();
   const accentColor = settings.branding.accent_color || '#0373F6';
 
+  // Analytics cookies are non-essential — only load the analytics scripts once
+  // the visitor has accepted (see CookieConsent).
+  const cookieStore = await cookies();
+  const analyticsConsented = cookieStore.get('cookie_consent')?.value === 'accepted';
+
   // Resolve the logged-in user server-side so AuthProvider seeds without a flash.
   let initialUser = null;
   try {
@@ -161,16 +168,17 @@ export default async function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
         {/* JSON-LD structured data for rich search results */}
         <JsonLd data={buildWebAppJsonLd({ name: siteName, description: ogDesc, url: siteUrl || undefined })} />
-        {/* Analytics — real <script> tags in <head> so Google's tag checker finds them
-            in the server-rendered HTML (next/script afterInteractive is client-only) */}
-        <AnalyticsScripts
-          gaId={settings.analytics.ga_id || process.env.NEXT_PUBLIC_GA_ID || ''}
-          gtmId={settings.analytics.gtm_id || process.env.NEXT_PUBLIC_GTM_ID || ''}
-          customScripts={settings.analytics.custom_head_scripts}
-        />
+        {/* Analytics — only loaded after cookie consent (non-essential cookies). */}
+        {analyticsConsented && (
+          <AnalyticsScripts
+            gaId={settings.analytics.ga_id || process.env.NEXT_PUBLIC_GA_ID || ''}
+            gtmId={settings.analytics.gtm_id || process.env.NEXT_PUBLIC_GTM_ID || ''}
+            customScripts={settings.analytics.custom_head_scripts}
+          />
+        )}
       </head>
       <body className={`${poppins.variable} font-sans antialiased`}>
-        {settings.analytics.gtm_id && (
+        {analyticsConsented && settings.analytics.gtm_id && (
           <noscript>
             <iframe
               src={`https://www.googletagmanager.com/ns.html?id=${settings.analytics.gtm_id}`}
@@ -208,6 +216,7 @@ export default async function RootLayout({
               <ThemeToggle />
               <AccountMenu />
               {children}
+              <CookieConsent />
             </CopyProvider>
           </MonetizationProvider>
         </BrandingProvider>

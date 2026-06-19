@@ -1,5 +1,6 @@
 import { getSettings } from '@/lib/settings';
 import { notFound } from 'next/navigation';
+import CookiePreferencesButton from '@/components/CookiePreferencesButton';
 
 export async function generateMetadata() {
   const settings = await getSettings();
@@ -45,6 +46,10 @@ export default async function CookiesPage() {
           ) : (
             <p className="text-faint italic">No cookie policy has been set yet.</p>
           )}
+
+          <div className="mt-6 pt-5 border-t border-hairline-soft">
+            <CookiePreferencesButton />
+          </div>
         </div>
       </div>
     </div>

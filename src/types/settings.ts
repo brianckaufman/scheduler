@@ -445,11 +445,16 @@ export const DEFAULT_SETTINGS: SiteSettings = {
 <li><strong>Participant names:</strong> Names entered voluntarily by participants to identify themselves.</li>
 <li><strong>Availability data:</strong> Time slot selections and RSVP responses submitted by participants.</li>
 <li><strong>Push notification tokens:</strong> If you opt in to notifications, we store a browser push subscription token to deliver event updates to your device.</li>
+<li><strong>Email addresses (optional):</strong> If you choose to receive notifications about an event, we store the email address you provide so we can send those messages.</li>
+<li><strong>Account information (optional):</strong> If you create an account, we collect your email address and a securely hashed password — or, if you sign in with Google, your name and email address from your Google profile. You may also set a display name.</li>
 <li><strong>Device data:</strong> Basic browser and device information used for service functionality.</li>
 </ul>
 
-<h2>No Accounts Required</h2>
-<p>This Service does not require you to create an account. We do not collect email addresses, passwords, or other account credentials. Participant identity is managed through your browser's local storage, which remains on your device.</p>
+<h2>Optional Accounts</h2>
+<p>You can use this Service without an account — creating events, marking availability, and RSVPing all work anonymously, with participant identity managed through your browser's local storage. Creating an account is entirely optional. If you do create one (with an email and password, or via Google Sign-In), we use the account information above to provide account features such as your event history and saved events, and we set an authentication cookie to keep you signed in. You may request deletion of your account and its associated data at any time by contacting us.</p>
+
+<h2>Email Notifications</h2>
+<p>If you provide an email address — when responding to an event, when creating an event, or in your account — we use it solely to send transactional emails about that event, such as when a final time is selected or changed. These emails are delivered through our email provider, Resend, acting as a data processor on our behalf. We do not send marketing emails, and we do not share your email address with third parties for their own purposes.</p>
 
 <h2>How We Use Your Information</h2>
 <p>Information collected is used solely to provide scheduling functionality — displaying event details, recording availability, and showing results. We do not use your information for advertising, marketing, or profiling.</p>
@@ -466,6 +471,9 @@ export const DEFAULT_SETTINGS: SiteSettings = {
 <h2>Third-Party Services</h2>
 <p>This Service uses third-party infrastructure providers (such as hosting and database services) to operate. These providers are subject to their own privacy policies.</p>
 <p><strong>Google Places API:</strong> When you type a location while creating or editing an event, your input may be sent to Google's Places API to provide address autocomplete suggestions. This data is transmitted to Google's servers and is subject to <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">Google's Privacy Policy</a>. We do not store the raw autocomplete queries — only the final location value you select or enter.</p>
+<p><strong>Authentication &amp; database (Supabase):</strong> Accounts, sessions, and event data are managed using Supabase, which stores this data and sets authentication cookies in your browser to keep you signed in.</p>
+<p><strong>Google Sign-In:</strong> If you choose to sign in with Google, Google provides your name and email address to us, and the sign-in is subject to <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">Google's Privacy Policy</a>.</p>
+<p><strong>Email delivery (Resend):</strong> Transactional notification emails are sent on our behalf by Resend, subject to <a href="https://resend.com/legal/privacy-policy" target="_blank" rel="noopener noreferrer">Resend's Privacy Policy</a>.</p>
 
 <h2>Children's Privacy</h2>
 <p>This Service is not directed to children under 13. We do not knowingly collect information from children.</p>
@@ -478,6 +486,9 @@ export const DEFAULT_SETTINGS: SiteSettings = {
 
 <h2>Service Description</h2>
 <p>This Service provides a free, no-account group scheduling tool. Users can create events, share links, and collect availability or RSVPs from participants. The Service is provided free of charge.</p>
+
+<h2>Accounts</h2>
+<p>Creating an account is optional. If you create one, you agree to provide accurate information and to keep your login credentials secure. You are responsible for all activity that occurs under your account. You must be at least 13 years old to create an account. You may delete your account at any time, and we may suspend or terminate accounts that violate these Terms. If you provide an email address, you consent to receive transactional emails related to the events you participate in (such as when a time is finalized); these are not marketing emails.</p>
 
 <h2>Acceptable Use</h2>
 <p>You agree to use this Service only for lawful purposes and in a manner that does not infringe the rights of others. You agree not to use the Service to transmit harmful, offensive, or illegal content.</p>
@@ -517,22 +528,35 @@ export const DEFAULT_SETTINGS: SiteSettings = {
 <p>We reserve the right to update these Terms at any time. Continued use of the Service after changes constitutes acceptance of the revised Terms.</p>`,
 
     cookie_policy: `<h2>Cookie Policy</h2>
-<p>This Cookie Policy explains how this Service uses browser storage on your device.</p>
+<p>This Cookie Policy explains the cookies and similar browser storage this Service uses, and how you can control them.</p>
 
-<h2>What We Use</h2>
-<p>This Service uses browser <strong>local storage</strong> — not traditional cookies — to store session information on your device. This includes:</p>
+<h2>Essential Cookies</h2>
+<p>These are required for the Service to function and do not require your consent:</p>
+<ul>
+<li><strong>Authentication cookies:</strong> If you sign in to an optional account, we set secure cookies to keep you logged in and to protect your session.</li>
+<li><strong>Administrative session cookie:</strong> Set only for site administrators who log in to the admin panel.</li>
+<li><strong>Cookie preference:</strong> A small cookie that remembers your consent choice so we don't ask again.</li>
+</ul>
+
+<h2>Functional Storage</h2>
+<p>We use your browser's <strong>local storage</strong> — which stays on your device — to remember:</p>
 <ul>
 <li>Your name and participant ID for events you have joined</li>
 <li>Organizer tokens for events you created</li>
-<li>UI preferences such as dismissed prompts</li>
+<li>UI preferences such as your light/dark theme and dismissed prompts</li>
 </ul>
-<p>This data stays on your device and is only used to provide Service functionality.</p>
+
+<h2>Analytics Cookies (optional)</h2>
+<p>With your consent, we may use analytics (such as Google Analytics) to understand how the Service is used so we can improve it. These set their own cookies and are <strong>only loaded after you accept</strong>. If you decline, no analytics cookies are set.</p>
+
+<h2>Your Choices</h2>
+<p>When you first visit, we ask whether to enable analytics cookies — you can <strong>Accept all</strong> or <strong>Decline analytics</strong>. Essential cookies and functional storage are always active because the Service cannot work without them. You can change your choice at any time using the "Cookie preferences" link, or clear all storage through your browser settings.</p>
 
 <h2>Push Notification Storage</h2>
 <p>If you opt in to push notifications, your browser generates a push subscription token that is stored on our servers (not just on your device). This token is used solely to deliver event updates — such as when a final meeting time is confirmed. It is never used for advertising or marketing. You can revoke this permission at any time in your browser or device notification settings, and your subscription will no longer be used to send notifications.</p>
 
 <h2>What We Don't Use</h2>
-<p>We do not use tracking cookies, advertising cookies, or third-party analytics cookies that follow you across other websites. We do not build behavioral profiles.</p>
+<p>We do not use advertising cookies or cross-site tracking cookies that follow you across other websites, and we do not build behavioral profiles or sell your data.</p>
 
 <h2>Third-Party Services</h2>
 <p>If analytics tools are configured by the site operator, those services may set their own cookies subject to their respective privacy policies. When address autocomplete is used, input is sent to Google's servers and may be subject to Google's own storage practices as described in their <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</a>.</p>
@@ -542,7 +566,7 @@ export const DEFAULT_SETTINGS: SiteSettings = {
 
     show_privacy: true,
     show_terms: true,
-    show_cookies: false,
+    show_cookies: true,
   },
   copy: DEFAULT_COPY,
   emailNotifications: DEFAULT_EMAIL_NOTIFICATIONS,
