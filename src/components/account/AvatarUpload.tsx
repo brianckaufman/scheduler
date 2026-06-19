@@ -24,6 +24,7 @@ export default function AvatarUpload({ initialUrl, name }: { initialUrl: string 
     setBusy(false);
     if (!res.ok) { setError(data.error || 'Upload failed'); return; }
     setUrl(data.avatar_url);
+    window.dispatchEvent(new CustomEvent('avatar-change', { detail: data.avatar_url }));
   };
 
   const remove = async () => {
@@ -31,6 +32,7 @@ export default function AvatarUpload({ initialUrl, name }: { initialUrl: string 
     await fetch('/api/account/avatar', { method: 'DELETE' });
     setBusy(false);
     setUrl(null);
+    window.dispatchEvent(new CustomEvent('avatar-change', { detail: null }));
   };
 
   return (

@@ -5,6 +5,7 @@ import { format, addDays } from 'date-fns';
 import type { Event } from '@/types';
 const RichTextEditor = lazy(() => import('@/components/RichTextEditor'));
 import LocationInput from '@/components/LocationInput';
+import EventColorPicker from '@/components/EventColorPicker';
 
 const DURATION_OPTIONS = [
   { value: 10, label: '10 min' },
@@ -30,6 +31,7 @@ type DeleteStep = 'idle' | 'confirm' | 'typing';
 
 export default function EditEventModal({ event, organizerToken, onClose, onSave, onDelete }: EditEventModalProps) {
   const [name, setName] = useState(event.name);
+  const [color, setColor] = useState(event.color || '');
   const [description, setDescription] = useState(event.description || '');
   const [body, setBody] = useState(event.body || '');
   const [organizerName, setOrganizerName] = useState(event.organizer_name || '');
@@ -84,6 +86,9 @@ export default function EditEventModal({ event, organizerToken, onClose, onSave,
           duration_minutes: durationMinutes,
           max_participants: maxP,
           min_responses: minResponses ? parseInt(minResponses, 10) : null,
+          // Only send color when changed, so edits still work if the color
+          // migration hasn't been run (avoids referencing a missing column).
+          ...(color !== (event.color || '') ? { color: color || null } : {}),
           response_deadline: responseDeadline
             ? new Date(responseDeadline + 'T23:59:59').toISOString()
             : null,
@@ -174,6 +179,7 @@ export default function EditEventModal({ event, organizerToken, onClose, onSave,
               />
             </Suspense>
           </div>
+          <EventColorPicker value={color} onChange={setColor} />
           <div>
             <label className="block text-xs font-medium text-secondary mb-1">Your name</label>
             <input type="text" value={organizerName} onChange={(e) => setOrganizerName(e.target.value)}

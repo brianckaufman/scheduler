@@ -5,6 +5,7 @@ import { sendPushNotifications } from '@/lib/push';
 import { sendParticipantTimeEmails } from '@/lib/email';
 import { parseLocation, locationLabel } from '@/lib/location';
 import { sanitizeText, sanitizeName, sanitizeHtml } from '@/lib/sanitize';
+import { normalizeHex } from '@/lib/eventColors';
 
 function getClientIp(request: NextRequest): string {
   return (
@@ -122,6 +123,9 @@ export async function PATCH(
   }
   if ('body' in updates) {
     safeUpdate.body = updates.body ? sanitizeHtml(String(updates.body)) : null;
+  }
+  if ('color' in updates) {
+    safeUpdate.color = typeof updates.color === 'string' ? normalizeHex(updates.color) : null;
   }
 
 

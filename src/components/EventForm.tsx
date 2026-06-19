@@ -22,6 +22,7 @@ import {
 } from 'date-fns';
 import { POPULAR_TIMEZONES, detectUserTimezone, getTimezoneLabel } from '@/lib/timezones';
 import LocationInput from '@/components/LocationInput';
+import EventColorPicker from '@/components/EventColorPicker';
 
 interface EventFormProps {
   enableFixedEvents?: boolean;
@@ -77,6 +78,7 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
   const [maxParticipants, setMaxParticipants] = useState('');
   const [minResponses, setMinResponses] = useState('');
   const [minResponsesCustom, setMinResponsesCustom] = useState(false);
+  const [color, setColor] = useState('');
   const [timeStart, setTimeStart] = useState('09:00');
   const [timeEnd, setTimeEnd] = useState('17:00');
   const [timezone, setTimezone] = useState(detectUserTimezone);
@@ -254,6 +256,7 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
         body: body.trim() || null,
         organizerName: organizerName.trim() || null,
         ...(organizerEmail.trim() && { organizerEmail: organizerEmail.trim() }),
+        ...(color && { color }),
         location: location.trim() || null,
         durationMinutes: resolvedDuration,
         timezone,
@@ -594,6 +597,8 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
                     />
                   </Suspense>
                 </div>
+
+                <EventColorPicker value={color} onChange={setColor} />
               </div>
             )}
           </div>
@@ -803,6 +808,8 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
                     />
                   </Suspense>
                 </div>
+
+                <EventColorPicker value={color} onChange={setColor} />
               </div>
             )}
           </div>

@@ -147,7 +147,10 @@ export default function EventView({ event: initialEvent, organizerAvatar }: Even
   const showPushPrompt = !isFixed && pushSupported && !isSubscribed && !pushDismissed && !event.finalized_time && !isOrganizer;
 
   return (
-    <div className="min-h-screen bg-subtle">
+    <div
+      className={`min-h-screen bg-subtle${event.color ? ' event-accent' : ''}`}
+      style={event.color ? ({ '--accent-base': event.color } as React.CSSProperties) : undefined}
+    >
       {showCelebration && <ConfettiCelebration onComplete={() => setShowCelebration(false)} />}
       <div className="max-w-lg mx-auto px-4 py-6">
         {/* Logo */}

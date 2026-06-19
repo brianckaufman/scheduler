@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { generateSlug, generateToken } from '@/lib/nanoid';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { sanitizeText, sanitizeName, sanitizeHtml, isValidTime, isValidDate, isValidTimezone } from '@/lib/sanitize';
+import { normalizeHex } from '@/lib/eventColors';
 
 function getClientIp(request: NextRequest): string {
   return (
@@ -65,7 +66,7 @@ export async function POST(request: NextRequest) {
 
   const {
     name, description, body: bodyText, organizerName, organizerEmail, location, durationMinutes,
-    responseDeadline, maxParticipants, minResponses, timezone,
+    responseDeadline, maxParticipants, minResponses, color, timezone,
     // Availability-mode fields
     dates, timeStart, timeEnd,
     // Fixed-mode fields
@@ -151,6 +152,7 @@ export async function POST(request: NextRequest) {
   const safeBody = bodyText ? sanitizeHtml(bodyText) : null;
   const safeOrganizerName = organizerName ? sanitizeName(organizerName) : null;
   const safeLocation = location ? sanitizeText(location, 600) : null;
+  const safeColor = typeof color === 'string' ? normalizeHex(color) : null;
 
   // Optional organizer email (for organizer notifications). Validate loosely.
   let safeOrganizerEmail: string | null = null;
@@ -203,6 +205,8 @@ export async function POST(request: NextRequest) {
     ...(responseDeadline && { response_deadline: responseDeadline }),
     ...(safeMaxParticipants && { max_participants: safeMaxParticipants }),
     ...(safeMinResponses && { min_responses: safeMinResponses }),
+    // color requires supabase-event-color-migration.sql to be run first.
+    ...(safeColor && { color: safeColor }),
     // user_id requires supabase-accounts-migration.sql to be run first.
     ...(userId && { user_id: userId }),
     // device_type requires supabase-analytics-migration.sql to be run first

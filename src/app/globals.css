@@ -167,6 +167,21 @@ body { color: var(--t-body); }
 .dark .logo-light { display: none; }
 .dark .logo-dark  { display: block; }
 
+/* Per-event accent: set --accent-base inline on this element and the whole
+   teal-* (accent) scale re-derives for the subtree. Mirrors the :root scale. */
+.event-accent {
+  --accent-50:  color-mix(in oklch, var(--accent-base)  5%, white);
+  --accent-100: color-mix(in oklch, var(--accent-base) 12%, white);
+  --accent-200: color-mix(in oklch, var(--accent-base) 25%, white);
+  --accent-300: color-mix(in oklch, var(--accent-base) 45%, white);
+  --accent-400: color-mix(in oklch, var(--accent-base) 70%, white);
+  --accent-500: var(--accent-base);
+  --accent-600: color-mix(in oklch, var(--accent-base) 85%, black);
+  --accent-700: color-mix(in oklch, var(--accent-base) 70%, black);
+  --accent-800: color-mix(in oklch, var(--accent-base) 55%, black);
+  --accent-900: color-mix(in oklch, var(--accent-base) 40%, black);
+}
+
 /* Brand gradient helpers */
 .bg-brand-gradient { background: var(--brand-gradient); }
 .bg-brand-gradient-ui { background: var(--brand-gradient-ui); }

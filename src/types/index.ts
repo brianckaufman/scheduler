@@ -17,6 +17,7 @@ export interface Event {
   timezone: string;
   created_at: string;
   event_type: 'availability' | 'fixed';
+  color?: string | null;
 }
 
 export type RsvpValue = 'yes' | 'maybe' | 'no';
