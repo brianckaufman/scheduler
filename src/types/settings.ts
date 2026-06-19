@@ -187,6 +187,21 @@ export interface SiteSettings {
     show_cookies: boolean;
   };
   copy: CopySettings;
+  emailNotifications: EmailNotificationSettings;
+}
+
+// Each email notification: toggle + editable subject/body templates.
+// Body supports {{variable}} placeholders (see DEFAULT_EMAIL_NOTIFICATIONS).
+export interface EmailTemplate {
+  enabled: boolean;
+  subject: string;
+  body: string;
+}
+export interface EmailNotificationSettings {
+  min_responses_reached: EmailTemplate; // → organizer
+  time_finalized: EmailTemplate;        // → participants (+ calendar)
+  time_changed: EmailTemplate;          // → participants (+ calendar)
+  new_response: EmailTemplate;          // → organizer
 }
 
 // ── Defaults ────────────────────────────────────────────────────
@@ -326,6 +341,47 @@ export const DEFAULT_COPY: CopySettings = {
     maybe_label: 'Maybe',
     cant_label: "Can't make it",
     pending_label: 'Awaiting response',
+  },
+};
+
+export const DEFAULT_EMAIL_NOTIFICATIONS: EmailNotificationSettings = {
+  // → organizer, when the minimum number of responses is reached
+  min_responses_reached: {
+    enabled: true,
+    subject: 'Time to pick a time for {{eventName}}',
+    body:
+      `Hi {{organizerName}},\n\n` +
+      `{{count}} people have now responded to {{eventName}} — that hits the minimum you set ({{minResponses}}).\n\n` +
+      `Head back in to choose the final time:`,
+  },
+  // → participants who gave an email, when the time is first locked in
+  time_finalized: {
+    enabled: true,
+    subject: '{{eventName}}: the time is set',
+    body:
+      `Hi {{name}},\n\n` +
+      `{{organizerName}} picked the time for {{eventName}}:\n\n` +
+      `{{time}}\n\n` +
+      `Add it to your calendar so you don't forget:`,
+  },
+  // → participants, when an already-finalized time is changed
+  time_changed: {
+    enabled: true,
+    subject: '{{eventName}}: the time changed',
+    body:
+      `Hi {{name}},\n\n` +
+      `Heads up — the time for {{eventName}} was updated. The new time is:\n\n` +
+      `{{time}}\n\n` +
+      `Update your calendar:`,
+  },
+  // → organizer, each time someone responds (OFF by default — can be noisy)
+  new_response: {
+    enabled: false,
+    subject: 'New response for {{eventName}}',
+    body:
+      `Hi {{organizerName}},\n\n` +
+      `{{participantName}} just responded to {{eventName}}. That's {{count}} so far.\n\n` +
+      `See where things stand:`,
   },
 };
 
@@ -487,4 +543,5 @@ export const DEFAULT_SETTINGS: SiteSettings = {
     show_cookies: false,
   },
   copy: DEFAULT_COPY,
+  emailNotifications: DEFAULT_EMAIL_NOTIFICATIONS,
 };

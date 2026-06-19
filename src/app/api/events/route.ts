@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
   }
 
   const {
-    name, description, body: bodyText, organizerName, location, durationMinutes,
+    name, description, body: bodyText, organizerName, organizerEmail, location, durationMinutes,
     responseDeadline, maxParticipants, minResponses, timezone,
     // Availability-mode fields
     dates, timeStart, timeEnd,
@@ -152,6 +152,17 @@ export async function POST(request: NextRequest) {
   const safeOrganizerName = organizerName ? sanitizeName(organizerName) : null;
   const safeLocation = location ? sanitizeText(location, 600) : null;
 
+  // Optional organizer email (for organizer notifications). Validate loosely.
+  let safeOrganizerEmail: string | null = null;
+  if (typeof organizerEmail === 'string' && organizerEmail.trim()) {
+    const e = organizerEmail.trim().toLowerCase();
+    if (e.length <= 254 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)) {
+      safeOrganizerEmail = e;
+    } else {
+      return NextResponse.json({ error: 'Please enter a valid email, or leave it blank.' }, { status: 400 });
+    }
+  }
+
   // Detect organizer device type
   const organizerUa = request.headers.get('user-agent') ?? '';
   const organizerDevice = /Mobile|Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(organizerUa)
@@ -181,6 +192,8 @@ export async function POST(request: NextRequest) {
     ...(finalizedTime && { finalized_time: finalizedTime }),
     ...(safeDescription && { description: safeDescription }),
     ...(safeOrganizerName && { organizer_name: safeOrganizerName }),
+    // organizer_email requires supabase-organizer-email-migration.sql to be run first.
+    ...(safeOrganizerEmail && { organizer_email: safeOrganizerEmail }),
     ...(safeLocation && { location: safeLocation }),
     ...(safeBody && { body: safeBody }),
     ...(responseDeadline && { response_deadline: responseDeadline }),

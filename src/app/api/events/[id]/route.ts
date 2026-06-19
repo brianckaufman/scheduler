@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { sendPushNotifications } from '@/lib/push';
-import { sendFinalizeEmails } from '@/lib/email';
+import { sendParticipantTimeEmails } from '@/lib/email';
+import { parseLocation, locationLabel } from '@/lib/location';
 import { sanitizeText, sanitizeName, sanitizeHtml } from '@/lib/sanitize';
 
 function getClientIp(request: NextRequest): string {
@@ -128,6 +129,15 @@ export async function PATCH(
     return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 });
   }
 
+  // When finalizing, capture the prior value so we can tell a first-time pick
+  // ("time finalized") from an edit of an already-set time ("time changed").
+  let priorFinalized: string | null = null;
+  if ('finalized_time' in updates) {
+    const { data: prior } = await supabase
+      .from('events').select('finalized_time').eq('id', id).single();
+    priorFinalized = prior?.finalized_time ?? null;
+  }
+
   const { data, error } = await supabase
     .from('events')
     .update(safeUpdate)
@@ -149,6 +159,12 @@ export async function PATCH(
     const origin = request.headers.get('origin')
       || process.env.NEXT_PUBLIC_SITE_URL
       || `https://${request.headers.get('host') || ''}`;
+    const eventUrl = `${origin}/e/${data.slug}`;
+
+    // First-time pick vs. an edit of an already-set time.
+    const isChange = !!priorFinalized && priorFinalized !== updates.finalized_time;
+    const variant = isChange ? 'time_changed' as const : 'time_finalized' as const;
+    const locLabel = data.location ? locationLabel(parseLocation(data.location)) : null;
 
     // Await both so the serverless function stays alive until the sends complete.
     // (Fire-and-forget here gets dropped when the response returns on Vercel.)
@@ -156,16 +172,24 @@ export async function PATCH(
     await Promise.allSettled([
       // Web push (opted-in browsers)
       sendPushNotifications(supabase, id, {
-        title: `${data.name}: Time Picked!`,
-        body: `${organizerName} picked ${timeStr}`,
+        title: isChange ? `${data.name}: Time Changed` : `${data.name}: Time Picked!`,
+        body: `${organizerName} ${isChange ? 'changed the time to' : 'picked'} ${timeStr}`,
         url: `/e/${data.slug}`,
       }),
-      // Email (participants who provided an address)
-      sendFinalizeEmails(supabase, id, {
+      // Email (participants who provided an address) + calendar invite
+      sendParticipantTimeEmails(supabase, id, {
+        variant,
         eventName: data.name,
         organizerName,
         timeStr,
-        url: `${origin}/e/${data.slug}`,
+        eventUrl,
+        calendar: {
+          name: data.name,
+          startISO: updates.finalized_time,
+          durationMinutes: data.duration_minutes || 60,
+          description: data.description,
+          location: locLabel,
+        },
       }),
     ]);
   }

@@ -9,7 +9,7 @@ import RichTextEditor from '@/components/RichTextEditor';
 
 import type { ReactNode } from 'react';
 
-type TabKey = 'usage' | 'seo' | 'branding' | 'copy' | 'monetization' | 'analytics' | 'social' | 'app' | 'legal';
+type TabKey = 'usage' | 'seo' | 'branding' | 'copy' | 'emailNotifications' | 'monetization' | 'analytics' | 'social' | 'app' | 'legal';
 
 interface UsageData {
   summary: {
@@ -71,6 +71,11 @@ const TAB_ICONS: Record<TabKey, ReactNode> = {
       <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 21l5.25-11.25L21 21m-9-3h7.5M3 5.621a48.474 48.474 0 016-.371m0 0c1.12 0 2.233.038 3.334.114M9 5.25V3m3.334 2.364C11.176 10.658 7.69 15.08 3 17.502m9.334-12.138c.896.061 1.785.147 2.666.257m-4.589 8.495a18.023 18.023 0 01-3.827-5.802" />
     </svg>
   ),
+  emailNotifications: (
+    <svg className={iconClass} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+    </svg>
+  ),
   monetization: (
     <svg className={iconClass} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
       <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
@@ -103,6 +108,7 @@ const TABS: { key: TabKey; label: string }[] = [
   { key: 'seo', label: 'SEO' },
   { key: 'branding', label: 'Branding' },
   { key: 'copy', label: 'Copy & Language' },
+  { key: 'emailNotifications', label: 'Email Notifications' },
   { key: 'monetization', label: 'Monetization' },
   { key: 'analytics', label: 'Analytics' },
   { key: 'social', label: 'Social' },
@@ -372,6 +378,25 @@ export default function AdminDashboard() {
         ...prev.copy,
         [group]: {
           ...prev.copy[group],
+          [field]: value,
+        },
+      },
+    }));
+    setHasChanges(true);
+    setSaveMessage('');
+  };
+
+  const updateEmailNotif = (
+    notif: keyof SiteSettings['emailNotifications'],
+    field: 'enabled' | 'subject' | 'body',
+    value: string | boolean
+  ) => {
+    setSettings((prev) => ({
+      ...prev,
+      emailNotifications: {
+        ...prev.emailNotifications,
+        [notif]: {
+          ...prev.emailNotifications[notif],
           [field]: value,
         },
       },
@@ -1476,12 +1501,74 @@ export default function AdminDashboard() {
     );
   };
 
+  const renderEmailNotifications = () => {
+    const NOTIFS: { key: keyof SiteSettings['emailNotifications']; label: string; desc: string; vars: string[] }[] = [
+      { key: 'min_responses_reached', label: 'Minimum responses reached → organizer', desc: 'Emails the event creator (if they gave an email) once enough people have responded, prompting them to pick the final time.', vars: ['organizerName', 'eventName', 'count', 'minResponses', 'link'] },
+      { key: 'time_finalized', label: 'Time finalized → participants', desc: 'Emails participants who gave an email when the organizer picks the time. Includes an "Add to calendar" button + .ics attachment.', vars: ['name', 'organizerName', 'eventName', 'time', 'link'] },
+      { key: 'time_changed', label: 'Time changed → participants', desc: 'Emails participants when an already-finalized time is edited, with the updated calendar invite.', vars: ['name', 'organizerName', 'eventName', 'time', 'link'] },
+      { key: 'new_response', label: 'New response → organizer', desc: 'Emails the organizer each time someone responds. Off by default — can get noisy on large events.', vars: ['organizerName', 'eventName', 'participantName', 'count', 'link'] },
+    ];
+    return (
+      <div className="space-y-5">
+        <p className={helpClass}>
+          Transactional emails sent via Resend. Each one can be turned on/off and its subject/body edited.
+          Use <code className="text-accent-fg">{'{{variables}}'}</code> as placeholders. Requires{' '}
+          <code className="text-accent-fg">RESEND_API_KEY</code> and <code className="text-accent-fg">EMAIL_FROM</code> to be set.
+        </p>
+        {NOTIFS.map((n) => {
+          const t = settings.emailNotifications[n.key];
+          return (
+            <div key={n.key} className="bg-subtle border border-hairline rounded-xl p-4 space-y-3">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-heading">{n.label}</p>
+                  <p className={`${helpClass} mt-0.5`}>{n.desc}</p>
+                </div>
+                <label className="flex items-center gap-2 cursor-pointer shrink-0">
+                  <input
+                    type="checkbox"
+                    checked={t.enabled}
+                    onChange={(e) => updateEmailNotif(n.key, 'enabled', e.target.checked)}
+                    className="w-4 h-4 rounded border-strong text-teal-500 focus:ring-teal-400"
+                  />
+                  <span className="text-xs text-body">{t.enabled ? 'On' : 'Off'}</span>
+                </label>
+              </div>
+              <div className={t.enabled ? 'space-y-3' : 'space-y-3 opacity-50 pointer-events-none'}>
+                <div>
+                  <label className={labelClass}>Subject</label>
+                  <input
+                    className={inputClass}
+                    value={t.subject}
+                    onChange={(e) => updateEmailNotif(n.key, 'subject', e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className={labelClass}>Body</label>
+                  <textarea
+                    className={`${inputClass} min-h-[120px] resize-y`}
+                    value={t.body}
+                    onChange={(e) => updateEmailNotif(n.key, 'body', e.target.value)}
+                  />
+                  <p className={helpClass}>
+                    Variables: {n.vars.map((v) => `{{${v}}}`).join(', ')}
+                  </p>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
   const renderTabContent = () => {
     switch (activeTab) {
       case 'usage': return renderUsage();
       case 'seo': return renderSEO();
       case 'branding': return renderBranding();
       case 'copy': return renderCopy();
+      case 'emailNotifications': return renderEmailNotifications();
       case 'monetization': return renderMonetization();
       case 'analytics': return renderAnalytics();
       case 'social': return renderSocial();

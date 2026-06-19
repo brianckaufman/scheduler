@@ -69,6 +69,7 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [organizerName, setOrganizerName] = useState('');
+  const [organizerEmail, setOrganizerEmail] = useState('');
   const [location, setLocation] = useState('');
   const [durationMinutes, setDurationMinutes] = useState(60);
   const [responseDeadline, setResponseDeadline] = useState('');
@@ -252,6 +253,7 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
         description: description.trim() || null,
         body: body.trim() || null,
         organizerName: organizerName.trim() || null,
+        ...(organizerEmail.trim() && { organizerEmail: organizerEmail.trim() }),
         location: location.trim() || null,
         durationMinutes: resolvedDuration,
         timezone,
@@ -416,6 +418,26 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
             required
             maxLength={50}
           />
+        </div>
+
+        <div>
+          <label htmlFor="organizerEmail" className="block text-sm font-medium text-body mb-1.5">
+            Your email <span className="text-faint font-normal">(optional)</span>
+          </label>
+          <input
+            id="organizerEmail"
+            type="email"
+            value={organizerEmail}
+            onChange={(e) => setOrganizerEmail(e.target.value)}
+            placeholder="you@example.com"
+            autoComplete="email"
+            inputMode="email"
+            className={inputClass}
+            maxLength={254}
+          />
+          <p className="text-xs text-faint mt-1">
+            We&apos;ll email you when enough people have responded so you can pick the time.
+          </p>
         </div>
 
 

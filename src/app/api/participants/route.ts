@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { sanitizeName } from '@/lib/sanitize';
+import { sendOrganizerEmail } from '@/lib/email';
 
 function getClientIp(request: NextRequest): string {
   return (
@@ -57,7 +58,7 @@ export async function POST(request: NextRequest) {
   // Fetch event to check deadline and participant limit
   const { data: event, error: eventError } = await supabase
     .from('events')
-    .select('id, response_deadline, max_participants, event_type')
+    .select('id, slug, name, response_deadline, max_participants, event_type, min_responses, organizer_name, finalized_time')
     .eq('id', event_id)
     .single();
 
@@ -124,6 +125,46 @@ export async function POST(request: NextRequest) {
 
   if (error || !data) {
     return NextResponse.json({ error: 'Failed to join event.' }, { status: 500 });
+  }
+
+  // ── Organizer email notifications (best-effort; never block the join) ──
+  // Awaited so the serverless function stays alive until the send completes.
+  try {
+    const minR = (event as { min_responses?: number | null }).min_responses ?? null;
+    if (event.event_type === 'availability' && !event.finalized_time) {
+      // organizer_email lives behind a migration — fetch separately so a missing
+      // column can't break the join. (Supabase returns an error, not a throw.)
+      const { data: oe } = await supabase
+        .from('events').select('organizer_email').eq('id', event_id).single();
+      const organizerEmail = (oe as { organizer_email?: string | null } | null)?.organizer_email ?? null;
+
+      if (organizerEmail) {
+        const { count } = await supabase
+          .from('participants').select('id', { count: 'exact', head: true }).eq('event_id', event_id);
+        const total = count ?? 0;
+
+        const origin = request.headers.get('origin')
+          || process.env.NEXT_PUBLIC_SITE_URL
+          || `https://${request.headers.get('host') || ''}`;
+        const eventUrl = `${origin}/e/${event.slug}`;
+        const organizerName = event.organizer_name || 'there';
+
+        // Minimum reached — fire once, exactly on the crossing.
+        if (minR && minR >= 2 && total === minR) {
+          await sendOrganizerEmail({
+            kind: 'min_responses_reached', organizerEmail, organizerName,
+            eventName: event.name, eventUrl, count: total, minResponses: minR,
+          });
+        }
+        // Each new response (disabled by default in settings).
+        await sendOrganizerEmail({
+          kind: 'new_response', organizerEmail, organizerName,
+          eventName: event.name, eventUrl, count: total, participantName: safeName,
+        });
+      }
+    }
+  } catch (err) {
+    console.error('Organizer notification error:', err);
   }
 
   return NextResponse.json(data, { status: 201 });
