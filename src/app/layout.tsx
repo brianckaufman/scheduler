@@ -13,6 +13,7 @@ import JsonLd, { buildWebAppJsonLd } from '@/components/JsonLd';
 import ThemeManager from '@/components/ThemeManager';
 import AccountMenu from '@/components/AccountMenu';
 import CookieConsent from '@/components/CookieConsent';
+import NavigationProgress from '@/components/NavigationProgress';
 import { optimizedOgImageUrl, optimizedFaviconUrl } from '@/lib/image';
 
 /** Runs before paint to set the .dark class with no flash of the wrong theme.
@@ -215,6 +216,7 @@ export default async function RootLayout({
           >
             <CopyProvider copy={settings.copy}>
               <ThemeManager />
+              <NavigationProgress />
               <AccountMenu />
               {children}
               <CookieConsent />

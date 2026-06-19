@@ -11,6 +11,7 @@ import { useRealtimeSlots } from '@/hooks/useRealtimeSlots';
 import { useRealtimeParticipants } from '@/hooks/useRealtimeParticipants';
 import TimeGridSlot, { PARTICIPANT_COLORS } from './TimeGridSlot';
 import BestTimes from './BestTimes';
+import AnimatedNumber from './AnimatedNumber';
 import SlotTooltip from './SlotTooltip';
 import { getTimezoneLabel } from '@/lib/timezones';
 import type { Event } from '@/types';
@@ -741,7 +742,10 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
       <div className="mt-2 pt-4 border-t border-hairline-soft space-y-3">
         <div className="flex items-center justify-between">
           <h3 className="text-xs font-semibold text-muted uppercase tracking-wide">
-            {interpolate(copy.grid.participants_label, { count: participants.length })}
+            {(() => {
+              const [pre, post] = copy.grid.participants_label.split('{{count}}');
+              return <>{pre}<AnimatedNumber value={participants.length} className="text-body" />{post}</>;
+            })()}
           </h3>
           <div className="flex items-center gap-2">
             {/* Legend inline — adapts to whether a full-overlap time exists */}

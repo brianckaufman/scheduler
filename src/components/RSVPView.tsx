@@ -6,6 +6,7 @@ import { useCopy } from '@/contexts/CopyContext';
 import { useMonetization } from '@/contexts/MonetizationContext';
 import SupportBanner from './SupportBanner';
 import ConfettiCelebration from './ConfettiCelebration';
+import AnimatedNumber from './AnimatedNumber';
 import { useRealtimeParticipants } from '@/hooks/useRealtimeParticipants';
 import { formatDisplayName, firstName } from '@/lib/names';
 import { buildInviteText } from '@/lib/invite';
@@ -110,7 +111,7 @@ function AccordionSection({
         <div className="flex items-center gap-2">
           <span className={`w-2 h-2 rounded-full shrink-0 ${!isEmpty && dotClass ? dotClass : 'bg-fill2'}`} />
           <span className={`text-sm font-medium ${isEmpty && dimWhenEmpty ? 'text-faint' : 'text-body'}`}>{label}</span>
-          <span className={`text-xs font-semibold tabular-nums ${isEmpty && dimWhenEmpty ? 'text-faint2' : 'text-faint'}`}>{count}</span>
+          <span className={`text-xs font-semibold tabular-nums ${isEmpty && dimWhenEmpty ? 'text-faint2' : 'text-faint'}`}><AnimatedNumber value={count} /></span>
         </div>
         <svg className={`w-4 h-4 text-faint transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
           fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -327,6 +328,10 @@ export default function RSVPView({ event, participantId, isOrganizer, organizerT
 
   const handleRsvp = useCallback(async (value: RsvpValue) => {
     if (saving) return;
+    // Quick tactile confirmation on tap.
+    if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+      try { navigator.vibrate(12); } catch { /* ignore */ }
+    }
     setOptimisticRsvp(value);
     setSaving(true);
 
