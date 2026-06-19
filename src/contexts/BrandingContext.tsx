@@ -4,6 +4,7 @@ import { createContext, useContext } from 'react';
 
 interface BrandingValues {
   logo_url: string;
+  logo_url_dark: string;
   logo_height: number;
   hide_home_title: boolean;
   hide_home_subtitle: boolean;
@@ -14,6 +15,7 @@ interface BrandingValues {
 
 const defaults: BrandingValues = {
   logo_url: '',
+  logo_url_dark: '',
   logo_height: 40,
   hide_home_title: false,
   hide_home_subtitle: false,

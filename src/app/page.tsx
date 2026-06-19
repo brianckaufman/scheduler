@@ -4,8 +4,8 @@ import HomeTabs from '@/components/HomeTabs';
 import InstallPrompt from '@/components/InstallPrompt';
 import Onboarding from '@/components/Onboarding';
 import PolicyFooterLinks from '@/components/PolicyFooterLinks';
+import Logo from '@/components/Logo';
 import { getSettings } from '@/lib/settings';
-import { optimizedLogoUrl } from '@/lib/image';
 
 export default async function Home() {
   const settings = await getSettings();
@@ -22,13 +22,7 @@ export default async function Home() {
         <div className="text-center mb-8 stagger-children">
           {branding.logo_url && (
             <div className="mb-4 flex justify-center">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={optimizedLogoUrl(branding.logo_url, logoHeight)}
-                alt={settings.seo.site_name || 'Logo'}
-                style={{ height: `${logoHeight}px` }}
-                className="w-auto object-contain"
-              />
+              <Logo height={logoHeight} />
             </div>
           )}
           {!branding.hide_home_title && (

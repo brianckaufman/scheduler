@@ -606,9 +606,19 @@ export default function AdminDashboard() {
         onChange={(url) => updateSection('branding', 'logo_url', url)}
         onUploadComplete={(url) => autoSaveImageField('branding', 'logo_url', url)}
         folder="logo"
-        label="Logo"
+        label="Logo (light mode)"
         help="Displayed in the app header and shared links"
         aspectHint="SVG or PNG recommended (transparent background)"
+      />
+
+      <ImageUpload
+        value={settings.branding.logo_url_dark}
+        onChange={(url) => updateSection('branding', 'logo_url_dark', url)}
+        onUploadComplete={(url) => autoSaveImageField('branding', 'logo_url_dark', url)}
+        folder="logo"
+        label="Logo (dark mode)"
+        help="Optional. Shown when a visitor is in dark mode. Falls back to the light logo if left empty."
+        aspectHint="Use a light-colored version that reads on a dark background"
       />
 
       {/* Logo display options — only shown when a logo is uploaded */}

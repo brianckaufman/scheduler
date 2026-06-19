@@ -170,6 +170,7 @@ export default async function RootLayout({
         <BrandingProvider
           branding={{
             logo_url: settings.branding.logo_url,
+            logo_url_dark: settings.branding.logo_url_dark || '',
             logo_height: settings.branding.logo_height || 40,
             hide_home_title: settings.branding.hide_home_title || false,
             hide_home_subtitle: settings.branding.hide_home_subtitle || false,

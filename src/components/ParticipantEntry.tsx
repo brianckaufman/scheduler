@@ -5,6 +5,7 @@ import { format, formatDistanceToNow, isPast, addMinutes } from 'date-fns';
 import { useCopy, interpolate } from '@/contexts/CopyContext';
 import { useBranding } from '@/contexts/BrandingContext';
 import { optimizedLogoUrl } from '@/lib/image';
+import Logo from '@/components/Logo';
 import { formatDisplayName, firstName } from '@/lib/names';
 import LocationDisplay from '@/components/LocationDisplay';
 import type { Event } from '@/types';
@@ -247,13 +248,7 @@ export default function ParticipantEntry({ event, onJoin }: ParticipantEntryProp
               <div className="text-center mb-6">
                 {branding.logo_url ? (
                   <div className="flex justify-center mb-3">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={optimizedLogoUrl(branding.logo_url, branding.logo_height || 40)}
-                      alt={branding.site_name}
-                      style={{ height: `${branding.logo_height || 40}px` }}
-                      className="w-auto object-contain"
-                    />
+                    <Logo height={branding.logo_height || 40} />
                   </div>
                 ) : (
                   <div className={`mx-auto w-14 h-14 rounded-2xl ${isFixed ? 'bg-teal-50 dark:bg-[#0D223A]' : 'bg-social-50 dark:bg-[#1C1939]'} flex items-center justify-center mb-3`}>

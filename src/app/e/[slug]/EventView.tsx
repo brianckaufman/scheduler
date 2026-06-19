@@ -19,7 +19,7 @@ import SupportBanner from '@/components/SupportBanner';
 import BookmarkPrompt from '@/components/BookmarkPrompt';
 import ConfettiCelebration from '@/components/ConfettiCelebration';
 import { useCreatedEvents } from '@/hooks/useCreatedEvents';
-import { optimizedLogoUrl } from '@/lib/image';
+import Logo from '@/components/Logo';
 import RichTextDisplay from '@/components/RichTextDisplay';
 import LocationDisplay from '@/components/LocationDisplay';
 import { formatDisplayName, firstName } from '@/lib/names';
@@ -152,13 +152,7 @@ export default function EventView({ event: initialEvent }: EventViewProps) {
         {branding.logo_url && (
           <div className="mb-4 flex justify-center">
             <a href="/">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={optimizedLogoUrl(branding.logo_url, branding.logo_height || 40)}
-                alt={branding.site_name}
-                style={{ height: `${branding.logo_height || 40}px` }}
-                className="w-auto object-contain"
-              />
+              <Logo height={branding.logo_height || 40} />
             </a>
           </div>
         )}
