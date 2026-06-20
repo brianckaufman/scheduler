@@ -14,6 +14,7 @@ import ThemeManager from '@/components/ThemeManager';
 import AccountMenu from '@/components/AccountMenu';
 import CookieConsent from '@/components/CookieConsent';
 import NavigationProgress from '@/components/NavigationProgress';
+import { Analytics } from '@vercel/analytics/next';
 import { optimizedOgImageUrl, optimizedFaviconUrl } from '@/lib/image';
 
 /** Runs before paint to set the .dark class with no flash of the wrong theme.
@@ -224,6 +225,7 @@ export default async function RootLayout({
           </MonetizationProvider>
         </BrandingProvider>
         </AuthProvider>
+        <Analytics />
       </body>
     </html>
   );
