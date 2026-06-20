@@ -615,7 +615,7 @@ export default function AdminDashboard() {
         value={settings.branding.logo_url_dark}
         onChange={(url) => updateSection('branding', 'logo_url_dark', url)}
         onUploadComplete={(url) => autoSaveImageField('branding', 'logo_url_dark', url)}
-        folder="logo"
+        folder="logo-dark"
         label="Logo (dark mode)"
         help="Optional. Shown when a visitor is in dark mode. Falls back to the light logo if left empty."
         aspectHint="Use a light-colored version that reads on a dark background"

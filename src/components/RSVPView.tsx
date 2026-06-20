@@ -54,13 +54,13 @@ const FrownFace = () => (
 const RSVP_CONFIG = {
   yes: {
     icon: <SmileFace />,
-    activeClass: 'bg-green-500 text-white border-green-500 dark:border-[#123428] shadow-md shadow-green-200',
+    activeClass: 'bg-green-500 text-white border-green-500 dark:border-[#123428] shadow-md shadow-green-200 dark:shadow-green-500/30',
     hoverClass: 'hover:border-green-400 hover:bg-green-50 dark:hover:bg-[#112D25] hover:text-success-fg',
     dotClass: 'bg-green-400',
   },
   maybe: {
     icon: <MaybeFace />,
-    activeClass: 'bg-amber-400 text-white border-amber-400 dark:border-[#3a2f17] shadow-md shadow-amber-200',
+    activeClass: 'bg-amber-400 text-white border-amber-400 dark:border-[#3a2f17] shadow-md shadow-amber-200 dark:shadow-amber-500/25',
     hoverClass: 'hover:border-amber-300 dark:hover:border-[#3a2f17] hover:bg-amber-50 dark:hover:bg-[#302817] hover:text-amber-700 dark:hover:text-amber-400',
     dotClass: 'bg-amber-400',
   },

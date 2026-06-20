@@ -179,7 +179,7 @@ export default function Onboarding() {
           )}
           <button
             onClick={goNext}
-            className="flex-1 py-3.5 px-6 text-sm font-semibold text-white bg-social-500 rounded-2xl hover:bg-social-600 shadow-lg shadow-social-200/50 transition-all duration-200 active:scale-[0.97] cursor-pointer"
+            className="flex-1 py-3.5 px-6 text-sm font-semibold text-white bg-social-500 rounded-2xl hover:bg-social-600 shadow-lg shadow-social-200/50 dark:shadow-social-500/30 transition-all duration-200 active:scale-[0.97] cursor-pointer"
           >
             {isLast ? "Let's go" : 'Next'}
           </button>
