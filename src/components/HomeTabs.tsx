@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, type ReactNode } from 'react';
+import { useState, useEffect, type ReactNode } from 'react';
 import { useCreatedEvents, getUserDisplayName } from '@/hooks/useCreatedEvents';
 import { firstName } from '@/lib/names';
 import ReturningUserBanner from './ReturningUserBanner';
@@ -13,6 +13,15 @@ export default function HomeTabs({ children }: HomeTabsProps) {
   const createdEvents = useCreatedEvents();
   const { events, loaded } = createdEvents;
   const [activeTab, setActiveTab] = useState<'new' | 'events'>('new');
+  const [creating, setCreating] = useState(false);
+
+  // EventForm announces when the user has picked a type (begins creating) so we
+  // can hide the tab bar and let them focus on building the event.
+  useEffect(() => {
+    const onCreating = (e: Event) => setCreating((e as CustomEvent<boolean>).detail);
+    window.addEventListener('eventform-creating', onCreating);
+    return () => window.removeEventListener('eventform-creating', onCreating);
+  }, []);
 
   // Don't show tabs if no events — just render the form directly
   const hasEvents = loaded && events.length > 0;
@@ -28,7 +37,8 @@ export default function HomeTabs({ children }: HomeTabsProps) {
 
   return (
     <div className="animate-fade-in">
-      {/* Tab bar */}
+      {/* Tab bar — hidden once the user begins creating an event */}
+      {!creating && (
       <div className="flex bg-fill rounded-xl p-1 mb-4">
         <button
           type="button"
@@ -66,6 +76,7 @@ export default function HomeTabs({ children }: HomeTabsProps) {
           </span>
         </button>
       </div>
+      )}
 
       {/* Tab content */}
       {activeTab === 'new' ? (

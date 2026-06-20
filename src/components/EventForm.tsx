@@ -67,6 +67,14 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
   const [eventType, setEventType] = useState<'availability' | 'fixed' | null>(
     enableFixedEvents ? null : 'availability'
   );
+
+  // Tell the surrounding HomeTabs to hide its tab bar once the user picks a type
+  // (begins creating). Only meaningful when the type chooser is in play.
+  useEffect(() => {
+    window.dispatchEvent(
+      new CustomEvent('eventform-creating', { detail: enableFixedEvents && eventType !== null })
+    );
+  }, [eventType, enableFixedEvents]);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [organizerName, setOrganizerName] = useState('');
