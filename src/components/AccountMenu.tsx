@@ -12,7 +12,12 @@ export default function AccountMenu() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  // Track whether the avatar image has actually decoded, so we show the initial
+  // fallback (never a broken-image icon) until it's ready, then fade it in.
+  const [imgOk, setImgOk] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => { setImgOk(false); }, [avatarUrl]);
 
   useEffect(() => {
     const onClick = (e: MouseEvent) => {
@@ -67,19 +72,24 @@ export default function AccountMenu() {
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-label="Account menu"
-        className="flex h-9 w-9 items-center justify-center rounded-full overflow-hidden bg-teal-500 text-white text-sm font-semibold shadow-sm hover:bg-teal-600 transition-colors cursor-pointer"
+        className="relative flex h-9 w-9 items-center justify-center rounded-full overflow-hidden bg-teal-500 text-white text-sm font-semibold shadow-sm hover:bg-teal-600 transition-colors cursor-pointer"
       >
-        {avatarUrl ? (
+        <span>{initial}</span>
+        {avatarUrl && (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={avatarUrl} alt="" className="w-full h-full object-cover" />
-        ) : (
-          initial
+          <img
+            src={avatarUrl}
+            alt=""
+            onLoad={() => setImgOk(true)}
+            onError={() => setImgOk(false)}
+            className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-200 ${imgOk ? 'opacity-100' : 'opacity-0'}`}
+          />
         )}
       </button>
       {open && (
         <div className="absolute right-0 mt-2 w-56 rounded-xl bg-surface border border-hairline shadow-lg overflow-hidden animate-fade-in">
           <div className="px-4 py-3 border-b border-hairline-soft flex items-center gap-3">
-            {avatarUrl ? (
+            {avatarUrl && imgOk ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={avatarUrl} alt="" className="w-9 h-9 rounded-full object-cover shrink-0" />
             ) : (
