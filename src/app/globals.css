@@ -346,6 +346,21 @@ body { color: var(--t-body); }
   transition: background-color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease, ring-color 0.2s ease;
 }
 
+/* Dark-mode heat glow: an outer halo on cells with overlap, intensity driven by
+   the inline --glow var (0..1). Painted on a pseudo-element so it never clobbers
+   the cell's inline ring; light mode is unaffected. Only cells that actually
+   overlap get the .slot-glow class, so empty cells pay nothing. */
+.slot-glow { position: relative; }
+.dark .slot-glow::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  box-shadow: 0 0 calc(var(--glow, 0) * 16px) calc(var(--glow, 0) * 1px) rgba(var(--t-heat-rgb), calc(var(--glow, 0) * 0.85));
+  transition: box-shadow 0.2s ease;
+}
+
 /* === Onboarding overlay animations === */
 
 @keyframes onboarding-enter {

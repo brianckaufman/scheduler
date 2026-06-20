@@ -120,6 +120,18 @@ function TimeGridSlotInner({
     ring('var(--t-best-ring)');
   }
 
+  // Dark-mode heat glow: brighter halo where more people overlap. Intensity is a
+  // 0..1 var consumed by .slot-glow in globals.css (light mode ignores it).
+  let glow = 0;
+  if (isAllMatch) glow = 1;
+  else if (isBest) glow = 0.85;
+  else if (totalAvailable > 0 && useCountMode) {
+    glow = Math.min(0.9, 0.3 + (totalAvailable / totalParticipants) * 0.6);
+  }
+  if (glow > 0) {
+    (cellStyle as Record<string, string | number>)['--glow'] = glow;
+  }
+
   // Desktop drag
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
@@ -147,7 +159,7 @@ function TimeGridSlotInner({
       className={`
         slot-cell w-full min-h-[44px] rounded-lg text-xs font-medium select-none cursor-pointer
         flex items-center justify-center gap-[3px] flex-wrap p-1
-        ${isMine ? 'slot-selected' : ''} ${isAllMatch ? 'slot-match' : ''}
+        ${isMine ? 'slot-selected' : ''} ${isAllMatch ? 'slot-match' : ''} ${glow > 0 ? 'slot-glow' : ''}
         active:scale-[0.93] touch-manipulation
       `}
       style={cellStyle}
