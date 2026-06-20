@@ -185,6 +185,36 @@ body { color: var(--t-body); }
 /* Brand gradient helpers */
 .bg-brand-gradient { background: var(--brand-gradient); }
 .bg-brand-gradient-ui { background: var(--brand-gradient-ui); }
+
+/* === Loading screen: a 3×3 grid that blooms diagonally (echoes the time grid).
+   Pure CSS so the route-level loading.tsx fallback paints instantly. === */
+.loader-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 7px;
+}
+.loader-grid span {
+  display: block;
+  width: 16px;
+  height: 16px;
+  border-radius: 5px;
+  background: var(--brand-gradient-ui);
+  animation: loader-bloom 1.3s ease-in-out infinite;
+}
+@keyframes loader-bloom {
+  0%, 65%, 100% { opacity: 0.2; transform: scale(0.7); }
+  32%          { opacity: 1;   transform: scale(1); }
+}
+.loader-grid span:nth-child(1) { animation-delay: 0ms; }
+.loader-grid span:nth-child(2), .loader-grid span:nth-child(4) { animation-delay: 90ms; }
+.loader-grid span:nth-child(3), .loader-grid span:nth-child(5), .loader-grid span:nth-child(7) { animation-delay: 180ms; }
+.loader-grid span:nth-child(6), .loader-grid span:nth-child(8) { animation-delay: 270ms; }
+.loader-grid span:nth-child(9) { animation-delay: 360ms; }
+
+@media (prefers-reduced-motion: reduce) {
+  .loader-grid span { animation: loader-fade 1.3s ease-in-out infinite; transform: none; }
+  @keyframes loader-fade { 0%, 100% { opacity: 0.35; } 50% { opacity: 1; } }
+}
 .bg-brand-wash { background: var(--brand-wash); }
 
 .time-grid {
