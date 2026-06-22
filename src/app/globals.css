@@ -236,8 +236,8 @@ body { color: var(--t-body); }
 }
 
 @keyframes slide-down {
-  from { opacity: 0; max-height: 0; }
-  to { opacity: 1; max-height: 600px; }
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes slide-up {
@@ -293,7 +293,6 @@ body { color: var(--t-body); }
 
 .animate-slide-down {
   animation: slide-down 0.3s ease-out both;
-  overflow: hidden;
 }
 
 .animate-slide-up {
