@@ -64,6 +64,7 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
 
   // Expandable participant list for large groups
   const [showAllParticipants, setShowAllParticipants] = useState(false);
+  const [showParticipants, setShowParticipants] = useState(true);
 
   // Tooltip
   const [tooltipSlot, setTooltipSlot] = useState<string | null>(null);
@@ -721,12 +722,20 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
       {/* Participants & Legend */}
       <div className="mt-2 pt-4 border-t border-hairline-soft space-y-3">
         <div className="flex items-center justify-between">
-          <h3 className="text-xs font-semibold text-muted uppercase tracking-wide">
+          <button
+            type="button"
+            onClick={() => setShowParticipants((v) => !v)}
+            className="flex items-center gap-1 text-xs font-semibold text-muted uppercase tracking-wide hover:text-body transition-colors cursor-pointer"
+          >
             {(() => {
               const [pre, post] = copy.grid.participants_label.split('{{count}}');
               return <>{pre}<AnimatedNumber value={participants.length} className="text-body" />{post}</>;
             })()}
-          </h3>
+            <svg className={`w-3.5 h-3.5 transition-transform duration-200 ${showParticipants ? 'rotate-180' : ''}`}
+              fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
           <div className="flex items-center gap-2">
             {/* Legend inline — adapts to whether a full-overlap time exists */}
             {overlapStatus === 'partial' ? (
@@ -748,12 +757,13 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
             )}
           </div>
         </div>
-        <ul className="space-y-1">
+        {showParticipants && (
+        <ul className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-1">
           {(participants.length > 8 && !showAllParticipants
             ? participants.slice(0, 6)
             : participants
           ).map((p) => (
-            <li key={p.id} className="flex items-center justify-between group animate-fade-in">
+            <li key={p.id} className="flex items-center justify-between gap-1 min-w-0 group animate-fade-in">
               <div className="flex items-center gap-2 min-w-0">
                 <span
                   className="inline-block w-2.5 h-2.5 rounded-full shrink-0"
@@ -781,7 +791,7 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
             </li>
           ))}
           {participants.length > 8 && (
-            <li>
+            <li className="col-span-full">
               <button
                 type="button"
                 onClick={() => setShowAllParticipants((v) => !v)}
@@ -792,6 +802,7 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
             </li>
           )}
         </ul>
+        )}
 
         {/* Organizer-only: who's free when breakdown */}
         {isOrganizer && participants.length > 0 && (

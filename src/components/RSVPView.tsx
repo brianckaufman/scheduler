@@ -311,6 +311,7 @@ export default function RSVPView({ event, participantId, isOrganizer, organizerT
   const [optimisticRsvp, setOptimisticRsvp] = useState<RsvpValue | null>(null);
   const [copied, setCopied] = useState(false);
   const [openSections, setOpenSections] = useState<Set<SectionKey>>(new Set());
+  const [showGuests, setShowGuests] = useState(true);
   const [modalRsvp, setModalRsvp] = useState<RsvpValue | null>(null);
   const [showConfetti, setShowConfetti] = useState(false);
 
@@ -416,10 +417,10 @@ export default function RSVPView({ event, participantId, isOrganizer, organizerT
   ];
 
   const renderNameList = (list: typeof going) => (
-    <ul className="space-y-1 mt-0.5">
+    <ul className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-1 mt-0.5">
       {list.map((p) => (
-        <li key={p.id} className="flex items-center justify-between group">
-          <span className={`text-sm ${p.id === participantId ? 'font-semibold text-heading' : 'text-secondary'}`}>
+        <li key={p.id} className="flex items-center justify-between gap-1 min-w-0 group">
+          <span className={`text-sm truncate ${p.id === participantId ? 'font-semibold text-heading' : 'text-secondary'}`}>
             {formatDisplayName(p.name)}
             {p.id === participantId && <span className="ml-1 text-xs text-faint font-normal">you</span>}
           </span>
@@ -497,29 +498,50 @@ export default function RSVPView({ event, participantId, isOrganizer, organizerT
           </div>
         )}
 
-        {/* Accordion RSVP list */}
+        {/* Guest list — collapsible (shown by default) */}
         {participants.length > 0 && (
           <div className="border-t border-hairline-soft pt-1 animate-fade-in">
-            <AccordionSection label={rsvpCopy?.going_label ?? 'Going'} count={going.length}
-              isOpen={openSections.has('yes')} onToggle={() => toggleSection('yes')}
-              dotClass={RSVP_CONFIG.yes.dotClass} dimWhenEmpty>
-              {renderNameList(going)}
-            </AccordionSection>
-            <AccordionSection label={rsvpCopy?.maybe_label ?? 'Maybe'} count={maybe.length}
-              isOpen={openSections.has('maybe')} onToggle={() => toggleSection('maybe')}
-              dotClass={RSVP_CONFIG.maybe.dotClass} dimWhenEmpty>
-              {renderNameList(maybe)}
-            </AccordionSection>
-            <AccordionSection label={rsvpCopy?.cant_label ?? "Can't make it"} count={cant.length}
-              isOpen={openSections.has('no')} onToggle={() => toggleSection('no')}
-              dotClass={RSVP_CONFIG.no.dotClass} dimWhenEmpty>
-              {renderNameList(cant)}
-            </AccordionSection>
-            {pending.length > 0 && (
-              <AccordionSection label={rsvpCopy?.pending_label ?? 'No response yet'} count={pending.length}
-                isOpen={openSections.has('pending')} onToggle={() => toggleSection('pending')}>
-                {renderNameList(pending)}
-              </AccordionSection>
+            <button
+              type="button"
+              onClick={() => setShowGuests((v) => !v)}
+              className="w-full flex items-center justify-between py-2.5 text-left rounded-lg hover:bg-subtle transition-colors cursor-pointer"
+            >
+              <span className="text-sm font-semibold text-body">
+                {rsvpCopy?.guests_label ?? 'Guest list'}
+                <span className="ml-1.5 text-xs font-medium text-faint tabular-nums">{participants.length}</span>
+              </span>
+              <span className="flex items-center gap-1 text-xs font-medium text-faint">
+                {showGuests ? (rsvpCopy?.hide ?? 'Hide') : (rsvpCopy?.show ?? 'Show')}
+                <svg className={`w-4 h-4 transition-transform duration-200 ${showGuests ? 'rotate-180' : ''}`}
+                  fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                </svg>
+              </span>
+            </button>
+            {showGuests && (
+              <div className="animate-fade-in">
+                <AccordionSection label={rsvpCopy?.going_label ?? 'Going'} count={going.length}
+                  isOpen={openSections.has('yes')} onToggle={() => toggleSection('yes')}
+                  dotClass={RSVP_CONFIG.yes.dotClass} dimWhenEmpty>
+                  {renderNameList(going)}
+                </AccordionSection>
+                <AccordionSection label={rsvpCopy?.maybe_label ?? 'Maybe'} count={maybe.length}
+                  isOpen={openSections.has('maybe')} onToggle={() => toggleSection('maybe')}
+                  dotClass={RSVP_CONFIG.maybe.dotClass} dimWhenEmpty>
+                  {renderNameList(maybe)}
+                </AccordionSection>
+                <AccordionSection label={rsvpCopy?.cant_label ?? "Can't make it"} count={cant.length}
+                  isOpen={openSections.has('no')} onToggle={() => toggleSection('no')}
+                  dotClass={RSVP_CONFIG.no.dotClass} dimWhenEmpty>
+                  {renderNameList(cant)}
+                </AccordionSection>
+                {pending.length > 0 && (
+                  <AccordionSection label={rsvpCopy?.pending_label ?? 'No response yet'} count={pending.length}
+                    isOpen={openSections.has('pending')} onToggle={() => toggleSection('pending')}>
+                    {renderNameList(pending)}
+                  </AccordionSection>
+                )}
+              </div>
             )}
           </div>
         )}

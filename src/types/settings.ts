@@ -127,6 +127,9 @@ export interface CopySettings {
     maybe_label: string;
     cant_label: string;
     pending_label: string;
+    guests_label: string;
+    hide: string;
+    show: string;
   };
 }
 
@@ -342,6 +345,9 @@ export const DEFAULT_COPY: CopySettings = {
     maybe_label: 'Maybe',
     cant_label: "Can't make it",
     pending_label: 'Awaiting response',
+    guests_label: 'Guest list',
+    hide: 'Hide',
+    show: 'Show',
   },
 };
 
