@@ -87,6 +87,7 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
   const [minResponses, setMinResponses] = useState('');
   const [minResponsesCustom, setMinResponsesCustom] = useState(false);
   const [color, setColor] = useState('');
+  const [hideGuestList, setHideGuestList] = useState(false);
   const [timeStart, setTimeStart] = useState('09:00');
   const [timeEnd, setTimeEnd] = useState('17:00');
   const [timezone, setTimezone] = useState(detectUserTimezone);
@@ -265,9 +266,11 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
         organizerName: organizerName.trim() || null,
         ...(organizerEmail.trim() && { organizerEmail: organizerEmail.trim() }),
         ...(color && { color }),
+        ...(hideGuestList && { hideGuestList: true }),
         location: location.trim() || null,
         durationMinutes: resolvedDuration,
         timezone,
+        maxParticipants: maxParticipants ? parseInt(maxParticipants, 10) : null,
         eventType,
       };
 
@@ -277,7 +280,6 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
             dates: selectedDates.map((d) => format(d, 'yyyy-MM-dd')),
             timeStart,
             timeEnd,
-            maxParticipants: maxParticipants ? parseInt(maxParticipants, 10) : null,
             minResponses: minResponses ? parseInt(minResponses, 10) : null,
             responseDeadline: responseDeadline
               ? new Date(responseDeadline + 'T23:59:59').toISOString()
@@ -434,49 +436,6 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
           />
         </div>
 
-        <div>
-          <label htmlFor="organizerEmail" className="block text-sm font-medium text-body mb-1.5">
-            Your email <span className="text-faint font-normal">(optional)</span>
-          </label>
-          <input
-            id="organizerEmail"
-            type="email"
-            value={organizerEmail}
-            onChange={(e) => setOrganizerEmail(e.target.value)}
-            placeholder="you@example.com"
-            autoComplete="email"
-            inputMode="email"
-            className={inputClass}
-            maxLength={254}
-          />
-          <p className="text-xs text-faint mt-1">
-            We&apos;ll email you when enough people have responded so you can pick the time.
-          </p>
-        </div>
-
-
-        <div>
-          <label htmlFor="description" className="block text-sm font-medium text-body mb-1.5">
-            Description <span className="text-faint font-normal">(optional)</span>
-          </label>
-          <input
-            id="description"
-            type="text"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder={copy.form.description_placeholder}
-            className={inputClass}
-            maxLength={500}
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-body mb-1.5">
-            Location <span className="text-faint font-normal">(optional)</span>
-          </label>
-          <LocationInput value={location} onChange={setLocation} inputClassName={inputClass} />
-        </div>
-
       </div>
 
       {/* Subtle divider */}
@@ -555,64 +514,6 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
             </div>
           </div>
 
-          <div>
-            <label htmlFor="fixedTimezone" className="block text-sm font-medium text-body mb-1.5">
-              Timezone
-            </label>
-            <select
-              id="fixedTimezone"
-              value={timezone}
-              onChange={(e) => setTimezone(e.target.value)}
-              className={selectClass}
-            >
-              {POPULAR_TIMEZONES.map((tz) => (
-                <option key={tz.value} value={tz.value}>{tz.label}</option>
-              ))}
-              {!POPULAR_TIMEZONES.find((t) => t.value === timezone) && (
-                <option value={timezone}>{getTimezoneLabel(timezone)}</option>
-              )}
-            </select>
-          </div>
-
-          {/* === More options (fixed) === */}
-          <div>
-            {!showOptional && (
-              <button
-                type="button"
-                onClick={() => setShowOptional(true)}
-                className="w-full flex items-center justify-center gap-1.5 py-2 text-xs font-medium text-faint hover:text-secondary transition-colors cursor-pointer"
-              >
-                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                </svg>
-                More options
-              </button>
-            )}
-
-            {showOptional && (
-              <div className="space-y-4 animate-slide-down">
-                <div className="border-t border-hairline-soft pt-4">
-                  <p className="text-xs font-medium text-faint uppercase tracking-wider mb-3">Additional options</p>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-body mb-1.5">
-                    Additional Details <span className="text-faint font-normal">(optional)</span>
-                  </label>
-                  <Suspense fallback={<div className="h-32 rounded-xl border border-strong bg-subtle animate-pulse" />}>
-                    <RichTextEditor
-                      value={body}
-                      onChange={setBody}
-                      placeholder="Add more context, agenda, directions, or anything guests should know…"
-                      minHeight={100}
-                    />
-                  </Suspense>
-                </div>
-
-                <EventColorPicker value={color} onChange={setColor} />
-              </div>
-            )}
-          </div>
         </div>
       )}
 
@@ -659,118 +560,185 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
             </div>
           </div>
 
-          <div>
-            <label htmlFor="timezone" className="block text-sm font-medium text-body mb-1.5">
-              Timezone
-            </label>
-            <select
-              id="timezone"
-              value={timezone}
-              onChange={(e) => setTimezone(e.target.value)}
-              className={selectClass}
-            >
-              {POPULAR_TIMEZONES.map((tz) => (
-                <option key={tz.value} value={tz.value}>{tz.label}</option>
-              ))}
-              {!POPULAR_TIMEZONES.find((t) => t.value === timezone) && (
-                <option value={timezone}>{getTimezoneLabel(timezone)}</option>
-              )}
-            </select>
-          </div>
+        </div>
+      )}
 
-          <div>
-            <label htmlFor="duration" className="block text-sm font-medium text-body mb-1.5">
-              {copy.form.duration_label}
-            </label>
-            <select
-              id="duration"
-              value={durationMinutes}
-              onChange={(e) => setDurationMinutes(Number(e.target.value))}
-              className={selectClass}
-            >
-              {DURATION_OPTIONS.map((d) => (
-                <option key={d.value} value={d.value}>{d.label}</option>
-              ))}
-            </select>
-          </div>
+      {/* === More options — everything non-critical, hidden by default === */}
+      <div>
+        {!showOptional && (
+          <button
+            type="button"
+            onClick={() => setShowOptional(true)}
+            className="w-full flex items-center justify-center gap-1.5 py-2 text-xs font-medium text-faint hover:text-secondary transition-colors cursor-pointer"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
+            More options
+          </button>
+        )}
 
-          {/* Minimum responses — always visible, not hidden behind More options */}
-          <div>
-            <label htmlFor="minResponses" className="block text-sm font-medium text-body mb-1.5">
-              Responses needed to pick a time{' '}
-              <span className="text-faint font-normal">(including yours, optional)</span>
-            </label>
-            {!minResponsesCustom ? (
-              <select
-                id="minResponses"
-                value={minResponses}
-                onChange={(e) => {
-                  if (e.target.value === 'custom') {
-                    setMinResponsesCustom(true);
-                    setMinResponses('');
-                  } else {
-                    setMinResponses(e.target.value);
-                  }
-                }}
-                className={selectClass}
-              >
-                <option value="">No minimum</option>
-                {Array.from({ length: 14 }, (_, i) => i + 2).map((n) => (
-                  <option key={n} value={n}>
-                    {n} people
-                  </option>
-                ))}
-                <option value="custom">Enter a number...</option>
-              </select>
-            ) : (
-              <div className="flex gap-2">
-                <input
-                  id="minResponses"
-                  type="text"
-                  inputMode="numeric"
-                  value={minResponses}
-                  onChange={(e) => setMinResponses(e.target.value.replace(/\D/g, '').slice(0, 3))}
-                  placeholder="e.g. 25 (minimum 2)"
-                  className={inputClass}
-                  autoFocus
-                />
-                <button
-                  type="button"
-                  onClick={() => { setMinResponsesCustom(false); setMinResponses(''); }}
-                  className="shrink-0 px-3 py-2 text-xs text-faint hover:text-secondary border border-hairline rounded-xl transition-colors cursor-pointer"
-                >
-                  Reset
-                </button>
-              </div>
-            )}
-            {minResponses && parseInt(minResponses, 10) >= 2 && (
+        {showOptional && (
+          <div className="space-y-4 animate-slide-down">
+            <div className="border-t border-hairline-soft pt-4">
+              <p className="text-xs font-medium text-faint uppercase tracking-wider mb-3">More options</p>
+            </div>
+
+            {/* Your email */}
+            <div>
+              <label htmlFor="organizerEmail" className="block text-sm font-medium text-body mb-1.5">
+                Your email <span className="text-faint font-normal">(optional)</span>
+              </label>
+              <input
+                id="organizerEmail"
+                type="email"
+                value={organizerEmail}
+                onChange={(e) => setOrganizerEmail(e.target.value)}
+                placeholder="you@example.com"
+                autoComplete="email"
+                inputMode="email"
+                className={inputClass}
+                maxLength={254}
+              />
               <p className="text-xs text-faint mt-1">
-                The Pick a Time panel will wait until {minResponses} people have responded, including you.
+                {eventType === 'fixed'
+                  ? "We'll email you when people RSVP."
+                  : "We'll email you when enough people have responded so you can pick the time."}
               </p>
-            )}
-          </div>
+            </div>
 
-          {/* === Optional section (availability only) === */}
-          <div>
-            {!showOptional && (
-              <button
-                type="button"
-                onClick={() => setShowOptional(true)}
-                className="w-full flex items-center justify-center gap-1.5 py-2 text-xs font-medium text-faint hover:text-secondary transition-colors cursor-pointer"
-              >
-                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                </svg>
-                More options
-              </button>
-            )}
+            {/* Description */}
+            <div>
+              <label htmlFor="description" className="block text-sm font-medium text-body mb-1.5">
+                Description <span className="text-faint font-normal">(optional)</span>
+              </label>
+              <input
+                id="description"
+                type="text"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder={copy.form.description_placeholder}
+                className={inputClass}
+                maxLength={500}
+              />
+            </div>
 
-            {showOptional && (
-              <div className="space-y-4 animate-slide-down">
-                <div className="border-t border-hairline-soft pt-4">
-                  <p className="text-xs font-medium text-faint uppercase tracking-wider mb-3">Additional options</p>
+            {/* Location */}
+            <div>
+              <label className="block text-sm font-medium text-body mb-1.5">
+                Location <span className="text-faint font-normal">(optional)</span>
+              </label>
+              <LocationInput value={location} onChange={setLocation} inputClassName={inputClass} />
+            </div>
+
+            {/* Timezone */}
+            <div>
+              <label htmlFor="timezone" className="block text-sm font-medium text-body mb-1.5">
+                Timezone
+              </label>
+              <select id="timezone" value={timezone} onChange={(e) => setTimezone(e.target.value)} className={selectClass}>
+                {POPULAR_TIMEZONES.map((tz) => (
+                  <option key={tz.value} value={tz.value}>{tz.label}</option>
+                ))}
+                {!POPULAR_TIMEZONES.find((t) => t.value === timezone) && (
+                  <option value={timezone}>{getTimezoneLabel(timezone)}</option>
+                )}
+              </select>
+            </div>
+
+            {/* Max participants / capacity (both types) */}
+            <div>
+              <label htmlFor="maxParticipants" className="block text-sm font-medium text-body mb-1.5">
+                {eventType === 'fixed' ? 'Max guests' : 'Max participants'} <span className="text-faint font-normal">(optional)</span>
+              </label>
+              <input
+                id="maxParticipants"
+                type="number"
+                value={maxParticipants}
+                onChange={(e) => setMaxParticipants(e.target.value)}
+                placeholder="No limit"
+                min={2}
+                max={1000}
+                className={inputClass}
+              />
+              {maxParticipants && parseInt(maxParticipants, 10) > 0 && (
+                <p className="text-xs text-faint mt-1">
+                  {eventType === 'fixed'
+                    ? `Caps RSVPs at ${maxParticipants} — guests see a "spots filled" meter.`
+                    : `New participants will be blocked after ${maxParticipants} have joined.`}
+                </p>
+              )}
+            </div>
+
+            {eventType === 'availability' && (
+              <>
+                {/* Meeting length */}
+                <div>
+                  <label htmlFor="duration" className="block text-sm font-medium text-body mb-1.5">
+                    {copy.form.duration_label}
+                  </label>
+                  <select id="duration" value={durationMinutes} onChange={(e) => setDurationMinutes(Number(e.target.value))} className={selectClass}>
+                    {DURATION_OPTIONS.map((d) => (
+                      <option key={d.value} value={d.value}>{d.label}</option>
+                    ))}
+                  </select>
                 </div>
 
+                {/* Minimum responses */}
+                <div>
+                  <label htmlFor="minResponses" className="block text-sm font-medium text-body mb-1.5">
+                    Responses needed to pick a time{' '}
+                    <span className="text-faint font-normal">(including yours, optional)</span>
+                  </label>
+                  {!minResponsesCustom ? (
+                    <select
+                      id="minResponses"
+                      value={minResponses}
+                      onChange={(e) => {
+                        if (e.target.value === 'custom') {
+                          setMinResponsesCustom(true);
+                          setMinResponses('');
+                        } else {
+                          setMinResponses(e.target.value);
+                        }
+                      }}
+                      className={selectClass}
+                    >
+                      <option value="">No minimum</option>
+                      {Array.from({ length: 14 }, (_, i) => i + 2).map((n) => (
+                        <option key={n} value={n}>{n} people</option>
+                      ))}
+                      <option value="custom">Enter a number...</option>
+                    </select>
+                  ) : (
+                    <div className="flex gap-2">
+                      <input
+                        id="minResponses"
+                        type="text"
+                        inputMode="numeric"
+                        value={minResponses}
+                        onChange={(e) => setMinResponses(e.target.value.replace(/\D/g, '').slice(0, 3))}
+                        placeholder="e.g. 25 (minimum 2)"
+                        className={inputClass}
+                        autoFocus
+                      />
+                      <button
+                        type="button"
+                        onClick={() => { setMinResponsesCustom(false); setMinResponses(''); }}
+                        className="shrink-0 px-3 py-2 text-xs text-faint hover:text-secondary border border-hairline rounded-xl transition-colors cursor-pointer"
+                      >
+                        Reset
+                      </button>
+                    </div>
+                  )}
+                  {minResponses && parseInt(minResponses, 10) >= 2 && (
+                    <p className="text-xs text-faint mt-1">
+                      The Pick a Time panel will wait until {minResponses} people have responded, including you.
+                    </p>
+                  )}
+                </div>
+
+                {/* Respond by */}
                 <div>
                   <label htmlFor="deadline" className="block text-sm font-medium text-body mb-1.5">
                     Respond by <span className="text-faint font-normal">(optional)</span>
@@ -785,47 +753,45 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
                   />
                 </div>
 
-                <div>
-                  <label htmlFor="maxParticipants" className="block text-sm font-medium text-body mb-1.5">
-                    Max participants <span className="text-faint font-normal">(optional)</span>
-                  </label>
-                  <input
-                    id="maxParticipants"
-                    type="number"
-                    value={maxParticipants}
-                    onChange={(e) => setMaxParticipants(e.target.value)}
-                    placeholder="No limit"
-                    min={2}
-                    max={1000}
-                    className={inputClass}
-                  />
-                  {maxParticipants && parseInt(maxParticipants, 10) > 0 && (
-                    <p className="text-xs text-faint mt-1">
-                      New participants will be blocked after {maxParticipants} have joined
-                    </p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-body mb-1.5">
-                    Additional Details <span className="text-faint font-normal">(optional)</span>
-                  </label>
-                  <Suspense fallback={<div className="h-32 rounded-xl border border-strong bg-subtle animate-pulse" />}>
-                    <RichTextEditor
-                      value={body}
-                      onChange={setBody}
-                      placeholder="Add more context, agenda, directions, or anything guests should know…"
-                      minHeight={100}
-                    />
-                  </Suspense>
-                </div>
-
-                <EventColorPicker value={color} onChange={setColor} />
-              </div>
+              </>
             )}
+
+            {/* Additional Details */}
+            <div>
+              <label className="block text-sm font-medium text-body mb-1.5">
+                Additional Details <span className="text-faint font-normal">(optional)</span>
+              </label>
+              <Suspense fallback={<div className="h-32 rounded-xl border border-strong bg-subtle animate-pulse" />}>
+                <RichTextEditor
+                  value={body}
+                  onChange={setBody}
+                  placeholder="Add more context, agenda, directions, or anything guests should know…"
+                  minHeight={100}
+                />
+              </Suspense>
+            </div>
+
+            {/* Event color */}
+            <EventColorPicker value={color} onChange={setColor} />
+
+            {/* Guest list privacy */}
+            <div className="border-t border-hairline-soft pt-4">
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={hideGuestList}
+                  onChange={(e) => setHideGuestList(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 rounded border-strong accent-social-500 cursor-pointer shrink-0"
+                />
+                <span>
+                  <span className="block text-sm font-medium text-body">Hide guest list</span>
+                  <span className="block text-xs text-faint mt-0.5">Only you will see who responded — guests still see the totals, just not the names.</span>
+                </span>
+              </label>
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {error && (
         <p className="text-red-500 dark:text-red-400 text-sm animate-fade-in">{error}</p>

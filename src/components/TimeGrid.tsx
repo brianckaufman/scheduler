@@ -147,6 +147,9 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
   }, [participantCount, onParticipantCountChange]);
 
   const totalParticipants = participants.length;
+  // When the organizer hides the guest list, only they see the names; everyone
+  // else still sees the overlap/heatmap, just not who responded.
+  const canSeeNames = isOrganizer || !event.hide_guest_list;
 
   const participantColorMap = useMemo(() => {
     const map = new Map<string, string>();
@@ -722,20 +725,29 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
       {/* Participants & Legend */}
       <div className="mt-2 pt-4 border-t border-hairline-soft space-y-3">
         <div className="flex items-center justify-between">
-          <button
-            type="button"
-            onClick={() => setShowParticipants((v) => !v)}
-            className="flex items-center gap-1 text-xs font-semibold text-muted uppercase tracking-wide hover:text-body transition-colors cursor-pointer"
-          >
-            {(() => {
-              const [pre, post] = copy.grid.participants_label.split('{{count}}');
-              return <>{pre}<AnimatedNumber value={participants.length} className="text-body" />{post}</>;
-            })()}
-            <svg className={`w-3.5 h-3.5 transition-transform duration-200 ${showParticipants ? 'rotate-180' : ''}`}
-              fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-            </svg>
-          </button>
+          {canSeeNames ? (
+            <button
+              type="button"
+              onClick={() => setShowParticipants((v) => !v)}
+              className="flex items-center gap-1 text-xs font-semibold text-muted uppercase tracking-wide hover:text-body transition-colors cursor-pointer"
+            >
+              {(() => {
+                const [pre, post] = copy.grid.participants_label.split('{{count}}');
+                return <>{pre}<AnimatedNumber value={participants.length} className="text-body" />{post}</>;
+              })()}
+              <svg className={`w-3.5 h-3.5 transition-transform duration-200 ${showParticipants ? 'rotate-180' : ''}`}
+                fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+          ) : (
+            <h3 className="flex items-center gap-1 text-xs font-semibold text-muted uppercase tracking-wide">
+              {(() => {
+                const [pre, post] = copy.grid.participants_label.split('{{count}}');
+                return <>{pre}<AnimatedNumber value={participants.length} className="text-body" />{post}</>;
+              })()}
+            </h3>
+          )}
           <div className="flex items-center gap-2">
             {/* Legend inline — adapts to whether a full-overlap time exists */}
             {overlapStatus === 'partial' ? (
@@ -757,7 +769,10 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
             )}
           </div>
         </div>
-        {showParticipants && (
+        {!canSeeNames && (
+          <p className="text-xs text-faint italic">Only the organizer can see who&apos;s responded.</p>
+        )}
+        {canSeeNames && showParticipants && (
         <ul className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-1">
           {(participants.length > 8 && !showAllParticipants
             ? participants.slice(0, 6)

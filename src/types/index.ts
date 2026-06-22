@@ -18,6 +18,7 @@ export interface Event {
   created_at: string;
   event_type: 'availability' | 'fixed';
   color?: string | null;
+  hide_guest_list?: boolean;
 }
 
 export type RsvpValue = 'yes' | 'maybe' | 'no';
@@ -29,6 +30,7 @@ export interface Participant {
   created_at: string;
   rsvp: RsvpValue | null;
   email?: string | null;
+  guest_count?: number;
 }
 
 export interface AvailabilitySlot {

@@ -314,9 +314,22 @@ export default function RSVPView({ event, participantId, isOrganizer, organizerT
   const [showGuests, setShowGuests] = useState(true);
   const [modalRsvp, setModalRsvp] = useState<RsvpValue | null>(null);
   const [showConfetti, setShowConfetti] = useState(false);
+  const [optimisticGuests, setOptimisticGuests] = useState<number | null>(null);
+  const [capacityError, setCapacityError] = useState<string | null>(null);
 
   const me = participants.find((p) => p.id === participantId);
   const myRsvp: RsvpValue | null = optimisticRsvp ?? me?.rsvp ?? null;
+
+  // Capacity: when a max is set, the cap counts "yes" responders plus the
+  // guests they're bringing. Drives the public "spots filled" meter + limits.
+  const myGuests = optimisticGuests ?? me?.guest_count ?? 0;
+  const headcount = participants.reduce((s, p) => (p.rsvp === 'yes' ? s + 1 + (p.guest_count || 0) : s), 0);
+  const cap = event.max_participants ?? null;
+  const capPct = cap ? Math.min(100, Math.round((headcount / cap) * 100)) : 0;
+  const isFull = cap !== null && headcount >= cap;
+  const myContribution = me?.rsvp === 'yes' ? 1 + (me?.guest_count ?? 0) : 0;
+  // Most guests I can add: remaining capacity minus my own seat (or 10 if no cap).
+  const maxGuestsForMe = cap !== null ? Math.max(0, cap - (headcount - myContribution) - 1) : 10;
 
   const toggleSection = (key: SectionKey) => {
     setOpenSections((prev) => {
@@ -329,6 +342,7 @@ export default function RSVPView({ event, participantId, isOrganizer, organizerT
 
   const handleRsvp = useCallback(async (value: RsvpValue) => {
     if (saving) return;
+    setCapacityError(null);
     // Quick tactile confirmation on tap.
     if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
       try { navigator.vibrate(12); } catch { /* ignore */ }
@@ -336,25 +350,54 @@ export default function RSVPView({ event, participantId, isOrganizer, organizerT
     setOptimisticRsvp(value);
     setSaving(true);
 
-    // Show confirmation modal + confetti for Going only
-    setModalRsvp(value);
-    if (value === 'yes') {
-      setShowConfetti(true);
-    }
-
     try {
-      await fetch(`/api/participants/${participantId}`, {
+      const res = await fetch(`/api/participants/${participantId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ rsvp: value, event_id: event.id }),
+        body: JSON.stringify({ rsvp: value, event_id: event.id, guest_count: value === 'yes' ? myGuests : 0 }),
       });
+      if (!res.ok) {
+        // e.g. the event filled up between render and tap.
+        const d = await res.json().catch(() => ({}));
+        setOptimisticRsvp(null);
+        setCapacityError(d.error || 'Could not save your RSVP. Please try again.');
+        return;
+      }
+      // Confirmation modal + confetti only after a confirmed save.
+      setModalRsvp(value);
+      if (value === 'yes') setShowConfetti(true);
       setOptimisticRsvp(null);
     } catch {
       setOptimisticRsvp(null);
+      setCapacityError('Could not save your RSVP. Please try again.');
     } finally {
       setSaving(false);
     }
-  }, [participantId, event.id, saving]);
+  }, [participantId, event.id, saving, myGuests]);
+
+  const handleGuestChange = useCallback(async (delta: number) => {
+    const current = optimisticGuests ?? me?.guest_count ?? 0;
+    const next = Math.max(0, Math.min(maxGuestsForMe, current + delta));
+    if (next === current) return;
+    setCapacityError(null);
+    setOptimisticGuests(next);
+    try {
+      const res = await fetch(`/api/participants/${participantId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rsvp: 'yes', event_id: event.id, guest_count: next }),
+      });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        setOptimisticGuests(null);
+        setCapacityError(d.error || 'Could not update your guest count.');
+        return;
+      }
+      setOptimisticGuests(null);
+    } catch {
+      setOptimisticGuests(null);
+    }
+  }, [participantId, event.id, me?.guest_count, optimisticGuests, maxGuestsForMe]);
 
   const handleDeleteParticipant = useCallback(async (pid: string) => {
     if (!organizerToken) return;
@@ -410,6 +453,10 @@ export default function RSVPView({ event, participantId, isOrganizer, organizerT
   const cant    = sortByName(participants.filter((p) => p.rsvp === 'no'));
   const pending = sortByName(participants.filter((p) => !p.rsvp));
 
+  // When the organizer hides the guest list, only they see the names; everyone
+  // else still sees the aggregate totals.
+  const canSeeNames = isOrganizer || !event.hide_guest_list;
+
   const rsvpOptions: { value: RsvpValue; label: string }[] = [
     { value: 'yes',   label: rsvpCopy?.going ?? 'Going' },
     { value: 'maybe', label: rsvpCopy?.maybe ?? 'Maybe' },
@@ -422,6 +469,7 @@ export default function RSVPView({ event, participantId, isOrganizer, organizerT
         <li key={p.id} className="flex items-center justify-between gap-1 min-w-0 group">
           <span className={`text-sm truncate ${p.id === participantId ? 'font-semibold text-heading' : 'text-secondary'}`}>
             {formatDisplayName(p.name)}
+            {(p.guest_count ?? 0) > 0 && <span className="ml-1 text-xs font-semibold text-social-fg">+{p.guest_count}</span>}
             {p.id === participantId && <span className="ml-1 text-xs text-faint font-normal">you</span>}
           </span>
           {isOrganizer && p.id !== participantId && (
@@ -445,6 +493,31 @@ export default function RSVPView({ event, participantId, isOrganizer, organizerT
       {showConfetti && <ConfettiCelebration onComplete={() => setShowConfetti(false)} />}
 
       <div className="space-y-5">
+        {/* Capacity meter — only when the organizer set a max */}
+        {cap !== null && (
+          <div className="rounded-xl border border-hairline-soft bg-subtle p-3">
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-sm font-semibold text-body">
+                <span className="tabular-nums">{headcount}</span>
+                <span className="text-faint font-normal"> of {cap} spots filled</span>
+              </span>
+              {isFull ? (
+                <span className="text-xs font-semibold text-red-500 dark:text-red-400">Full</span>
+              ) : capPct >= 80 ? (
+                <span className="text-xs font-semibold text-amber-600 dark:text-amber-400">Almost full</span>
+              ) : (
+                <span className="text-xs font-medium text-faint tabular-nums">{Math.max(0, cap - headcount)} left</span>
+              )}
+            </div>
+            <div className="h-2 rounded-full bg-fill overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-all duration-500 ${isFull ? 'bg-red-500' : capPct >= 80 ? 'bg-amber-500' : 'bg-social-500'}`}
+                style={{ width: `${Math.max(capPct, headcount > 0 ? 6 : 0)}%` }}
+              />
+            </div>
+          </div>
+        )}
+
         {/* RSVP buttons */}
         <div>
           <p className="text-sm font-semibold text-body mb-3">
@@ -454,25 +527,63 @@ export default function RSVPView({ event, participantId, isOrganizer, organizerT
             {rsvpOptions.map(({ value, label }) => {
               const cfg = RSVP_CONFIG[value];
               const isActive = myRsvp === value;
+              // Can't claim a "Going" spot once the event is full (unless already in).
+              const blocked = value === 'yes' && isFull && !isActive;
+              const disabled = saving || blocked;
               return (
                 <button
                   key={value}
                   type="button"
                   onClick={() => handleRsvp(value)}
-                  disabled={saving}
+                  disabled={disabled}
                   className={`
                     flex flex-col items-center gap-1.5 py-3.5 px-2 rounded-2xl border-2 text-sm font-semibold
                     transition-all duration-200 active:scale-95 cursor-pointer
                     ${isActive ? cfg.activeClass : `bg-surface border-hairline text-muted ${cfg.hoverClass}`}
-                    ${saving ? 'opacity-60 cursor-not-allowed' : ''}
+                    ${disabled ? 'opacity-60 cursor-not-allowed' : ''}
                   `}
                 >
                   {cfg.icon}
-                  <span className="text-xs font-semibold leading-tight text-center">{label}</span>
+                  <span className="text-xs font-semibold leading-tight text-center">{blocked ? 'Full' : label}</span>
                 </button>
               );
             })}
           </div>
+
+          {/* Guest stepper — when Going, bring +N (bounded by remaining capacity) */}
+          {myRsvp === 'yes' && (maxGuestsForMe > 0 || myGuests > 0) && (
+            <div className="mt-3 flex items-center justify-between rounded-xl border border-hairline px-3 py-2.5 animate-fade-in">
+              <span className="text-sm text-body">
+                Bringing guests?
+                {myGuests > 0 && <span className="text-faint"> · you +{myGuests}</span>}
+              </span>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => handleGuestChange(-1)}
+                  disabled={myGuests <= 0}
+                  aria-label="Remove a guest"
+                  className="w-7 h-7 flex items-center justify-center rounded-full border border-hairline text-body hover:bg-subtle disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" d="M5 12h14" /></svg>
+                </button>
+                <span className="text-sm font-semibold tabular-nums w-5 text-center">{myGuests}</span>
+                <button
+                  type="button"
+                  onClick={() => handleGuestChange(1)}
+                  disabled={myGuests >= maxGuestsForMe}
+                  aria-label="Add a guest"
+                  className="w-7 h-7 flex items-center justify-center rounded-full border border-hairline text-body hover:bg-subtle disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 5v14M5 12h14" /></svg>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {capacityError && (
+            <p className="mt-2 text-sm text-red-500 dark:text-red-400 animate-fade-in">{capacityError}</p>
+          )}
         </div>
 
         {/* Calendar actions — secondary, below RSVP once answered */}
@@ -501,6 +612,8 @@ export default function RSVPView({ event, participantId, isOrganizer, organizerT
         {/* Guest list — collapsible (shown by default) */}
         {participants.length > 0 && (
           <div className="border-t border-hairline-soft pt-1 animate-fade-in">
+            {canSeeNames ? (
+            <>
             <button
               type="button"
               onClick={() => setShowGuests((v) => !v)}
@@ -541,6 +654,17 @@ export default function RSVPView({ event, participantId, isOrganizer, organizerT
                     {renderNameList(pending)}
                   </AccordionSection>
                 )}
+              </div>
+            )}
+            </>
+            ) : (
+              <div className="py-2.5">
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-secondary">
+                  <span className="flex items-center gap-1.5"><span className={`w-2 h-2 rounded-full ${RSVP_CONFIG.yes.dotClass}`} /><b className="text-heading tabular-nums">{going.length}</b> {rsvpCopy?.going ?? 'Going'}</span>
+                  <span className="flex items-center gap-1.5"><span className={`w-2 h-2 rounded-full ${RSVP_CONFIG.maybe.dotClass}`} /><b className="text-heading tabular-nums">{maybe.length}</b> {rsvpCopy?.maybe ?? 'Maybe'}</span>
+                  <span className="flex items-center gap-1.5"><span className={`w-2 h-2 rounded-full ${RSVP_CONFIG.no.dotClass}`} /><b className="text-heading tabular-nums">{cant.length}</b> {rsvpCopy?.cant ?? "Can't"}</span>
+                </div>
+                <p className="text-xs text-faint mt-1.5">Only the organizer can see who&apos;s responded.</p>
               </div>
             )}
           </div>

@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
 
   const {
     name, description, body: bodyText, organizerName, organizerEmail, location, durationMinutes,
-    responseDeadline, maxParticipants, minResponses, color, timezone,
+    responseDeadline, maxParticipants, minResponses, color, hideGuestList, timezone,
     // Availability-mode fields
     dates, timeStart, timeEnd,
     // Fixed-mode fields
@@ -207,6 +207,8 @@ export async function POST(request: NextRequest) {
     ...(safeMinResponses && { min_responses: safeMinResponses }),
     // color requires supabase-event-color-migration.sql to be run first.
     ...(safeColor && { color: safeColor }),
+    // hide_guest_list requires supabase-hide-guest-list-migration.sql first.
+    ...(hideGuestList === true && { hide_guest_list: true }),
     // user_id requires supabase-accounts-migration.sql to be run first.
     ...(userId && { user_id: userId }),
     // device_type requires supabase-analytics-migration.sql to be run first

@@ -32,6 +32,7 @@ type DeleteStep = 'idle' | 'confirm' | 'typing';
 export default function EditEventModal({ event, organizerToken, onClose, onSave, onDelete }: EditEventModalProps) {
   const [name, setName] = useState(event.name);
   const [color, setColor] = useState(event.color || '');
+  const [hideGuestList, setHideGuestList] = useState(event.hide_guest_list ?? false);
   const [description, setDescription] = useState(event.description || '');
   const [body, setBody] = useState(event.body || '');
   const [organizerName, setOrganizerName] = useState(event.organizer_name || '');
@@ -89,6 +90,8 @@ export default function EditEventModal({ event, organizerToken, onClose, onSave,
           // Only send color when changed, so edits still work if the color
           // migration hasn't been run (avoids referencing a missing column).
           ...(color !== (event.color || '') ? { color: color || null } : {}),
+          // Only send when changed, so edits work even if the migration hasn't run.
+          ...(hideGuestList !== (event.hide_guest_list ?? false) ? { hide_guest_list: hideGuestList } : {}),
           response_deadline: responseDeadline
             ? new Date(responseDeadline + 'T23:59:59').toISOString()
             : null,
@@ -180,6 +183,18 @@ export default function EditEventModal({ event, organizerToken, onClose, onSave,
             </Suspense>
           </div>
           <EventColorPicker value={color} onChange={setColor} />
+          <label className="flex items-start gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={hideGuestList}
+              onChange={(e) => setHideGuestList(e.target.checked)}
+              className="mt-0.5 h-4 w-4 rounded border-strong accent-social-500 cursor-pointer shrink-0"
+            />
+            <span>
+              <span className="block text-sm font-medium text-body">Hide guest list</span>
+              <span className="block text-xs text-faint mt-0.5">Only you will see who responded — guests still see the totals, just not the names.</span>
+            </span>
+          </label>
           <div>
             <label className="block text-xs font-medium text-secondary mb-1">Your name</label>
             <input type="text" value={organizerName} onChange={(e) => setOrganizerName(e.target.value)}

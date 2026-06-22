@@ -73,8 +73,11 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  // Enforce max participants
-  if (event.max_participants) {
+  // Enforce max participants at join time for availability events only. RSVP
+  // events cap on confirmed headcount (yes + guests), enforced when someone
+  // RSVPs "yes" (see PATCH /api/participants/[id]) — so people can still view
+  // and decline a full event, and can join to RSVP "maybe"/"no".
+  if (event.event_type === 'availability' && event.max_participants) {
     const { count } = await supabase
       .from('participants')
       .select('*', { count: 'exact', head: true })

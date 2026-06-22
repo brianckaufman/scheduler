@@ -127,6 +127,9 @@ export async function PATCH(
   if ('color' in updates) {
     safeUpdate.color = typeof updates.color === 'string' ? normalizeHex(updates.color) : null;
   }
+  if ('hide_guest_list' in updates) {
+    safeUpdate.hide_guest_list = !!updates.hide_guest_list;
+  }
 
 
   if (Object.keys(safeUpdate).length === 0) {
