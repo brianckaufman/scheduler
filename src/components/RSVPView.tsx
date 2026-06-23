@@ -595,7 +595,7 @@ export default function RSVPView({ event, participantId, isOrganizer, organizerT
                   onClick={() => handleGuestChange(-1)}
                   disabled={myGuests <= 0}
                   aria-label="Remove a guest"
-                  className="w-8 h-8 flex items-center justify-center rounded-chip bg-icon-bg text-icon-fg hover:brightness-95 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer"
+                  className="w-9 h-9 flex items-center justify-center rounded-chip bg-icon-bg text-icon-fg hover:brightness-95 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer"
                 >
                   <MinusIcon className="w-4 h-4" />
                 </button>
@@ -605,7 +605,7 @@ export default function RSVPView({ event, participantId, isOrganizer, organizerT
                   onClick={() => handleGuestChange(1)}
                   disabled={myGuests >= maxGuestsForMe}
                   aria-label="Add a guest"
-                  className="w-8 h-8 flex items-center justify-center rounded-chip bg-teal-500 text-white hover:bg-teal-600 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer"
+                  className="w-9 h-9 flex items-center justify-center rounded-chip bg-teal-500 text-white hover:bg-teal-600 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer"
                 >
                   <PlusIcon className="w-4 h-4" />
                 </button>

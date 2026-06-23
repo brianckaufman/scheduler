@@ -318,8 +318,8 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
     }
   };
 
-  const inputClass = "w-full px-4 py-3 rounded-xl border border-hairline focus:outline-none focus:ring-2 focus:ring-social-500 focus:border-transparent text-heading placeholder-faint transition-shadow duration-200";
-  const selectClass = "w-full px-3 py-3 rounded-xl border border-hairline focus:outline-none focus:ring-2 focus:ring-social-500 text-heading bg-surface transition-shadow duration-200";
+  const inputClass = "w-full px-4 py-3 rounded-xl border border-hairline focus:outline-none focus:ring-2 focus:ring-social-500 focus:border-transparent text-base text-heading placeholder-faint transition-shadow duration-200";
+  const selectClass = "w-full px-3 py-3 rounded-xl border border-hairline focus:outline-none focus:ring-2 focus:ring-social-500 text-base text-heading bg-surface transition-shadow duration-200";
 
   // === Type picker (shown before the form when fixed events are enabled) ===
   if (enableFixedEvents && eventType === null) {

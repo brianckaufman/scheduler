@@ -388,7 +388,7 @@ export default function EditEventModal({ event, organizerToken, onClose, onSave,
             type="button"
             onClick={handleSave}
             disabled={saving || !name.trim() || !organizerName.trim()}
-            className="w-full py-2.5 bg-social-500 text-white font-semibold rounded-xl hover:bg-social-600 transition-all duration-200 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            className="w-full py-3 bg-social-500 text-white font-semibold rounded-xl hover:bg-social-600 transition-all duration-200 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
           >
             {saving ? 'Saving...' : 'Save Changes'}
           </button>
