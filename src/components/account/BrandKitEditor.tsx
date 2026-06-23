@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import EventColorPicker from '@/components/EventColorPicker';
+import { loadImageFromFile, resizeToBlob } from '@/lib/imageProcess';
 
 /**
  * Account-level brand kit — logo + brand color that new events inherit.
@@ -33,8 +34,14 @@ export default function BrandKitEditor() {
     if (!file) return;
     setUploading(true);
     try {
+      let toSend: File = file;
+      if (file.type !== 'image/svg+xml') {
+        const img = await loadImageFromFile(file);
+        const { blob, ext } = await resizeToBlob(img, 480, 240);
+        toSend = new File([blob], `logo.${ext}`, { type: blob.type });
+      }
       const fd = new FormData();
-      fd.append('file', file);
+      fd.append('file', toSend);
       const res = await fetch('/api/account/brand-kit/logo', { method: 'POST', body: fd });
       const d = await res.json().catch(() => ({}));
       if (res.ok) setLogoUrl(d.url);

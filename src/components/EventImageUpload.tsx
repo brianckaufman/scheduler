@@ -1,6 +1,8 @@
 'use client';
 
 import { useRef, useState } from 'react';
+import ImageCropper from './ImageCropper';
+import { loadImageFromFile, resizeToBlob } from '@/lib/imageProcess';
 
 /**
  * Organizer-facing per-event image upload (logo or hero photo). Posts to
@@ -29,18 +31,16 @@ export default function EventImageUpload({
   const inputRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [cropFile, setCropFile] = useState<File | null>(null);
 
   const pick = () => inputRef.current?.click();
 
-  const onFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    e.target.value = '';
-    if (!file) return;
-    setError('');
+  const uploadBlob = async (blob: Blob, ext: string) => {
     setBusy(true);
+    setError('');
     try {
       const fd = new FormData();
-      fd.append('file', file);
+      fd.append('file', new File([blob], `${kind}.${ext}`, { type: blob.type }));
       fd.append('kind', kind);
       fd.append('organizer_token', organizerToken);
       const res = await fetch(`/api/events/${eventId}/upload`, { method: 'POST', body: fd });
@@ -50,6 +50,26 @@ export default function EventImageUpload({
     } catch {
       setError('Upload failed');
     } finally {
+      setBusy(false);
+    }
+  };
+
+  const onFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setError('');
+    // SVG is vector — upload as-is (already tiny; can't canvas-crop).
+    if (file.type === 'image/svg+xml') { uploadBlob(file, 'svg'); return; }
+    // Photo → crop step. Logo → optimize only (keep aspect + transparency).
+    if (kind === 'photo') { setCropFile(file); return; }
+    setBusy(true);
+    try {
+      const img = await loadImageFromFile(file);
+      const { blob, ext } = await resizeToBlob(img, 480, 240);
+      await uploadBlob(blob, ext);
+    } catch {
+      setError('Could not process image');
       setBusy(false);
     }
   };
@@ -93,6 +113,15 @@ export default function EventImageUpload({
       {hint && <p className="text-xs text-faint mt-1">{hint}</p>}
       {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
       <input ref={inputRef} type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml,image/gif" onChange={onFile} className="hidden" />
+      {cropFile && (
+        <ImageCropper
+          file={cropFile}
+          aspect={2.64}
+          outWidth={1200}
+          onCancel={() => setCropFile(null)}
+          onCropped={(blob, ext) => { setCropFile(null); uploadBlob(blob, ext); }}
+        />
+      )}
     </div>
   );
 }
