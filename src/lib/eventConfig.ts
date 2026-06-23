@@ -33,3 +33,32 @@ export function getModules(event: { config?: EventConfig | null } | null | undef
   const overrides = (event?.config?.modules ?? {}) as Partial<EventModules>;
   return { ...DEFAULT_MODULES, ...overrides };
 }
+
+/** Server-side: keep only known module keys with boolean values. */
+export function sanitizeConfig(input: unknown): EventConfig {
+  const out: EventConfig = {};
+  if (input && typeof input === 'object') {
+    const modules = (input as { modules?: unknown }).modules;
+    if (modules && typeof modules === 'object') {
+      const clean: Partial<EventModules> = {};
+      for (const k of Object.keys(DEFAULT_MODULES) as (keyof EventModules)[]) {
+        const v = (modules as Record<string, unknown>)[k];
+        if (typeof v === 'boolean') clean[k] = v;
+      }
+      out.modules = clean;
+    }
+  }
+  return out;
+}
+
+/** Host-facing toggle list (key, label, hint). Order = display order. */
+export const MODULE_TOGGLES: { key: keyof EventModules; label: string; hint: string }[] = [
+  { key: 'countdown', label: 'Countdown timer', hint: 'Live days/hrs/min until the event' },
+  { key: 'attendeeStack', label: 'Attendee avatars', hint: 'Overlapping avatars + “N going”' },
+  { key: 'rsvpProgress', label: 'RSVP progress bar', hint: 'Going / maybe / can’t breakdown' },
+  { key: 'map', label: 'Map preview', hint: 'Static map for physical locations' },
+  { key: 'calendar', label: 'Add to calendar', hint: 'ICS / calendar buttons' },
+  { key: 'organizer', label: 'Organizer attribution', hint: 'Show who’s hosting' },
+  { key: 'description', label: 'Description block', hint: 'Show the details text' },
+  { key: 'confetti', label: 'Celebratory confetti', hint: 'Confetti burst on RSVP' },
+];

@@ -10,6 +10,7 @@ import AnimatedNumber from './AnimatedNumber';
 import { IconChip } from './ui/IconChip';
 import { UsersIcon, PlusIcon, MinusIcon } from './ui/icons';
 import AttendeeStack from './modules/AttendeeStack';
+import RsvpProgress from './modules/RsvpProgress';
 import { getModules } from '@/lib/eventConfig';
 import { useRealtimeParticipants } from '@/hooks/useRealtimeParticipants';
 import { formatDisplayName, firstName } from '@/lib/names';
@@ -369,7 +370,7 @@ export default function RSVPView({ event, participantId, isOrganizer, organizerT
       }
       // Confirmation modal + confetti only after a confirmed save.
       setModalRsvp(value);
-      if (value === 'yes') setShowConfetti(true);
+      if (value === 'yes' && getModules(event).confetti) setShowConfetti(true);
       setOptimisticRsvp(null);
     } catch {
       setOptimisticRsvp(null);
@@ -533,6 +534,11 @@ export default function RSVPView({ event, participantId, isOrganizer, organizerT
           </div>
         )}
 
+        {/* RSVP breakdown */}
+        {modules.rsvpProgress && participants.length > 0 && (
+          <RsvpProgress going={going.length} maybe={maybe.length} cant={cant.length} />
+        )}
+
         {/* RSVP buttons */}
         <div>
           <p className="text-sm font-semibold text-body mb-3">
@@ -602,7 +608,7 @@ export default function RSVPView({ event, participantId, isOrganizer, organizerT
         </div>
 
         {/* Calendar actions — secondary, below RSVP once answered */}
-        {myRsvp === 'yes' && event.finalized_time && (
+        {myRsvp === 'yes' && event.finalized_time && modules.calendar && (
           <div className="space-y-2 animate-fade-in">
             <button type="button" onClick={handleDownloadICS}
               className="w-full py-2.5 px-4 bg-social-500 text-white text-sm font-semibold rounded-xl hover:bg-social-600 shadow-sm transition-all duration-200 active:scale-[0.97] cursor-pointer flex items-center justify-center gap-2">

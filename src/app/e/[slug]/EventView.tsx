@@ -307,7 +307,7 @@ export default function EventView({ event: initialEvent, organizerAvatar }: Even
                       value={<LocationDisplay location={event.location ?? ''} textClassName="text-sm text-body" />}
                     />
                   )}
-                  {event.organizer_name && (
+                  {modules.organizer && event.organizer_name && (
                     <div className="flex items-center gap-3">
                       {organizerAvatar ? (
                         // eslint-disable-next-line @next/next/no-img-element
@@ -340,7 +340,7 @@ export default function EventView({ event: initialEvent, organizerAvatar }: Even
                 )}
                 {event.body && <RichTextDisplay html={event.body} />}
                 <div className="space-y-3 mt-3">
-                  {event.organizer_name && (
+                  {modules.organizer && event.organizer_name && (
                     <div className="flex items-center gap-3">
                       {organizerAvatar ? (
                         // eslint-disable-next-line @next/next/no-img-element

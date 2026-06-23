@@ -6,6 +6,7 @@ import { sendParticipantTimeEmails } from '@/lib/email';
 import { parseLocation, locationLabel } from '@/lib/location';
 import { sanitizeText, sanitizeName, sanitizeHtml } from '@/lib/sanitize';
 import { normalizeHex } from '@/lib/eventColors';
+import { sanitizeConfig } from '@/lib/eventConfig';
 
 function getClientIp(request: NextRequest): string {
   return (
@@ -129,6 +130,22 @@ export async function PATCH(
   }
   if ('hide_guest_list' in updates) {
     safeUpdate.hide_guest_list = !!updates.hide_guest_list;
+  }
+  // Polished Pro (Phase 2) — per-event branding + module config.
+  if ('logo_url' in updates) {
+    safeUpdate.logo_url = typeof updates.logo_url === 'string' && updates.logo_url ? updates.logo_url : null;
+  }
+  if ('photo_url' in updates) {
+    safeUpdate.photo_url = typeof updates.photo_url === 'string' && updates.photo_url ? updates.photo_url : null;
+  }
+  if ('icon_bg' in updates) {
+    safeUpdate.icon_bg = typeof updates.icon_bg === 'string' ? normalizeHex(updates.icon_bg) : null;
+  }
+  if ('icon_fg' in updates) {
+    safeUpdate.icon_fg = typeof updates.icon_fg === 'string' ? normalizeHex(updates.icon_fg) : null;
+  }
+  if ('config' in updates) {
+    safeUpdate.config = sanitizeConfig(updates.config);
   }
 
 

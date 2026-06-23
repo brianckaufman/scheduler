@@ -6,6 +6,8 @@ import type { Event } from '@/types';
 const RichTextEditor = lazy(() => import('@/components/RichTextEditor'));
 import LocationInput from '@/components/LocationInput';
 import EventColorPicker from '@/components/EventColorPicker';
+import EventImageUpload from '@/components/EventImageUpload';
+import { getModules, MODULE_TOGGLES, type EventModules } from '@/lib/eventConfig';
 
 const DURATION_OPTIONS = [
   { value: 10, label: '10 min' },
@@ -33,6 +35,9 @@ export default function EditEventModal({ event, organizerToken, onClose, onSave,
   const [name, setName] = useState(event.name);
   const [color, setColor] = useState(event.color || '');
   const [hideGuestList, setHideGuestList] = useState(event.hide_guest_list ?? false);
+  const [logoUrl, setLogoUrl] = useState(event.logo_url || '');
+  const [photoUrl, setPhotoUrl] = useState(event.photo_url || '');
+  const [modules, setModules] = useState<EventModules>(() => getModules(event));
   const [description, setDescription] = useState(event.description || '');
   const [body, setBody] = useState(event.body || '');
   const [organizerName, setOrganizerName] = useState(event.organizer_name || '');
@@ -92,6 +97,9 @@ export default function EditEventModal({ event, organizerToken, onClose, onSave,
           ...(color !== (event.color || '') ? { color: color || null } : {}),
           // Only send when changed, so edits work even if the migration hasn't run.
           ...(hideGuestList !== (event.hide_guest_list ?? false) ? { hide_guest_list: hideGuestList } : {}),
+          ...(logoUrl !== (event.logo_url || '') ? { logo_url: logoUrl || null } : {}),
+          ...(photoUrl !== (event.photo_url || '') ? { photo_url: photoUrl || null } : {}),
+          ...(JSON.stringify(modules) !== JSON.stringify(getModules(event)) ? { config: { modules } } : {}),
           response_deadline: responseDeadline
             ? new Date(responseDeadline + 'T23:59:59').toISOString()
             : null,
@@ -195,6 +203,50 @@ export default function EditEventModal({ event, organizerToken, onClose, onSave,
               <span className="block text-xs text-faint mt-0.5">Only you will see who responded — guests still see the totals, just not the names.</span>
             </span>
           </label>
+
+          {/* === Appearance / branding === */}
+          <div className="border-t border-hairline-soft pt-4 space-y-4">
+            <p className="text-xs font-semibold text-faint uppercase tracking-wider">Appearance</p>
+            <EventImageUpload
+              eventId={event.id}
+              organizerToken={organizerToken}
+              kind="photo"
+              value={photoUrl}
+              onChange={setPhotoUrl}
+              label="Event photo"
+              hint="Wide hero image. PNG/JPG, max 5MB."
+              aspect="photo"
+            />
+            <EventImageUpload
+              eventId={event.id}
+              organizerToken={organizerToken}
+              kind="logo"
+              value={logoUrl}
+              onChange={setLogoUrl}
+              label="Event logo"
+              hint="Replaces the default lockup. Transparent PNG/SVG works best."
+              aspect="logo"
+            />
+          </div>
+
+          {/* === Modules (show / hide) === */}
+          <div className="border-t border-hairline-soft pt-4 space-y-3">
+            <p className="text-xs font-semibold text-faint uppercase tracking-wider">Show / hide</p>
+            {MODULE_TOGGLES.map(({ key, label, hint }) => (
+              <label key={key} className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={modules[key]}
+                  onChange={(e) => setModules((m) => ({ ...m, [key]: e.target.checked }))}
+                  className="mt-0.5 h-4 w-4 rounded border-strong accent-social-500 cursor-pointer shrink-0"
+                />
+                <span>
+                  <span className="block text-sm font-medium text-body">{label}</span>
+                  <span className="block text-xs text-faint mt-0.5">{hint}</span>
+                </span>
+              </label>
+            ))}
+          </div>
           <div>
             <label className="block text-xs font-medium text-secondary mb-1">Your name</label>
             <input type="text" value={organizerName} onChange={(e) => setOrganizerName(e.target.value)}
