@@ -360,7 +360,7 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-base font-bold text-heading">Event RSVP</p>
-            <p className="text-sm text-muted mt-0.5 leading-snug">Set the date and time and invite people to RSVP.</p>
+            <p className="text-sm text-muted mt-0.5 leading-snug">Set the date and time and invite people to attend.</p>
           </div>
           <svg className="w-5 h-5 text-faint2 group-hover:text-accent-fg shrink-0 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />

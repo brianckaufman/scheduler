@@ -15,9 +15,11 @@ export async function generateMetadata({ params }: EventPageProps) {
     getSettings(),
   ]);
 
+  // select('*') tolerates a not-yet-run photo_url migration (vs. erroring on a
+  // missing named column and breaking the page metadata).
   const { data: event } = await supabase
     .from('events')
-    .select('name, description, organizer_name')
+    .select('*')
     .eq('slug', slug)
     .single();
 
@@ -30,8 +32,16 @@ export async function generateMetadata({ params }: EventPageProps) {
 
   const title = `${event.name} | ${siteName}`;
   const description = event.description
-    || `Tap your availability for "${event.name}"${event.organizer_name ? ` organized by ${event.organizer_name}` : ''}`;
+    || `You're invited to "${event.name}"${event.organizer_name ? ` — hosted by ${event.organizer_name}` : ''}. Tap the link to respond.`;
   const eventUrl = siteUrl ? `${siteUrl}/e/${slug}` : undefined;
+
+  // Prefer the event's own hero photo (our cropper outputs 1200×455); fall back
+  // to the site OG image (1200×630).
+  const ogImage = event.photo_url
+    ? { url: event.photo_url as string, width: 1200, height: 455, alt: title }
+    : settings.seo.og_image
+      ? { url: settings.seo.og_image, width: 1200, height: 630, alt: title }
+      : null;
 
   return {
     title,
@@ -44,13 +54,13 @@ export async function generateMetadata({ params }: EventPageProps) {
       title,
       description,
       siteName,
-      ...(settings.seo.og_image ? { images: [{ url: settings.seo.og_image, width: 1200, height: 630, alt: title }] } : {}),
+      ...(ogImage ? { images: [ogImage] } : {}),
     },
     twitter: {
       card: 'summary_large_image' as const,
       title,
       description,
-      ...(settings.seo.og_image ? { images: [{ url: settings.seo.og_image, alt: title }] } : {}),
+      ...(ogImage ? { images: [{ url: ogImage.url, alt: title }] } : {}),
     },
   };
 }

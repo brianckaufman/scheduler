@@ -80,6 +80,7 @@ export default function AccountMenu() {
           <img
             src={avatarUrl}
             alt=""
+            referrerPolicy="no-referrer"
             onLoad={() => setImgOk(true)}
             onError={() => setImgOk(false)}
             className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-200 ${imgOk ? 'opacity-100' : 'opacity-0'}`}
@@ -91,7 +92,7 @@ export default function AccountMenu() {
           <div className="px-4 py-3 border-b border-hairline-soft flex items-center gap-3">
             {avatarUrl && imgOk ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={avatarUrl} alt="" className="w-9 h-9 rounded-full object-cover shrink-0" />
+              <img src={avatarUrl} alt="" referrerPolicy="no-referrer" className="w-9 h-9 rounded-full object-cover shrink-0" />
             ) : (
               <div className="w-9 h-9 rounded-full bg-teal-500 text-white flex items-center justify-center text-sm font-semibold shrink-0">{initial}</div>
             )}

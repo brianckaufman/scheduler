@@ -40,7 +40,7 @@ export default function AvatarUpload({ initialUrl, name }: { initialUrl: string 
       <div className="relative shrink-0">
         {url ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={url} alt={name} className="w-16 h-16 rounded-full object-cover border border-hairline" />
+          <img src={url} alt={name} referrerPolicy="no-referrer" className="w-16 h-16 rounded-full object-cover border border-hairline" />
         ) : (
           <div className="w-16 h-16 rounded-full bg-teal-500 text-white flex items-center justify-center text-xl font-semibold">
             {initial}

@@ -313,7 +313,7 @@ export default function EventView({ event: initialEvent, organizerAvatar }: Even
                     <div className="flex items-center gap-3">
                       {organizerAvatar ? (
                         // eslint-disable-next-line @next/next/no-img-element
-                        <img src={organizerAvatar} alt="" className="w-9 h-9 rounded-chip object-cover shrink-0 ring-1 ring-hairline" />
+                        <img src={organizerAvatar} alt="" referrerPolicy="no-referrer" className="w-9 h-9 rounded-chip object-cover shrink-0 ring-1 ring-hairline" />
                       ) : (
                         <IconChip><UserIcon /></IconChip>
                       )}
@@ -346,7 +346,7 @@ export default function EventView({ event: initialEvent, organizerAvatar }: Even
                     <div className="flex items-center gap-3">
                       {organizerAvatar ? (
                         // eslint-disable-next-line @next/next/no-img-element
-                        <img src={organizerAvatar} alt="" className="w-9 h-9 rounded-chip object-cover shrink-0 ring-1 ring-hairline" />
+                        <img src={organizerAvatar} alt="" referrerPolicy="no-referrer" className="w-9 h-9 rounded-chip object-cover shrink-0 ring-1 ring-hairline" />
                       ) : (
                         <IconChip><UserIcon /></IconChip>
                       )}
