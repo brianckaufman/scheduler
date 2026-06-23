@@ -7,6 +7,7 @@ import { parseLocation, locationLabel } from '@/lib/location';
 import { sanitizeText, sanitizeName, sanitizeHtml } from '@/lib/sanitize';
 import { normalizeHex } from '@/lib/eventColors';
 import { sanitizeConfig } from '@/lib/eventConfig';
+import { isEventKind } from '@/lib/eventTypes';
 
 function getClientIp(request: NextRequest): string {
   return (
@@ -146,6 +147,9 @@ export async function PATCH(
   }
   if ('config' in updates) {
     safeUpdate.config = sanitizeConfig(updates.config);
+  }
+  if ('event_kind' in updates) {
+    safeUpdate.event_kind = isEventKind(updates.event_kind) ? updates.event_kind : null;
   }
 
 

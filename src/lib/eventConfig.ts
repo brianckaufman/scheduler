@@ -1,5 +1,6 @@
 // Polished Pro — per-event module toggles, stored in events.config (JSONB).
 // Components read getModules(event); the Customize panel writes overrides.
+import { getKindModuleDefaults } from './eventTypes';
 
 export interface EventModules {
   countdown: boolean;
@@ -28,10 +29,17 @@ export const DEFAULT_MODULES: EventModules = {
   description: true,
 };
 
-/** Merge an event's stored toggles over the defaults. Tolerates null/missing. */
-export function getModules(event: { config?: EventConfig | null } | null | undefined): EventModules {
+/**
+ * Resolve a final module set: base defaults → event-kind preset → the event's
+ * explicit overrides. Tolerates null/missing at every layer.
+ */
+export function getModules(
+  event: { config?: EventConfig | null; event_kind?: string | null } | null | undefined,
+): EventModules {
+  // Imported lazily to avoid a circular import (eventTypes imports this file's types only).
+  const kindDefaults = getKindModuleDefaults(event?.event_kind);
   const overrides = (event?.config?.modules ?? {}) as Partial<EventModules>;
-  return { ...DEFAULT_MODULES, ...overrides };
+  return { ...DEFAULT_MODULES, ...kindDefaults, ...overrides };
 }
 
 /** Server-side: keep only known module keys with boolean values. */

@@ -19,6 +19,8 @@ export interface Event {
   event_type: 'availability' | 'fixed';
   color?: string | null;
   hide_guest_list?: boolean;
+  // Polished Pro (Phase 3) — semantic event type (seeds module defaults + tone).
+  event_kind?: string | null;
   // Polished Pro (Phase 2) — per-event branding + module config.
   logo_url?: string | null;
   photo_url?: string | null;

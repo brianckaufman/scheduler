@@ -23,6 +23,7 @@ import {
 import { POPULAR_TIMEZONES, detectUserTimezone, getTimezoneLabel } from '@/lib/timezones';
 import LocationInput from '@/components/LocationInput';
 import EventColorPicker from '@/components/EventColorPicker';
+import { EVENT_KINDS } from '@/lib/eventTypes';
 
 interface EventFormProps {
   enableFixedEvents?: boolean;
@@ -88,6 +89,7 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
   const [minResponsesCustom, setMinResponsesCustom] = useState(false);
   const [color, setColor] = useState('');
   const [hideGuestList, setHideGuestList] = useState(false);
+  const [eventKind, setEventKind] = useState('casual');
   const [timeStart, setTimeStart] = useState('09:00');
   const [timeEnd, setTimeEnd] = useState('17:00');
   const [timezone, setTimezone] = useState(detectUserTimezone);
@@ -271,6 +273,7 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
         durationMinutes: resolvedDuration,
         timezone,
         maxParticipants: maxParticipants ? parseInt(maxParticipants, 10) : null,
+        eventKind,
         eventType,
       };
 
@@ -582,6 +585,19 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
           <div className="space-y-4 animate-slide-down">
             <div className="border-t border-hairline-soft pt-4">
               <p className="text-xs font-medium text-faint uppercase tracking-wider mb-3">More options</p>
+            </div>
+
+            {/* Event type preset */}
+            <div>
+              <label htmlFor="eventKind" className="block text-sm font-medium text-body mb-1.5">
+                Event type
+              </label>
+              <select id="eventKind" value={eventKind} onChange={(e) => setEventKind(e.target.value)} className={selectClass}>
+                {EVENT_KINDS.map((k) => (
+                  <option key={k.key} value={k.key}>{k.emoji} {k.label}</option>
+                ))}
+              </select>
+              <p className="text-xs text-faint mt-1">Sets sensible defaults for what shows on the event — tweak anytime.</p>
             </div>
 
             {/* Your email */}

@@ -8,6 +8,7 @@ import LocationInput from '@/components/LocationInput';
 import EventColorPicker from '@/components/EventColorPicker';
 import EventImageUpload from '@/components/EventImageUpload';
 import { getModules, MODULE_TOGGLES, type EventModules } from '@/lib/eventConfig';
+import { EVENT_KINDS } from '@/lib/eventTypes';
 
 const DURATION_OPTIONS = [
   { value: 10, label: '10 min' },
@@ -37,6 +38,7 @@ export default function EditEventModal({ event, organizerToken, onClose, onSave,
   const [hideGuestList, setHideGuestList] = useState(event.hide_guest_list ?? false);
   const [logoUrl, setLogoUrl] = useState(event.logo_url || '');
   const [photoUrl, setPhotoUrl] = useState(event.photo_url || '');
+  const [eventKind, setEventKind] = useState(event.event_kind || 'casual');
   const [modules, setModules] = useState<EventModules>(() => getModules(event));
   const [description, setDescription] = useState(event.description || '');
   const [body, setBody] = useState(event.body || '');
@@ -100,6 +102,7 @@ export default function EditEventModal({ event, organizerToken, onClose, onSave,
           ...(logoUrl !== (event.logo_url || '') ? { logo_url: logoUrl || null } : {}),
           ...(photoUrl !== (event.photo_url || '') ? { photo_url: photoUrl || null } : {}),
           ...(JSON.stringify(modules) !== JSON.stringify(getModules(event)) ? { config: { modules } } : {}),
+          ...(eventKind !== (event.event_kind || 'casual') ? { event_kind: eventKind } : {}),
           response_deadline: responseDeadline
             ? new Date(responseDeadline + 'T23:59:59').toISOString()
             : null,
@@ -229,9 +232,26 @@ export default function EditEventModal({ event, organizerToken, onClose, onSave,
             />
           </div>
 
-          {/* === Modules (show / hide) === */}
+          {/* === Event type + modules (show / hide) === */}
           <div className="border-t border-hairline-soft pt-4 space-y-3">
-            <p className="text-xs font-semibold text-faint uppercase tracking-wider">Show / hide</p>
+            <div>
+              <label className="block text-xs font-semibold text-faint uppercase tracking-wider mb-1.5">Event type</label>
+              <select
+                value={eventKind}
+                onChange={(e) => {
+                  const k = e.target.value;
+                  setEventKind(k);
+                  // Re-seed the toggles to the new type's defaults; user can re-tweak.
+                  setModules(getModules({ event_kind: k }));
+                }}
+                className={inputClass}
+              >
+                {EVENT_KINDS.map((k) => (
+                  <option key={k.key} value={k.key}>{k.emoji} {k.label}</option>
+                ))}
+              </select>
+            </div>
+            <p className="text-xs font-semibold text-faint uppercase tracking-wider pt-1">Show / hide</p>
             {MODULE_TOGGLES.map(({ key, label, hint }) => (
               <label key={key} className="flex items-start gap-3 cursor-pointer">
                 <input

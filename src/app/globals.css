@@ -180,6 +180,16 @@
 html { background: var(--t-page); }
 body { color: var(--t-body); }
 
+/* Native date/time picker icon is dark by default — lighten it in dark mode so
+   it stays visible on dark inputs (WebKit/Blink). */
+.dark input[type="date"]::-webkit-calendar-picker-indicator,
+.dark input[type="time"]::-webkit-calendar-picker-indicator,
+.dark input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.8);
+  opacity: 0.85;
+  cursor: pointer;
+}
+
 /* Theme-aware logo swap — deterministic via real .dark specificity (the
    Tailwind `dark:` variant uses :where() which has zero specificity and can't
    reliably override `block`/`hidden`). Only applied when a dark logo exists. */

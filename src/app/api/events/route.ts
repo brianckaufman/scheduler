@@ -4,6 +4,7 @@ import { generateSlug, generateToken } from '@/lib/nanoid';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { sanitizeText, sanitizeName, sanitizeHtml, isValidTime, isValidDate, isValidTimezone } from '@/lib/sanitize';
 import { normalizeHex } from '@/lib/eventColors';
+import { isEventKind } from '@/lib/eventTypes';
 
 function getClientIp(request: NextRequest): string {
   return (
@@ -66,7 +67,7 @@ export async function POST(request: NextRequest) {
 
   const {
     name, description, body: bodyText, organizerName, organizerEmail, location, durationMinutes,
-    responseDeadline, maxParticipants, minResponses, color, hideGuestList, timezone,
+    responseDeadline, maxParticipants, minResponses, color, hideGuestList, eventKind, timezone,
     // Availability-mode fields
     dates, timeStart, timeEnd,
     // Fixed-mode fields
@@ -209,6 +210,8 @@ export async function POST(request: NextRequest) {
     ...(safeColor && { color: safeColor }),
     // hide_guest_list requires supabase-hide-guest-list-migration.sql first.
     ...(hideGuestList === true && { hide_guest_list: true }),
+    // event_kind requires supabase-event-kind-migration.sql first.
+    ...(isEventKind(eventKind) && eventKind !== 'casual' && { event_kind: eventKind }),
     // user_id requires supabase-accounts-migration.sql to be run first.
     ...(userId && { user_id: userId }),
     // device_type requires supabase-analytics-migration.sql to be run first
