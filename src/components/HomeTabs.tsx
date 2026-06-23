@@ -36,7 +36,9 @@ export default function HomeTabs({ children }: HomeTabsProps) {
     : 'Your Events';
 
   return (
-    <div className="animate-fade-in">
+    // relative z-20 keeps open row menus (Pin / Duplicate) above the later
+    // "See a live example" section, which otherwise paints over them.
+    <div className="animate-fade-in relative z-20">
       {/* Tab bar — hidden once the user begins creating an event */}
       {!creating && (
       <div className="flex bg-fill rounded-xl p-1 mb-4">
