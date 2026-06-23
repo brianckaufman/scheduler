@@ -9,6 +9,7 @@ import EventColorPicker from '@/components/EventColorPicker';
 import EventImageUpload from '@/components/EventImageUpload';
 import { getModules, MODULE_TOGGLES, type EventModules } from '@/lib/eventConfig';
 import { EVENT_KINDS } from '@/lib/eventTypes';
+import QuestionsEditor from '@/components/QuestionsEditor';
 
 const DURATION_OPTIONS = [
   { value: 10, label: '10 min' },
@@ -266,6 +267,15 @@ export default function EditEventModal({ event, organizerToken, onClose, onSave,
                 </span>
               </label>
             ))}
+          </div>
+
+          {/* === Custom questions === */}
+          <div className="border-t border-hairline-soft pt-4 space-y-3">
+            <div>
+              <p className="text-xs font-semibold text-faint uppercase tracking-wider">Custom questions</p>
+              <p className="text-xs text-faint mt-0.5">Ask guests anything (dietary needs, song requests…). Saved separately.</p>
+            </div>
+            <QuestionsEditor eventId={event.id} organizerToken={organizerToken} />
           </div>
           <div>
             <label className="block text-xs font-medium text-secondary mb-1">Your name</label>

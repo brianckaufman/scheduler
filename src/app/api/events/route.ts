@@ -184,6 +184,15 @@ export async function POST(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
   const userId = user?.id ?? null;
 
+  // Inherit the creator's account brand kit (Phase 6). Tolerates a missing table.
+  let brandKit: { brand_color?: string | null; logo_url?: string | null; icon_bg?: string | null; icon_fg?: string | null } | null = null;
+  if (userId) {
+    const { data: bk } = await supabase
+      .from('brand_kits').select('brand_color, logo_url, icon_bg, icon_fg').eq('user_id', userId).maybeSingle();
+    brandKit = bk ?? null;
+  }
+  const effectiveColor = safeColor || (brandKit?.brand_color ?? null);
+
   // Only include optional nullable columns when they have values — avoids
   // "column not found in schema cache" errors if migrations haven't been run yet.
   const insertPayload = {
@@ -207,7 +216,11 @@ export async function POST(request: NextRequest) {
     ...(safeMaxParticipants && { max_participants: safeMaxParticipants }),
     ...(safeMinResponses && { min_responses: safeMinResponses }),
     // color requires supabase-event-color-migration.sql to be run first.
-    ...(safeColor && { color: safeColor }),
+    ...(effectiveColor && { color: effectiveColor }),
+    // Brand-kit branding inheritance (Phase 2/6 columns).
+    ...(brandKit?.logo_url && { logo_url: brandKit.logo_url }),
+    ...(brandKit?.icon_bg && { icon_bg: brandKit.icon_bg }),
+    ...(brandKit?.icon_fg && { icon_fg: brandKit.icon_fg }),
     // hide_guest_list requires supabase-hide-guest-list-migration.sql first.
     ...(hideGuestList === true && { hide_guest_list: true }),
     // event_kind requires supabase-event-kind-migration.sql first.

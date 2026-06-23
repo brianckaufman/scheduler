@@ -6,6 +6,7 @@ import ProfileEditor from '@/components/account/ProfileEditor';
 import RemoveSavedButton from '@/components/account/RemoveSavedButton';
 import AvatarUpload from '@/components/account/AvatarUpload';
 import ThemeSetting from '@/components/account/ThemeSetting';
+import BrandKitEditor from '@/components/account/BrandKitEditor';
 
 export const dynamic = 'force-dynamic';
 
@@ -101,6 +102,11 @@ export default async function AccountPage() {
           <p className="text-xs text-faint pt-1 border-t border-hairline-soft">
             Signed in as <span className="text-muted">{user.email}</span>
           </p>
+        </section>
+
+        <section className="bg-surface rounded-2xl border border-hairline-soft p-4 space-y-4">
+          <h2 className="text-sm font-semibold text-heading">Brand kit</h2>
+          <BrandKitEditor />
         </section>
 
         <Section title="Events you created" count={createdEvents.length}

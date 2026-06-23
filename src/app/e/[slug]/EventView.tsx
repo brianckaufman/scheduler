@@ -16,7 +16,9 @@ import { FactRow } from '@/components/ui/FactRow';
 import { IconChip } from '@/components/ui/IconChip';
 import { CalendarIcon, ClockIcon, PinIcon, UserIcon } from '@/components/ui/icons';
 import Countdown from '@/components/modules/Countdown';
+import MapPreview from '@/components/modules/MapPreview';
 import { getModules } from '@/lib/eventConfig';
+import { parseLocation } from '@/lib/location';
 import FinalizedBanner from '@/components/FinalizedBanner';
 import EditEventModal from '@/components/EditEventModal';
 import SkeletonLoader from '@/components/SkeletonLoader';
@@ -390,6 +392,13 @@ export default function EventView({ event: initialEvent, organizerAvatar }: Even
               </>
             )}
           </div>
+
+          {/* Map preview — physical-location events, when the module is on */}
+          {modules.map && event.location && parseLocation(event.location).type !== 'virtual' && (
+            <div className="mb-4">
+              <MapPreview eventId={event.id} location={event.location} />
+            </div>
+          )}
 
           {/* Body: TimeGrid for availability, RSVPView for fixed */}
           {isFixed ? (

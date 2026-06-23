@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { format, addMinutes } from 'date-fns';
 import { useCopy } from '@/contexts/CopyContext';
 import { useMonetization } from '@/contexts/MonetizationContext';
@@ -11,7 +11,10 @@ import { IconChip } from './ui/IconChip';
 import { UsersIcon, PlusIcon, MinusIcon } from './ui/icons';
 import AttendeeStack from './modules/AttendeeStack';
 import RsvpProgress from './modules/RsvpProgress';
+import GuestQuestions from './GuestQuestions';
+import OrganizerResponses from './OrganizerResponses';
 import { getModules } from '@/lib/eventConfig';
+import type { EventQuestion } from '@/lib/questions';
 import { useRealtimeParticipants } from '@/hooks/useRealtimeParticipants';
 import { formatDisplayName, firstName } from '@/lib/names';
 import { buildInviteText } from '@/lib/invite';
@@ -321,6 +324,14 @@ export default function RSVPView({ event, participantId, isOrganizer, organizerT
   const [showConfetti, setShowConfetti] = useState(false);
   const [optimisticGuests, setOptimisticGuests] = useState<number | null>(null);
   const [capacityError, setCapacityError] = useState<string | null>(null);
+  const [questions, setQuestions] = useState<EventQuestion[]>([]);
+
+  useEffect(() => {
+    fetch(`/api/events/${event.id}/questions`)
+      .then((r) => r.json())
+      .then((d) => setQuestions(d.questions ?? []))
+      .catch(() => {});
+  }, [event.id]);
 
   const me = participants.find((p) => p.id === participantId);
   const myRsvp: RsvpValue | null = optimisticRsvp ?? me?.rsvp ?? null;
@@ -628,6 +639,16 @@ export default function RSVPView({ event, participantId, isOrganizer, organizerT
               )}
             </button>
           </div>
+        )}
+
+        {/* Custom questions — guests answer once they're going/maybe */}
+        {questions.length > 0 && participantId && (myRsvp === 'yes' || myRsvp === 'maybe') && (
+          <GuestQuestions eventId={event.id} participantId={participantId} questions={questions} />
+        )}
+
+        {/* Organizer: collapsible view of all answers */}
+        {questions.length > 0 && isOrganizer && organizerToken && (
+          <OrganizerResponses eventId={event.id} organizerToken={organizerToken} questions={questions} />
         )}
 
         {/* Guest list — collapsible (shown by default) */}
