@@ -1,5 +1,5 @@
-import LoadingScreen from '@/components/LoadingScreen';
+import EventSkeleton from '@/components/ui/EventSkeleton';
 
 export default function Loading() {
-  return <LoadingScreen />;
+  return <EventSkeleton />;
 }

@@ -72,6 +72,13 @@
   /* scrim */
   --t-scrim: rgba(0,0,0,0.45);
 
+  /* ── Polished Pro: icon-chip tints. Independent tokens, but derived from the
+     accent by default so they auto-follow theme (via --t-fill / --t-accent-fg)
+     AND per-event color (via .event-accent re-deriving --accent-base). A host
+     can override --icon-bg / --icon-fg explicitly later without touching brand. */
+  --icon-bg: color-mix(in oklch, var(--accent-base) 15%, var(--t-fill));
+  --icon-fg: var(--t-accent-fg);
+
   /* ── Brand gradient (cool sweep: emerald → blue → violet) ── */
   --brand-gradient:       linear-gradient(135deg, #03D2A3 0%, #0373F6 52%, #6B34EE 100%);
   --brand-gradient-hover: linear-gradient(135deg, #02A983 0%, #025CC7 52%, #5528C0 100%);
@@ -110,7 +117,21 @@
 }
 
 @theme inline {
-  --font-sans: var(--font-poppins);
+  --font-sans: var(--font-jakarta);
+
+  /* Polished Pro: icon-chip tints → bg-icon-bg / text-icon-fg */
+  --color-icon-bg: var(--icon-bg);
+  --color-icon-fg: var(--icon-fg);
+
+  /* Radius → rounded-card / rounded-field / rounded-chip */
+  --radius-card:  18px;
+  --radius-field: 13px;
+  --radius-chip:  10px;
+
+  /* Shadow → shadow-card / shadow-float / shadow-device (neutral, never brand-tinted) */
+  --shadow-card:   0 6px 16px rgba(0,0,0,.06);
+  --shadow-float:  0 12px 24px -10px rgba(20,22,45,.5);
+  --shadow-device: 0 44px 80px -34px rgba(20,22,45,.5);
   /* Accent (brand blue) drives every teal-* class */
   --color-teal-50:  var(--accent-50);
   --color-teal-100: var(--accent-100);

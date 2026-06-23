@@ -12,6 +12,11 @@ import ParticipantEntry from '@/components/ParticipantEntry';
 import TimeGrid from '@/components/TimeGrid';
 import RSVPView from '@/components/RSVPView';
 import ShareLink from '@/components/ShareLink';
+import { FactRow } from '@/components/ui/FactRow';
+import { IconChip } from '@/components/ui/IconChip';
+import { CalendarIcon, ClockIcon, PinIcon, UserIcon } from '@/components/ui/icons';
+import Countdown from '@/components/modules/Countdown';
+import { getModules } from '@/lib/eventConfig';
 import FinalizedBanner from '@/components/FinalizedBanner';
 import EditEventModal from '@/components/EditEventModal';
 import SkeletonLoader from '@/components/SkeletonLoader';
@@ -145,19 +150,49 @@ export default function EventView({ event: initialEvent, organizerAvatar }: Even
   // Only show push prompt for availability events (fixed events have no time to announce)
   const showPushPrompt = !isFixed && pushSupported && !isSubscribed && !pushDismissed && !event.finalized_time && !isOrganizer;
 
+  const modules = getModules(event);
+  // Per-event accent + independent icon-chip overrides, applied as inline vars.
+  const rootStyle: Record<string, string> = {};
+  if (event.color) rootStyle['--accent-base'] = event.color;
+  if (event.icon_bg) rootStyle['--icon-bg'] = event.icon_bg;
+  if (event.icon_fg) rootStyle['--icon-fg'] = event.icon_fg;
+
   return (
     <div
       className={`min-h-screen bg-subtle${event.color ? ' event-accent' : ''}`}
-      style={event.color ? ({ '--accent-base': event.color } as React.CSSProperties) : undefined}
+      style={Object.keys(rootStyle).length ? (rootStyle as React.CSSProperties) : undefined}
     >
       {showCelebration && <ConfettiCelebration onComplete={() => setShowCelebration(false)} />}
       <div className="max-w-lg mx-auto px-4 py-6">
-        {/* Logo */}
-        {branding.logo_url && (
+        {/* Logo — per-event logo wins, else the global brand lockup */}
+        {(event.logo_url || branding.logo_url) && (
           <div className="mb-4 flex justify-center">
             <a href="/">
-              <Logo height={branding.logo_height || 40} />
+              {event.logo_url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={event.logo_url} alt="" style={{ height: branding.logo_height || 40 }} className="w-auto object-contain" />
+              ) : (
+                <Logo height={branding.logo_height || 40} />
+              )}
             </a>
+          </div>
+        )}
+
+        {/* Hero photo with overlapping brand date chip (fixed events) */}
+        {event.photo_url && (
+          <div className="mb-4 relative rounded-card overflow-hidden h-[194px] bg-fill shadow-card">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={event.photo_url} alt="" className="w-full h-full object-cover" />
+            {isFixed && event.finalized_time && (
+              <div className="absolute left-3 bottom-3 rounded-chip bg-teal-500 text-white px-3 py-1.5 text-center shadow-float">
+                <div className="text-[10px] font-bold uppercase tracking-wider opacity-90 leading-none">
+                  {format(new Date(event.finalized_time), 'MMM')}
+                </div>
+                <div className="text-lg font-extrabold leading-none mt-0.5">
+                  {format(new Date(event.finalized_time), 'd')}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -245,53 +280,40 @@ export default function EventView({ event: initialEvent, organizerAvatar }: Even
 
             {isFixed && event.finalized_time ? (
               <>
-                {/* Fixed event: vertical detail rows */}
-                <div className="space-y-2.5 mt-1">
-                  {/* Date */}
-                  <div className="flex items-center gap-3">
-                    <svg className="w-4 h-4 text-faint shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
-                    </svg>
-                    <span className="text-sm font-semibold text-heading">
-                      {format(new Date(event.finalized_time), 'EEEE, MMMM d, yyyy')}
-                    </span>
-                  </div>
-                  {/* Time */}
-                  <div className="flex items-center gap-3">
-                    <svg className="w-4 h-4 text-faint shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <span className="text-sm font-semibold text-heading">
-                      {format(new Date(event.finalized_time), 'h:mm a')}
-                      {' – '}
-                      {format(addMinutes(new Date(event.finalized_time), event.duration_minutes || 60), 'h:mm a')}
-                      {event.timezone && (
-                        <span className="ml-1.5 text-xs font-normal text-faint">
-                          {getTzAbbr(event.finalized_time, event.timezone)}
-                        </span>
-                      )}
-                    </span>
-                  </div>
-                  {/* Location */}
+                {/* Fixed event: vertical fact rows */}
+                <div className="space-y-3 mt-1">
+                  <FactRow
+                    icon={<CalendarIcon />}
+                    value={<span className="font-semibold text-heading">{format(new Date(event.finalized_time), 'EEEE, MMMM d, yyyy')}</span>}
+                  />
+                  <FactRow
+                    icon={<ClockIcon />}
+                    value={
+                      <span className="font-semibold text-heading">
+                        {format(new Date(event.finalized_time), 'h:mm a')}
+                        {' – '}
+                        {format(addMinutes(new Date(event.finalized_time), event.duration_minutes || 60), 'h:mm a')}
+                        {event.timezone && (
+                          <span className="ml-1.5 text-xs font-normal text-faint">
+                            {getTzAbbr(event.finalized_time, event.timezone)}
+                          </span>
+                        )}
+                      </span>
+                    }
+                  />
                   {event.location && (
-                    <div className="flex items-start gap-3">
-                      <svg className="w-4 h-4 text-faint shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                      </svg>
-                      <LocationDisplay location={event.location ?? ''} textClassName="text-sm text-body" />
-                    </div>
+                    <FactRow
+                      icon={<PinIcon />}
+                      value={<LocationDisplay location={event.location ?? ''} textClassName="text-sm text-body" />}
+                    />
                   )}
-                  {/* Organizer */}
                   {event.organizer_name && (
                     <div className="flex items-center gap-3">
                       {organizerAvatar ? (
                         // eslint-disable-next-line @next/next/no-img-element
-                        <img src={organizerAvatar} alt="" className="w-6 h-6 rounded-full object-cover shrink-0 ring-1 ring-hairline" />
+                        <img src={organizerAvatar} alt="" className="w-9 h-9 rounded-chip object-cover shrink-0 ring-1 ring-hairline" />
                       ) : (
-                        <svg className="w-4 h-4 text-faint shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                        </svg>
+                        <IconChip><UserIcon /></IconChip>
                       )}
                       <span className="text-sm text-secondary">
                         {interpolate(copy.event.organized_by, { name: formatDisplayName(event.organizer_name) })}
@@ -299,8 +321,13 @@ export default function EventView({ event: initialEvent, organizerAvatar }: Even
                     </div>
                   )}
                 </div>
+                {isFixed && event.finalized_time && modules.countdown && (
+                  <div className="mt-4">
+                    <Countdown target={event.finalized_time} />
+                  </div>
+                )}
                 {/* Description / body */}
-                {event.description && (
+                {modules.description && event.description && (
                   <p className="text-sm text-muted mt-3 leading-relaxed">{event.description}</p>
                 )}
                 {event.body && <RichTextDisplay html={event.body} />}
@@ -312,16 +339,14 @@ export default function EventView({ event: initialEvent, organizerAvatar }: Even
                   <p className="text-sm text-muted mt-1 leading-relaxed">{event.description}</p>
                 )}
                 {event.body && <RichTextDisplay html={event.body} />}
-                <div className="space-y-2 mt-3">
+                <div className="space-y-3 mt-3">
                   {event.organizer_name && (
                     <div className="flex items-center gap-3">
                       {organizerAvatar ? (
                         // eslint-disable-next-line @next/next/no-img-element
-                        <img src={organizerAvatar} alt="" className="w-6 h-6 rounded-full object-cover shrink-0 ring-1 ring-hairline" />
+                        <img src={organizerAvatar} alt="" className="w-9 h-9 rounded-chip object-cover shrink-0 ring-1 ring-hairline" />
                       ) : (
-                        <svg className="w-4 h-4 text-faint shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                        </svg>
+                        <IconChip><UserIcon /></IconChip>
                       )}
                       <span className="text-sm text-secondary">
                         {interpolate(copy.event.organized_by, { name: formatDisplayName(event.organizer_name) })}
@@ -329,25 +354,22 @@ export default function EventView({ event: initialEvent, organizerAvatar }: Even
                     </div>
                   )}
                   {event.location && (
-                    <div className="flex items-start gap-3">
-                      <svg className="w-4 h-4 text-faint shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                      </svg>
-                      <LocationDisplay location={event.location ?? ''} textClassName="text-sm text-body" />
-                    </div>
+                    <FactRow
+                      icon={<PinIcon />}
+                      value={<LocationDisplay location={event.location ?? ''} textClassName="text-sm text-body" />}
+                    />
                   )}
                   {event.duration_minutes && (
-                    <div className="flex items-center gap-3">
-                      <svg className="w-4 h-4 text-faint shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <span className="text-sm text-secondary">
-                        {interpolate(copy.event.duration_needed, { duration: event.duration_minutes >= 60
-                          ? `${event.duration_minutes / 60} hour${event.duration_minutes > 60 ? 's' : ''}`
-                          : `${event.duration_minutes} min` })}
-                      </span>
-                    </div>
+                    <FactRow
+                      icon={<ClockIcon />}
+                      value={
+                        <span className="text-secondary">
+                          {interpolate(copy.event.duration_needed, { duration: event.duration_minutes >= 60
+                            ? `${event.duration_minutes / 60} hour${event.duration_minutes > 60 ? 's' : ''}`
+                            : `${event.duration_minutes} min` })}
+                        </span>
+                      }
+                    />
                   )}
                   {event.response_deadline && (
                     <div className="flex items-center gap-3">

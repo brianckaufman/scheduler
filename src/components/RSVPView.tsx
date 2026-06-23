@@ -7,6 +7,10 @@ import { useMonetization } from '@/contexts/MonetizationContext';
 import SupportBanner from './SupportBanner';
 import ConfettiCelebration from './ConfettiCelebration';
 import AnimatedNumber from './AnimatedNumber';
+import { IconChip } from './ui/IconChip';
+import { UsersIcon, PlusIcon, MinusIcon } from './ui/icons';
+import AttendeeStack from './modules/AttendeeStack';
+import { getModules } from '@/lib/eventConfig';
 import { useRealtimeParticipants } from '@/hooks/useRealtimeParticipants';
 import { formatDisplayName, firstName } from '@/lib/names';
 import { buildInviteText } from '@/lib/invite';
@@ -456,6 +460,7 @@ export default function RSVPView({ event, participantId, isOrganizer, organizerT
   // When the organizer hides the guest list, only they see the names; everyone
   // else still sees the aggregate totals.
   const canSeeNames = isOrganizer || !event.hide_guest_list;
+  const modules = getModules(event);
 
   const rsvpOptions: { value: RsvpValue; label: string }[] = [
     { value: 'yes',   label: rsvpCopy?.going ?? 'Going' },
@@ -493,6 +498,16 @@ export default function RSVPView({ event, participantId, isOrganizer, organizerT
       {showConfetti && <ConfettiCelebration onComplete={() => setShowConfetti(false)} />}
 
       <div className="space-y-5">
+        {/* Going summary — overlapping avatars + count (privacy-aware) */}
+        {modules.attendeeStack && going.length > 0 && (
+          <AttendeeStack
+            names={going.map((p) => p.name)}
+            total={going.length}
+            showNames={canSeeNames}
+            label={`${going.length} going`}
+          />
+        )}
+
         {/* Capacity meter — only when the organizer set a max */}
         {cap !== null && (
           <div className="rounded-xl border border-hairline-soft bg-subtle p-3">
@@ -563,9 +578,9 @@ export default function RSVPView({ event, participantId, isOrganizer, organizerT
                   onClick={() => handleGuestChange(-1)}
                   disabled={myGuests <= 0}
                   aria-label="Remove a guest"
-                  className="w-7 h-7 flex items-center justify-center rounded-full border border-hairline text-body hover:bg-subtle disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                  className="w-8 h-8 flex items-center justify-center rounded-chip bg-icon-bg text-icon-fg hover:brightness-95 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer"
                 >
-                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" d="M5 12h14" /></svg>
+                  <MinusIcon className="w-4 h-4" />
                 </button>
                 <span className="text-sm font-semibold tabular-nums w-5 text-center">{myGuests}</span>
                 <button
@@ -573,9 +588,9 @@ export default function RSVPView({ event, participantId, isOrganizer, organizerT
                   onClick={() => handleGuestChange(1)}
                   disabled={myGuests >= maxGuestsForMe}
                   aria-label="Add a guest"
-                  className="w-7 h-7 flex items-center justify-center rounded-full border border-hairline text-body hover:bg-subtle disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                  className="w-8 h-8 flex items-center justify-center rounded-chip bg-teal-500 text-white hover:bg-teal-600 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer"
                 >
-                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 5v14M5 12h14" /></svg>
+                  <PlusIcon className="w-4 h-4" />
                 </button>
               </div>
             </div>
@@ -671,9 +686,11 @@ export default function RSVPView({ event, participantId, isOrganizer, organizerT
         )}
 
         {participants.length === 0 && (
-          <p className="text-sm text-faint italic pt-1 border-t border-hairline-soft">
-            {rsvpCopy?.no_responses ?? 'No responses yet'}
-          </p>
+          <div className="border-t border-hairline-soft pt-5 flex flex-col items-center text-center gap-2">
+            <IconChip size="lg"><UsersIcon /></IconChip>
+            <p className="text-sm font-semibold text-body">Be the first to RSVP</p>
+            <p className="text-xs text-muted">{rsvpCopy?.no_responses ?? 'Tap a response above — replies show up here.'}</p>
+          </div>
         )}
       </div>
 

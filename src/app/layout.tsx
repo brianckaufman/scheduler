@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { Poppins } from 'next/font/google';
+import { Plus_Jakarta_Sans } from 'next/font/google';
 import { cookies } from 'next/headers';
 import './globals.css';
 import { getSettings } from '@/lib/settings';
@@ -21,10 +21,10 @@ import { optimizedOgImageUrl, optimizedFaviconUrl } from '@/lib/image';
  *  theme = 'light' | 'dark' | 'system' (default). 'system' follows the OS. */
 const THEME_INIT_SCRIPT = `(function(){try{var t=localStorage.getItem('theme')||'system';var d=t==='dark'||((t==='system'||t==='')&&window.matchMedia('(prefers-color-scheme: dark)').matches);if(d)document.documentElement.classList.add('dark');}catch(e){}})();`;
 
-const poppins = Poppins({
-  variable: '--font-poppins',
+const jakarta = Plus_Jakarta_Sans({
+  variable: '--font-jakarta',
   subsets: ['latin'],
-  weight: ['300', '400', '500', '600', '700'],
+  weight: ['400', '500', '600', '700', '800'],
   display: 'swap',
 });
 
@@ -180,7 +180,7 @@ export default async function RootLayout({
           />
         )}
       </head>
-      <body className={`${poppins.variable} font-sans antialiased`}>
+      <body className={`${jakarta.variable} font-sans antialiased`}>
         {analyticsConsented && settings.analytics.gtm_id && (
           <noscript>
             <iframe

@@ -19,6 +19,12 @@ export interface Event {
   event_type: 'availability' | 'fixed';
   color?: string | null;
   hide_guest_list?: boolean;
+  // Polished Pro (Phase 2) — per-event branding + module config.
+  logo_url?: string | null;
+  photo_url?: string | null;
+  icon_bg?: string | null;
+  icon_fg?: string | null;
+  config?: import('@/lib/eventConfig').EventConfig | null;
 }
 
 export type RsvpValue = 'yes' | 'maybe' | 'no';
