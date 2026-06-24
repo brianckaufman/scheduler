@@ -179,12 +179,18 @@ export default function EventView({ event: initialEvent, organizerAvatar }: Even
         {/* Logo — per-event logo wins, else the global brand lockup */}
         {(event.logo_url || branding.logo_url) && (
           <div className="mb-4 flex justify-center">
-            <a href="/">
+            <a href="/" className="relative inline-flex items-center justify-center px-6 py-1.5">
+              {/* Soft surface halo so the lockup reads on any ambient bg / brand color, both modes */}
+              <span
+                aria-hidden
+                className="pointer-events-none absolute inset-0"
+                style={{ background: 'radial-gradient(ellipse 80% 95% at 50% 50%, color-mix(in oklch, var(--color-surface) 68%, transparent) 0%, transparent 72%)' }}
+              />
               {event.logo_url ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={event.logo_url} alt="" style={{ height: branding.logo_height || 40 }} className="w-auto object-contain" />
+                <img src={event.logo_url} alt="" style={{ height: branding.logo_height || 40 }} className="relative w-auto object-contain" />
               ) : (
-                <Logo height={branding.logo_height || 40} />
+                <span className="relative"><Logo height={branding.logo_height || 40} /></span>
               )}
             </a>
           </div>
@@ -449,8 +455,10 @@ export default function EventView({ event: initialEvent, organizerAvatar }: Even
 
         {/* Viral CTA footer */}
         <div className="mt-8 mb-4 text-center">
-          <div className="border-t border-hairline-soft pt-6">
-            <p className="text-xs text-faint mb-2">{copy.event.cta_prompt}</p>
+          {/* Gradient rule reads softly on any ambient bg (vs. a flat hairline) */}
+          <div className="h-px bg-gradient-to-r from-transparent via-black/10 dark:via-white/15 to-transparent" />
+          <div className="pt-6">
+            <p className="text-xs text-faint mb-2 [text-shadow:0_1px_10px_var(--color-subtle)]">{copy.event.cta_prompt}</p>
             <a
               href="/"
               className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#101828] dark:bg-[#232B36] text-white text-sm font-medium rounded-full hover:bg-[#101828] dark:hover:bg-[#232B36] transition-all duration-200 active:scale-95 cursor-pointer"
@@ -460,10 +468,10 @@ export default function EventView({ event: initialEvent, organizerAvatar }: Even
               </svg>
               {copy.event.cta_button}
             </a>
-            <p className="text-xs text-faint mt-2">{copy.event.cta_footer}</p>
+            <p className="text-xs text-faint mt-2 [text-shadow:0_1px_10px_var(--color-subtle)]">{copy.event.cta_footer}</p>
 
             {monetization.buymeacoffee_url && monetization.show_on_event && (
-              <div className="mt-3">
+              <div className="mt-3 [text-shadow:0_1px_10px_var(--color-subtle)]">
                 <SupportBanner
                   url={monetization.buymeacoffee_url}
                   cta={monetization.donation_cta}

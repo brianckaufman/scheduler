@@ -34,7 +34,7 @@ export default function SaveEventButton({ eventId, className }: { eventId: strin
 
   // Default styling for standalone use; ShareLink passes its shared button style.
   const base = className
-    ? `${className} border ${saved ? 'border-strong text-accent-fg bg-subtle' : 'border-hairline text-body hover:bg-subtle'}`
+    ? `${className} border shadow-sm ${saved ? 'border-strong text-accent-fg bg-subtle' : 'border-hairline text-body bg-surface/80 backdrop-blur-sm hover:bg-subtle'}`
     : `inline-flex items-center gap-1.5 text-xs font-medium transition-colors ${saved ? 'text-accent-fg' : 'text-faint hover:text-secondary'}`;
 
   return (

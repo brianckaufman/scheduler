@@ -61,7 +61,7 @@ export default function ShareLink({ event, isOrganizer }: ShareLinkProps) {
         {/* Copy */}
         <button
           onClick={handleCopyInvite}
-          className={`${btnBase} border border-hairline text-body hover:bg-subtle`}
+          className={`${btnBase} bg-surface/80 backdrop-blur-sm border border-hairline text-body shadow-sm hover:bg-subtle`}
         >
           {copied ? (
             <>
