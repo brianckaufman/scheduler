@@ -5,6 +5,7 @@ import { checkRateLimit } from '@/lib/rate-limit';
 import { sanitizeText, sanitizeName, sanitizeHtml, isValidTime, isValidDate, isValidTimezone } from '@/lib/sanitize';
 import { normalizeHex } from '@/lib/eventColors';
 import { isEventKind } from '@/lib/eventTypes';
+import { sanitizeConfig } from '@/lib/eventConfig';
 
 function getClientIp(request: NextRequest): string {
   return (
@@ -67,7 +68,7 @@ export async function POST(request: NextRequest) {
 
   const {
     name, description, body: bodyText, organizerName, organizerEmail, location, durationMinutes,
-    responseDeadline, maxParticipants, minResponses, color, hideGuestList, eventKind, timezone,
+    responseDeadline, maxParticipants, minResponses, color, hideGuestList, eventKind, config, timezone,
     // Availability-mode fields
     dates, timeStart, timeEnd,
     // Fixed-mode fields
@@ -225,6 +226,8 @@ export async function POST(request: NextRequest) {
     ...(hideGuestList === true && { hide_guest_list: true }),
     // event_kind requires supabase-event-kind-migration.sql first.
     ...(isEventKind(eventKind) && eventKind !== 'casual' && { event_kind: eventKind }),
+    // config (module toggles) requires supabase-event-branding-modules-migration.sql.
+    ...(config && typeof config === 'object' && { config: sanitizeConfig(config) }),
     // user_id requires supabase-accounts-migration.sql to be run first.
     ...(userId && { user_id: userId }),
     // device_type requires supabase-analytics-migration.sql to be run first
@@ -269,6 +272,7 @@ export async function POST(request: NextRequest) {
   }
 
   return NextResponse.json({
+    id: data.id,
     slug: data.slug,
     organizerToken,
     organizerParticipantId,

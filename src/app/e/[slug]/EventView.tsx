@@ -164,8 +164,18 @@ export default function EventView({ event: initialEvent, organizerAvatar }: Even
       className={`min-h-screen bg-subtle${event.color ? ' event-accent' : ''}`}
       style={Object.keys(rootStyle).length ? (rootStyle as React.CSSProperties) : undefined}
     >
+      {/* Spotify-style ambient backdrop: the event photo stretched, heavily
+          blurred and faded so the desktop margins take on the image's colors.
+          Desktop only — on mobile the card already fills the width. */}
+      {event.photo_url && (
+        <div
+          aria-hidden
+          className="hidden md:block fixed inset-0 z-0 bg-cover bg-center blur-3xl scale-150 opacity-[0.18] dark:opacity-[0.28] pointer-events-none"
+          style={{ backgroundImage: `url("${event.photo_url}")` }}
+        />
+      )}
       {showCelebration && <ConfettiCelebration onComplete={() => setShowCelebration(false)} />}
-      <div className="max-w-lg mx-auto px-4 py-6">
+      <div className="max-w-lg mx-auto px-4 py-6 relative z-10">
         {/* Logo — per-event logo wins, else the global brand lockup */}
         {(event.logo_url || branding.logo_url) && (
           <div className="mb-4 flex justify-center">

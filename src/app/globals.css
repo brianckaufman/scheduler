@@ -211,6 +211,20 @@ body { color: var(--t-body); }
   --accent-700: color-mix(in oklch, var(--accent-base) 70%, black);
   --accent-800: color-mix(in oklch, var(--accent-base) 55%, black);
   --accent-900: color-mix(in oklch, var(--accent-base) 40%, black);
+
+  /* Secondary (social) scale also follows the event color, so the share,
+     capacity, and add-to-calendar buttons brand-match instead of staying the
+     default violet. (Status colors green/amber/red are literal, so unaffected.) */
+  --secondary-50:  color-mix(in oklch, var(--accent-base)  5%, white);
+  --secondary-100: color-mix(in oklch, var(--accent-base) 12%, white);
+  --secondary-200: color-mix(in oklch, var(--accent-base) 25%, white);
+  --secondary-300: color-mix(in oklch, var(--accent-base) 45%, white);
+  --secondary-400: color-mix(in oklch, var(--accent-base) 70%, white);
+  --secondary-500: var(--accent-base);
+  --secondary-600: color-mix(in oklch, var(--accent-base) 85%, black);
+  --secondary-700: color-mix(in oklch, var(--accent-base) 70%, black);
+  --secondary-800: color-mix(in oklch, var(--accent-base) 55%, black);
+  --secondary-900: color-mix(in oklch, var(--accent-base) 40%, black);
 }
 
 /* Brand gradient helpers */

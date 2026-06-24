@@ -23,7 +23,9 @@ import {
 import { POPULAR_TIMEZONES, detectUserTimezone, getTimezoneLabel } from '@/lib/timezones';
 import LocationInput from '@/components/LocationInput';
 import EventColorPicker from '@/components/EventColorPicker';
+import EventImagePicker from '@/components/EventImagePicker';
 import { EVENT_KINDS } from '@/lib/eventTypes';
+import { getModules, MODULE_TOGGLES, type EventModules } from '@/lib/eventConfig';
 
 interface EventFormProps {
   enableFixedEvents?: boolean;
@@ -90,6 +92,31 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
   const [color, setColor] = useState('');
   const [hideGuestList, setHideGuestList] = useState(false);
   const [eventKind, setEventKind] = useState('casual');
+  const [modules, setModules] = useState<EventModules>(() => getModules({ event_kind: 'casual' }));
+  // Create-time branding images (cropped/optimized locally, uploaded after create).
+  const [photoBlob, setPhotoBlob] = useState<Blob | null>(null);
+  const [photoExt, setPhotoExt] = useState('webp');
+  const [photoPreview, setPhotoPreview] = useState('');
+  const [logoBlob, setLogoBlob] = useState<Blob | null>(null);
+  const [logoExt, setLogoExt] = useState('webp');
+  const [logoPreview, setLogoPreview] = useState('');
+
+  const pickPhoto = (blob: Blob, ext: string) => {
+    if (photoPreview) URL.revokeObjectURL(photoPreview);
+    setPhotoBlob(blob); setPhotoExt(ext); setPhotoPreview(URL.createObjectURL(blob));
+  };
+  const clearPhoto = () => {
+    if (photoPreview) URL.revokeObjectURL(photoPreview);
+    setPhotoBlob(null); setPhotoPreview('');
+  };
+  const pickLogo = (blob: Blob, ext: string) => {
+    if (logoPreview) URL.revokeObjectURL(logoPreview);
+    setLogoBlob(blob); setLogoExt(ext); setLogoPreview(URL.createObjectURL(blob));
+  };
+  const clearLogo = () => {
+    if (logoPreview) URL.revokeObjectURL(logoPreview);
+    setLogoBlob(null); setLogoPreview('');
+  };
   const [timeStart, setTimeStart] = useState('09:00');
   const [timeEnd, setTimeEnd] = useState('17:00');
   const [timezone, setTimezone] = useState(detectUserTimezone);
@@ -274,6 +301,8 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
         timezone,
         maxParticipants: maxParticipants ? parseInt(maxParticipants, 10) : null,
         eventKind,
+        // Only send module overrides if the host changed them from the type defaults.
+        ...(JSON.stringify(modules) !== JSON.stringify(getModules({ event_kind: eventKind })) ? { config: { modules } } : {}),
         eventType,
       };
 
@@ -300,7 +329,7 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
         throw new Error(data.error || 'Failed to create event');
       }
 
-      const { slug, organizerToken, organizerParticipantId, organizerName: returnedName } = await res.json();
+      const { id, slug, organizerToken, organizerParticipantId, organizerName: returnedName } = await res.json();
       localStorage.setItem(`organizer_${slug}`, organizerToken);
       if (organizerParticipantId && returnedName) {
         localStorage.setItem(
@@ -308,6 +337,36 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
           JSON.stringify({ id: organizerParticipantId, name: returnedName })
         );
       }
+
+      // Upload create-time branding images now that the event exists, then
+      // persist their URLs. Failures are non-fatal — the event is already made.
+      if (id && (photoBlob || logoBlob)) {
+        const branding: Record<string, string> = {};
+        const uploads: [Blob | null, string, 'photo' | 'logo'][] = [
+          [photoBlob, photoExt, 'photo'],
+          [logoBlob, logoExt, 'logo'],
+        ];
+        for (const [blob, ext, kind] of uploads) {
+          if (!blob) continue;
+          try {
+            const fd = new FormData();
+            fd.append('file', new File([blob], `${kind}.${ext}`, { type: blob.type }));
+            fd.append('kind', kind);
+            fd.append('organizer_token', organizerToken);
+            const up = await fetch(`/api/events/${id}/upload`, { method: 'POST', body: fd });
+            const d = await up.json().catch(() => ({}));
+            if (up.ok && d.url) branding[kind === 'photo' ? 'photo_url' : 'logo_url'] = d.url;
+          } catch { /* skip this image */ }
+        }
+        if (Object.keys(branding).length) {
+          await fetch(`/api/events/${id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ organizer_token: organizerToken, ...branding }),
+          }).catch(() => {});
+        }
+      }
+
       sessionStorage.setItem('just_created', 'true');
       addEvent(slug, name.trim());
       saveUserDisplayName(organizerName.trim());
@@ -592,7 +651,7 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
               <label htmlFor="eventKind" className="block text-sm font-medium text-body mb-1.5">
                 Event type
               </label>
-              <select id="eventKind" value={eventKind} onChange={(e) => setEventKind(e.target.value)} className={selectClass}>
+              <select id="eventKind" value={eventKind} onChange={(e) => { const k = e.target.value; setEventKind(k); setModules(getModules({ event_kind: k })); }} className={selectClass}>
                 {EVENT_KINDS.map((k) => (
                   <option key={k.key} value={k.key}>{k.emoji} {k.label}</option>
                 ))}
@@ -790,6 +849,26 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
             {/* Event color */}
             <EventColorPicker value={color} onChange={setColor} />
 
+            {/* Event photo + logo — cropped/optimized locally, uploaded after create */}
+            <EventImagePicker
+              kind="photo"
+              preview={photoPreview}
+              onPick={pickPhoto}
+              onClear={clearPhoto}
+              label="Event photo"
+              hint="Wide hero image. Drag to crop; auto-optimized for fast loading."
+              aspect="photo"
+            />
+            <EventImagePicker
+              kind="logo"
+              preview={logoPreview}
+              onPick={pickLogo}
+              onClear={clearLogo}
+              label="Event logo"
+              hint="Replaces the default lockup. Transparent PNG/SVG works best."
+              aspect="logo"
+            />
+
             {/* Guest list privacy */}
             <div className="border-t border-hairline-soft pt-4">
               <label className="flex items-start gap-3 cursor-pointer">
@@ -804,6 +883,25 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
                   <span className="block text-xs text-faint mt-0.5">Only you will see who responded — guests still see the totals, just not the names.</span>
                 </span>
               </label>
+            </div>
+
+            {/* Show / hide modules */}
+            <div className="border-t border-hairline-soft pt-4 space-y-3">
+              <p className="text-xs font-semibold text-faint uppercase tracking-wider">Show / hide</p>
+              {MODULE_TOGGLES.map(({ key, label, hint }) => (
+                <label key={key} className="flex items-start gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={modules[key]}
+                    onChange={(e) => setModules((m) => ({ ...m, [key]: e.target.checked }))}
+                    className="mt-0.5 h-4 w-4 rounded border-strong accent-social-500 cursor-pointer shrink-0"
+                  />
+                  <span>
+                    <span className="block text-sm font-medium text-body">{label}</span>
+                    <span className="block text-xs text-faint mt-0.5">{hint}</span>
+                  </span>
+                </label>
+              ))}
             </div>
           </div>
         )}

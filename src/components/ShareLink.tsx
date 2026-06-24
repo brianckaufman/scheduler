@@ -43,7 +43,9 @@ export default function ShareLink({ event, isOrganizer }: ShareLinkProps) {
   const handleShare = async () => {
     if (navigator.share) {
       try {
-        await navigator.share({ title: event.name, text: inviteText, url });
+        // Pass the body WITHOUT the URL — navigator.share adds the URL via its
+        // own `url` field, so including it in `text` too double-previews it.
+        await navigator.share({ title: event.name, text: buildInviteText(event), url });
         return;
       } catch { /* cancelled */ }
     }
