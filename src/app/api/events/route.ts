@@ -231,14 +231,22 @@ export async function POST(request: NextRequest) {
     // ...(organizerDevice && { device_type: organizerDevice }),
   };
 
-  const { data, error } = await supabase
-    .from('events')
-    .insert(insertPayload)
-    .select()
-    .single();
+  // Resilient insert: if an optional column from an un-run migration isn't in
+  // the schema cache, strip it and retry so the event still gets created (the
+  // un-migrated feature's value is simply dropped). Required columns always
+  // exist, so this only ever removes optional migration-added fields.
+  const payload: Record<string, unknown> = { ...insertPayload };
+  let result = await supabase.from('events').insert(payload as never).select().single();
+  for (let i = 0; i < 8 && result.error; i++) {
+    const missing = result.error?.message?.match(/Could not find the '([^']+)' column/i)?.[1];
+    if (!missing || !(missing in payload)) break;
+    delete payload[missing];
+    result = await supabase.from('events').insert(payload as never).select().single();
+  }
+  const { data, error } = result;
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error || !data) {
+    return NextResponse.json({ error: error?.message || 'Failed to create event' }, { status: 500 });
   }
 
   // Auto-add the organizer as a participant if they provided their name.
