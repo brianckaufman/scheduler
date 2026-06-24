@@ -139,23 +139,26 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const settings = await getSettings();
-  const accentColor = settings.branding.accent_color || '#0373F6';
-
   // Analytics cookies are non-essential — only load the analytics scripts once
   // the visitor has accepted (see CookieConsent).
   const cookieStore = await cookies();
   const analyticsConsented = cookieStore.get('cookie_consent')?.value === 'accepted';
 
-  // Resolve the logged-in user server-side so AuthProvider seeds without a flash.
-  let initialUser = null;
-  try {
-    const supabase = await createClient();
-    const { data } = await supabase.auth.getUser();
-    initialUser = data.user;
-  } catch {
-    /* anonymous */
-  }
+  // Fetch settings (cached) and the logged-in user in PARALLEL — these were
+  // serial before and, with the old uncached settings read, dominated TTFB.
+  const [settings, initialUser] = await Promise.all([
+    getSettings(),
+    (async () => {
+      try {
+        const supabase = await createClient();
+        const { data } = await supabase.auth.getUser();
+        return data.user;
+      } catch {
+        return null; // anonymous
+      }
+    })(),
+  ]);
+  const accentColor = settings.branding.accent_color || '#0373F6';
   const siteName = settings.seo.site_name || 'Scheduler';
   const siteUrl = settings.seo.site_url || process.env.NEXT_PUBLIC_SITE_URL || '';
   const ogDesc = settings.seo.og_description || 'Find a time that works for everyone. No accounts needed.';

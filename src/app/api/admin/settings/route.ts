@@ -65,8 +65,8 @@ export async function PUT(request: Request) {
       );
     }
 
-    // Bust Next.js server component cache so all pages pick up new settings
-    // Using 'layout' type invalidates the root layout + all child pages
+    // Bust the route + data cache for all pages so new settings apply right
+    // away (the cached settings fetch also self-revalidates within 60s).
     revalidatePath('/', 'layout');
 
     // Return the fully merged settings (with defaults filled in)
