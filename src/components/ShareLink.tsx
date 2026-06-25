@@ -11,7 +11,7 @@ interface ShareLinkProps {
   isOrganizer?: boolean;
 }
 
-export default function ShareLink({ event, isOrganizer }: ShareLinkProps) {
+export default function ShareLink({ event }: ShareLinkProps) {
   const copy = useCopy();
   const [copied, setCopied] = useState(false);
   const [canShare, setCanShare] = useState(false);
@@ -94,11 +94,6 @@ export default function ShareLink({ event, isOrganizer }: ShareLinkProps) {
         {/* Save (only renders for logged-in users) */}
         <SaveEventButton eventId={event.id} className={btnBase} />
       </div>
-      {isOrganizer && (
-        <p className="text-xs text-faint text-center">
-          {copy.share.share_prompt}
-        </p>
-      )}
     </div>
   );
 }

@@ -184,7 +184,7 @@ export default function EventView({ event: initialEvent, organizerAvatar }: Even
               <span
                 aria-hidden
                 className="pointer-events-none absolute inset-0"
-                style={{ background: 'radial-gradient(ellipse 80% 95% at 50% 50%, color-mix(in oklch, var(--color-surface) 68%, transparent) 0%, transparent 72%)' }}
+                style={{ background: 'radial-gradient(ellipse 65% 75% at 50% 50%, color-mix(in oklch, var(--color-surface) 42%, transparent) 0%, transparent 68%)' }}
               />
               {event.logo_url ? (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -453,25 +453,24 @@ export default function EventView({ event: initialEvent, organizerAvatar }: Even
           </div>
         )}
 
-        {/* Viral CTA footer */}
-        <div className="mt-8 mb-4 text-center">
-          {/* Gradient rule reads softly on any ambient bg (vs. a flat hairline) */}
-          <div className="h-px bg-gradient-to-r from-transparent via-black/10 dark:via-white/15 to-transparent" />
-          <div className="pt-6">
-            <p className="text-xs text-faint mb-2 [text-shadow:0_1px_10px_var(--color-subtle)]">{copy.event.cta_prompt}</p>
+        {/* Viral CTA footer — self-contained surface so the copy stays legible
+            over any ambient backdrop, in light or dark mode. */}
+        <div className="mt-8 mb-4">
+          <div className="mx-auto max-w-sm rounded-card bg-surface/70 backdrop-blur-md border border-hairline shadow-sm px-6 py-6 text-center">
+            <p className="text-sm text-secondary mb-3">{copy.event.cta_prompt}</p>
             <a
               href="/"
-              className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#101828] dark:bg-[#232B36] text-white text-sm font-medium rounded-full hover:bg-[#101828] dark:hover:bg-[#232B36] transition-all duration-200 active:scale-95 cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-[#101828] dark:bg-[#232B36] text-white text-sm font-medium rounded-full hover:opacity-90 transition-all duration-200 active:scale-95 cursor-pointer"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
               </svg>
               {copy.event.cta_button}
             </a>
-            <p className="text-xs text-faint mt-2 [text-shadow:0_1px_10px_var(--color-subtle)]">{copy.event.cta_footer}</p>
+            <p className="text-xs text-faint mt-3">{copy.event.cta_footer}</p>
 
             {monetization.buymeacoffee_url && monetization.show_on_event && (
-              <div className="mt-3 [text-shadow:0_1px_10px_var(--color-subtle)]">
+              <div className="mt-4 pt-4 border-t border-hairline">
                 <SupportBanner
                   url={monetization.buymeacoffee_url}
                   cta={monetization.donation_cta}
