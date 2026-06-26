@@ -13,6 +13,11 @@ export function buildInviteText(event: Event, url?: string): string {
   // `url` field, so embedding it in the text too yields a DOUBLE link preview.
   const tail = url ? `\n${url}` : '';
 
+  // "Let Brian know…" when we have the organizer's name, else "Let us know…".
+  const letKnow = event.organizer_name
+    ? `Let ${firstName(event.organizer_name)} know if you can make it:`
+    : `Let us know if you can make it:`;
+
   if (event.event_type === 'fixed' && event.finalized_time) {
     const start = new Date(event.finalized_time);
     const end = addMinutes(start, event.duration_minutes || 60);
@@ -24,14 +29,14 @@ export function buildInviteText(event: Event, url?: string): string {
       `⏰ ${format(start, 'h:mm a')} – ${format(end, 'h:mm a')}`,
       ...(event.location ? [`📍 ${locationLabel(parseLocation(event.location))}`] : []),
       ``,
-      `Let us know if you can make it:`,
+      letKnow,
       ...(url ? [url] : []),
     ];
     return lines.join('\n');
   }
 
   if (event.event_type === 'fixed') {
-    return `You're invited to "${event.name}". Let us know if you can make it:${tail}`;
+    return `You're invited to "${event.name}". ${letKnow}${tail}`;
   }
 
   // Availability event
