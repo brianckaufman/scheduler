@@ -7,6 +7,7 @@ import { useCopy, interpolate } from '@/contexts/CopyContext';
 import { useBranding } from '@/contexts/BrandingContext';
 import { useMonetization } from '@/contexts/MonetizationContext';
 import { useParticipantSession } from '@/hooks/useParticipantSession';
+import { recordRespondedEvent } from '@/hooks/useRespondedEvents';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import ParticipantEntry from '@/components/ParticipantEntry';
 import TimeGrid from '@/components/TimeGrid';
@@ -82,6 +83,19 @@ export default function EventView({ event: initialEvent, organizerAvatar }: Even
     const token = localStorage.getItem(`organizer_${event.slug}`);
     setIsOrganizer(!!token);
   }, [event.slug]);
+
+  // Remember events the user responds to (someone else's events) so they appear
+  // in the "Joined" tab on the homepage. We check the organizer token directly
+  // (not the isOrganizer state, which resolves a render later) so we never log
+  // the organizer's own event — those already show under their own events.
+  useEffect(() => {
+    if (!loaded || !hasSession || !participantId) return;
+    if (localStorage.getItem(`organizer_${event.slug}`)) return;
+    recordRespondedEvent(event.slug, event.name, {
+      eventType: event.event_type as 'fixed' | 'availability',
+      finalizedTime: event.finalized_time ?? null,
+    });
+  }, [loaded, hasSession, participantId, event.slug, event.name, event.event_type, event.finalized_time]);
 
   useEffect(() => {
     try {
@@ -467,17 +481,6 @@ export default function EventView({ event: initialEvent, organizerAvatar }: Even
               </svg>
               {copy.event.cta_button}
             </a>
-            <p className="text-xs text-faint mt-3">{copy.event.cta_footer}</p>
-
-            {monetization.buymeacoffee_url && monetization.show_on_event && (
-              <div className="mt-4 pt-4 border-t border-hairline">
-                <SupportBanner
-                  url={monetization.buymeacoffee_url}
-                  cta={monetization.donation_cta}
-                  variant="inline"
-                />
-              </div>
-            )}
           </div>
         </div>
       </div>

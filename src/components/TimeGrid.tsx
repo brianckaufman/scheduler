@@ -542,8 +542,7 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
                 key={date}
                 className="text-center text-xs font-medium text-secondary pb-1 sticky top-0 bg-surface z-20"
               >
-                <div>{format(parseISO(date), 'EEE')}</div>
-                <div>{format(parseISO(date), 'M/d')}</div>
+                <div className="whitespace-nowrap">{format(parseISO(date), 'EEE M/d')}</div>
                 <button
                   type="button"
                   onClick={() => handleDayToggle(date)}

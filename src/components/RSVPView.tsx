@@ -16,6 +16,7 @@ import OrganizerResponses from './OrganizerResponses';
 import { getModules } from '@/lib/eventConfig';
 import type { EventQuestion } from '@/lib/questions';
 import { useRealtimeParticipants } from '@/hooks/useRealtimeParticipants';
+import { recordRespondedEvent } from '@/hooks/useRespondedEvents';
 import { formatDisplayName, firstName } from '@/lib/names';
 import { buildInviteText } from '@/lib/invite';
 import { parseLocation, locationLabel } from '@/lib/location';
@@ -335,6 +336,18 @@ export default function RSVPView({ event, participantId, isOrganizer, organizerT
 
   const me = participants.find((p) => p.id === participantId);
   const myRsvp: RsvpValue | null = optimisticRsvp ?? me?.rsvp ?? null;
+
+  // Keep the homepage "Joined" entry's RSVP status in sync. Skip the organizer's
+  // own event (it lives under their own events, not the joined list).
+  useEffect(() => {
+    if (!myRsvp) return;
+    if (localStorage.getItem(`organizer_${event.slug}`)) return;
+    recordRespondedEvent(event.slug, event.name, {
+      eventType: 'fixed',
+      finalizedTime: event.finalized_time ?? null,
+      rsvp: myRsvp,
+    });
+  }, [myRsvp, event.slug, event.name, event.finalized_time]);
 
   // Capacity: when a max is set, the cap counts "yes" responders plus the
   // guests they're bringing. Drives the public "spots filled" meter + limits.

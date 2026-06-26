@@ -103,13 +103,13 @@ function TimeGridSlotInner({
     const fraction = totalAvailable / totalParticipants;
     const alpha = 0.16 + fraction * 0.5;
     cellStyle.backgroundColor = `rgba(var(--t-heat-rgb), ${alpha})`;
-    if (isMine) ring('var(--t-border-strong)');
+    if (isMine) ring('var(--t-selected-ring)');
   } else if (isMine && othersCount > 0) {
     cellStyle.backgroundColor = 'var(--t-grid-mine)';
-    ring('var(--t-border-strong)');
+    ring('var(--t-selected-ring)');
   } else if (isMine) {
     cellStyle.backgroundColor = 'var(--t-grid-mine)';
-    ring('var(--t-border-strong)');
+    ring('var(--t-selected-ring)');
   } else if (othersCount > 0) {
     cellStyle.backgroundColor = 'var(--t-grid-others)';
   }
@@ -166,9 +166,7 @@ function TimeGridSlotInner({
     >
       {useCountMode ? (
         totalAvailable > 0 && (
-          <span className={`text-[11px] font-bold ${
-            isAllMatch ? 'text-success-fg' : 'text-accent-fg'
-          }`}>
+          <span className="text-[11px] font-semibold tabular-nums text-heading/80">
             {totalAvailable}
           </span>
         )

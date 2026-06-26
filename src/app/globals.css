@@ -61,9 +61,11 @@
   /* overlap grid surfaces */
   --t-grid-empty:  #F3F4F6;
   --t-grid-others: #E5E7EB;
-  --t-grid-mine:   #D1D5DB;
+  --t-grid-mine:   #E3F7F2;
   --t-grid-full:   #EAF8EC;
   --t-best-ring:   var(--accent-500);
+  /* ring around slots the current user selected */
+  --t-selected-ring: #14B8A6;
   /* toast */
   --t-toast-bg:   #101828;
   /* heat (overlap fill) base — alpha applied per-cell */
@@ -107,9 +109,10 @@
   --t-success-ring: #3ADB65;
   --t-grid-empty:  #252C36;
   --t-grid-others: #2E3742;
-  --t-grid-mine:   #39424E;
+  --t-grid-mine:   #16322E;
   --t-grid-full:   #123428;
   --t-best-ring:   var(--accent-400);
+  --t-selected-ring: #2DD4BF;
   --t-toast-bg:   #232B36;
   --t-heat-floor: 0.18;
   --t-scrim: rgba(0,0,0,0.6);
