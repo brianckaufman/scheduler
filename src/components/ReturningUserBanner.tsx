@@ -8,9 +8,11 @@ const DEFAULT_VISIBLE = 3;
 
 interface ReturningUserBannerProps {
   createdEvents: ReturnType<typeof useCreatedEvents>;
+  /** Heading shown inside the panel (e.g. "Brian's Events"). */
+  title?: string;
 }
 
-export default function ReturningUserBanner({ createdEvents }: ReturningUserBannerProps) {
+export default function ReturningUserBanner({ createdEvents, title }: ReturningUserBannerProps) {
   const { events, loaded, removeEvent, updateEvent } = createdEvents;
   const [expanded, setExpanded] = useState(false);
   const [deletingSlug, setDeletingSlug] = useState<string | null>(null);
@@ -107,8 +109,9 @@ export default function ReturningUserBanner({ createdEvents }: ReturningUserBann
 
   return (
     <div className="animate-fade-in bg-surface rounded-2xl shadow-sm border border-hairline-soft overflow-visible">
-      {/* Auto-delete info */}
+      {/* Title + auto-delete info */}
       <div className="px-4 pt-3 pb-1">
+        {title && <h2 className="text-sm font-semibold text-heading mb-0.5">{title}</h2>}
         <p className="text-xs text-faint">
           Finalized events auto-delete after 24 hours. Pin to keep.
         </p>

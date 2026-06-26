@@ -8,6 +8,8 @@ const DEFAULT_VISIBLE = 3;
 
 interface RespondedEventsBannerProps {
   respondedEvents: ReturnType<typeof useRespondedEvents>;
+  /** Heading shown inside the panel (e.g. "Joined"). */
+  title?: string;
 }
 
 const RSVP_BADGE: Record<RsvpValue, { label: string; cls: string }> = {
@@ -16,7 +18,7 @@ const RSVP_BADGE: Record<RsvpValue, { label: string; cls: string }> = {
   no: { label: "Can't", cls: 'bg-fill2 text-faint' },
 };
 
-export default function RespondedEventsBanner({ respondedEvents }: RespondedEventsBannerProps) {
+export default function RespondedEventsBanner({ respondedEvents, title }: RespondedEventsBannerProps) {
   const { events, loaded, removeEvent, updateEvent } = respondedEvents;
   const [expanded, setExpanded] = useState(false);
   const [removingSlug, setRemovingSlug] = useState<string | null>(null);
@@ -118,6 +120,7 @@ export default function RespondedEventsBanner({ respondedEvents }: RespondedEven
   return (
     <div className="animate-fade-in bg-surface rounded-2xl shadow-sm border border-hairline-soft overflow-visible">
       <div className="px-4 pt-3 pb-1">
+        {title && <h2 className="text-sm font-semibold text-heading mb-0.5">{title}</h2>}
         <p className="text-xs text-faint">
           Events you&apos;ve responded to. Removed a week after they end — pin to keep.
         </p>
