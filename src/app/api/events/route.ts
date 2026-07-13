@@ -77,10 +77,15 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid timezone' }, { status: 400 });
   }
 
-  // Accept any duration 1–1440 min; default 60 if invalid
-  const safeDuration = Number.isInteger(durationMinutes) && durationMinutes > 0 && durationMinutes <= 1440
-    ? durationMinutes
-    : 60;
+  // Accept any duration 1–1440 min; default 60 if invalid. All-day events get
+  // a fixed 1439 sentinel (not 1440) — the DB's duration CHECK constraint
+  // validates duration against the time_start/time_end window, and our
+  // all-day sentinel window is 00:00–23:59 (1439 minutes), not a full 1440.
+  const safeDuration = safeAllDay
+    ? 1439
+    : Number.isInteger(durationMinutes) && durationMinutes > 0 && durationMinutes <= 1440
+      ? durationMinutes
+      : 60;
 
   const safeEventType = eventType === 'fixed' ? 'fixed' : 'availability';
 
