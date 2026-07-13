@@ -12,7 +12,7 @@ async function testCols(table, cols) {
   }
 }
 console.log('=== column existence probe ===');
-await testCols('events', ['id','event_type','finalized_time','created_at','timezone','description','body','location','response_deadline','max_participants','organizer_name','organizer_email','device_type','min_responses']);
+await testCols('events', ['id','event_type','finalized_time','created_at','timezone','description','body','location','response_deadline','max_participants','organizer_name','organizer_email','device_type','min_responses','all_day','finalized_end_date','min_block_days']);
 await testCols('participants', ['id','event_id','name','created_at','rsvp','device_type']);
 const { count: ev } = await sb.from('events').select('id',{count:'exact',head:true});
 const { count: pt } = await sb.from('participants').select('id',{count:'exact',head:true});

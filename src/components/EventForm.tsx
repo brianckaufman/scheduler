@@ -73,6 +73,8 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
   const [maxParticipants, setMaxParticipants] = useState('');
   const [minResponses, setMinResponses] = useState('');
   const [minResponsesCustom, setMinResponsesCustom] = useState(false);
+  // Sequential-block mode (all-day trips): require an unbroken run of N days.
+  const [minBlockDays, setMinBlockDays] = useState('');
   const [color, setColor] = useState('');
   const [hideGuestList, setHideGuestList] = useState(false);
   const [eventKind, setEventKind] = useState('casual');
@@ -340,6 +342,7 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
             timeStart,
             timeEnd,
             minResponses: minResponses ? parseInt(minResponses, 10) : null,
+            ...(allDay && minBlockDays ? { minBlockDays: parseInt(minBlockDays, 10) } : {}),
             responseDeadline: responseDeadline
               ? new Date(responseDeadline + 'T23:59:59').toISOString()
               : null,
@@ -871,6 +874,32 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
                     </p>
                   )}
                 </div>
+
+                {/* Sequential block — trips/vacations need consecutive days, not scattered ones */}
+                {allDay && (
+                  <div>
+                    <label htmlFor="minBlockDays" className="block text-sm font-medium text-body mb-1.5">
+                      Require a consecutive block of days?{' '}
+                      <span className="text-faint font-normal">(for trips, optional)</span>
+                    </label>
+                    <select
+                      id="minBlockDays"
+                      value={minBlockDays}
+                      onChange={(e) => setMinBlockDays(e.target.value)}
+                      className={selectClass}
+                    >
+                      <option value="">No — any overlapping days are fine</option>
+                      {[2, 3, 4, 5, 6, 7, 10, 14].map((n) => (
+                        <option key={n} value={n}>{n} days in a row</option>
+                      ))}
+                    </select>
+                    {minBlockDays && parseInt(minBlockDays, 10) >= 2 && (
+                      <p className="text-xs text-faint mt-1">
+                        We&apos;ll only suggest unbroken blocks of at least {minBlockDays} consecutive days that work for everyone.
+                      </p>
+                    )}
+                  </div>
+                )}
 
                 {/* Respond by */}
                 <div>

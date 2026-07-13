@@ -32,6 +32,10 @@ export interface Event {
   // Inclusive end date ('yyyy-MM-dd') of a finalized all-day range. Null/absent
   // for a single-day all-day event (same day as finalized_time) or a timed event.
   finalized_end_date?: string | null;
+  // Sequential-block mode (all-day events only) — require an unbroken run of at
+  // least this many consecutive calendar days that works for everyone, for
+  // trips/vacations. Null/absent = flexible "any overlapping days" behaviour.
+  min_block_days?: number | null;
 }
 
 export type RsvpValue = 'yes' | 'maybe' | 'no';

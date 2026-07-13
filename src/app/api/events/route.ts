@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
     name, description, body: bodyText, organizerName, organizerEmail, location, durationMinutes,
     responseDeadline, maxParticipants, minResponses, color, hideGuestList, eventKind, config, timezone,
     // Availability-mode fields
-    dates, timeStart, timeEnd,
+    dates, timeStart, timeEnd, minBlockDays,
     // Fixed-mode fields
     eventType, fixedDate, fixedTime,
     // All-day mode (both flows) — whole days instead of times-of-day.
@@ -172,6 +172,17 @@ export async function POST(request: NextRequest) {
     }
   }
 
+  // Validate the required consecutive-block length (all-day availability only).
+  // A block of 1 is just a normal day, so the floor is 2; cap at the max number
+  // of proposable dates (31). Ignored unless this is an all-day availability event.
+  let safeMinBlockDays: number | null = null;
+  if (safeAllDay && safeEventType === 'availability' && minBlockDays !== undefined && minBlockDays !== null && minBlockDays !== '') {
+    const num = Number(minBlockDays);
+    if (Number.isInteger(num) && num >= 2 && num <= 31) {
+      safeMinBlockDays = num;
+    }
+  }
+
   // --- Sanitize text inputs ---
   const safeName = sanitizeText(name, 100);
   const safeDescription = description ? sanitizeText(description, 500) : null;
@@ -243,6 +254,8 @@ export async function POST(request: NextRequest) {
     ...(responseDeadline && { response_deadline: responseDeadline }),
     ...(safeMaxParticipants && { max_participants: safeMaxParticipants }),
     ...(safeMinResponses && { min_responses: safeMinResponses }),
+    // min_block_days requires supabase-block-days-migration.sql to be run first.
+    ...(safeMinBlockDays && { min_block_days: safeMinBlockDays }),
     // color requires supabase-event-color-migration.sql to be run first.
     ...(effectiveColor && { color: effectiveColor }),
     // Brand-kit branding inheritance (Phase 2/6 columns).

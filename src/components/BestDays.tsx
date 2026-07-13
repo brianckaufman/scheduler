@@ -3,11 +3,14 @@
 import { useMemo, useState } from 'react';
 import { format } from 'date-fns';
 import { formatDisplayName } from '@/lib/names';
+import { areAdjacentDays } from '@/lib/overlap';
 import type { Participant } from '@/types';
 
 interface BestDaysProps {
   /** Every proposed day, sorted ascending — ISO slot keys from generateAllDaySlots. */
   dayKeys: string[];
+  /** 'yyyy-MM-dd' strings parallel to dayKeys, so a range never spans a gap. */
+  sortedDates: string[];
   overlapMap: Map<string, Set<string>>;
   totalParticipants: number;
   participants: Participant[];
@@ -30,6 +33,7 @@ function intersect(a: Set<string>, b: Set<string>): Set<string> {
 
 export default function BestDays({
   dayKeys,
+  sortedDates,
   overlapMap,
   totalParticipants,
   participants,
@@ -56,6 +60,9 @@ export default function BestDays({
       let best: RangeCandidate = { startIdx: i, endIdx: i, count: running.size, participantIds: running };
 
       for (let j = i + 1; j < dayKeys.length; j++) {
+        // A range must be an unbroken run of calendar days — stop at any gap in
+        // the proposed dates so we never report a span that jumps a hole.
+        if (!areAdjacentDays(sortedDates[j - 1], sortedDates[j])) break;
         const dayset = overlapMap.get(dayKeys[j]) ?? new Set<string>();
         running = intersect(running, dayset);
         if (running.size < 2) break;
@@ -70,7 +77,7 @@ export default function BestDays({
     return candidates
       .sort((a, b) => b.count - a.count || (b.endIdx - b.startIdx) - (a.endIdx - a.startIdx))
       .slice(0, 5);
-  }, [dayKeys, overlapMap, totalParticipants]);
+  }, [dayKeys, sortedDates, overlapMap, totalParticipants]);
 
   // Per-day counts, for the manual range picker's day chips.
   const dayCounts = useMemo(
