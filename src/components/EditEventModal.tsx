@@ -7,7 +7,7 @@ const RichTextEditor = lazy(() => import('@/components/RichTextEditor'));
 import LocationInput from '@/components/LocationInput';
 import EventColorPicker from '@/components/EventColorPicker';
 import EventImageUpload from '@/components/EventImageUpload';
-import { getModules, MODULE_TOGGLES, type EventModules } from '@/lib/eventConfig';
+import { getModules, MODULE_TOGGLES, FIXED_ONLY_MODULES, type EventModules } from '@/lib/eventConfig';
 import { EVENT_KINDS } from '@/lib/eventTypes';
 import QuestionsEditor from '@/components/QuestionsEditor';
 import DateRangeCalendar from '@/components/DateRangeCalendar';
@@ -65,7 +65,6 @@ export default function EditEventModal({ event, organizerToken, onClose, onSave,
   const [photoUrl, setPhotoUrl] = useState(event.photo_url || '');
   const [eventKind, setEventKind] = useState(event.event_kind || 'casual');
   const [modules, setModules] = useState<EventModules>(() => getModules(event));
-  const [description, setDescription] = useState(event.description || '');
   const [body, setBody] = useState(event.body || '');
   const [organizerName, setOrganizerName] = useState(event.organizer_name || '');
   const [location, setLocation] = useState(event.location || '');
@@ -148,7 +147,6 @@ export default function EditEventModal({ event, organizerToken, onClose, onSave,
         body: JSON.stringify({
           organizer_token: organizerToken,
           name: name.trim(),
-          description: description.trim() || null,
           body: body.trim() || null,
           organizer_name: organizerName.trim(),
           location: location.trim() || null,
@@ -244,13 +242,8 @@ export default function EditEventModal({ event, organizerToken, onClose, onSave,
               className={inputClass} maxLength={100} required />
           </div>
           <div>
-            <label className="block text-xs font-medium text-secondary mb-1">Short description</label>
-            <input type="text" value={description} onChange={(e) => setDescription(e.target.value)}
-              className={inputClass} maxLength={500} placeholder="Optional — shown as a subtitle" />
-          </div>
-          <div>
             <label className="block text-xs font-medium text-secondary mb-1.5">
-              Full details{' '}
+              Additional details{' '}
               <span className="text-faint font-normal">(optional — hidden behind "Read more")</span>
             </label>
             <Suspense fallback={<div className="h-28 rounded-xl border border-strong bg-subtle animate-pulse" />}>
@@ -322,7 +315,7 @@ export default function EditEventModal({ event, organizerToken, onClose, onSave,
               </select>
             </div>
             <p className="text-xs font-semibold text-faint uppercase tracking-wider pt-1">Show / hide</p>
-            {MODULE_TOGGLES.map(({ key, label, hint }) => (
+            {MODULE_TOGGLES.filter(({ key }) => isFixed || !FIXED_ONLY_MODULES.includes(key)).map(({ key, label, hint }) => (
               <label key={key} className="flex items-start gap-3 cursor-pointer">
                 <input
                   type="checkbox"

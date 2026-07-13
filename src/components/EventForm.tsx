@@ -25,7 +25,7 @@ import LocationInput from '@/components/LocationInput';
 import EventColorPicker from '@/components/EventColorPicker';
 import EventImagePicker from '@/components/EventImagePicker';
 import { EVENT_KINDS } from '@/lib/eventTypes';
-import { getModules, MODULE_TOGGLES, type EventModules } from '@/lib/eventConfig';
+import { getModules, MODULE_TOGGLES, FIXED_ONLY_MODULES, type EventModules } from '@/lib/eventConfig';
 import { TIME_OPTIONS, formatTimeLabel, enumDurationEndTimeOptions } from '@/lib/timeOptions';
 import DateRangeCalendar from '@/components/DateRangeCalendar';
 import CollapsibleSection from '@/components/ui/CollapsibleSection';
@@ -64,7 +64,6 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
     );
   }, [eventType, enableFixedEvents]);
   const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
   const [organizerName, setOrganizerName] = useState('');
   const [organizerEmail, setOrganizerEmail] = useState('');
   const [location, setLocation] = useState('');
@@ -320,7 +319,6 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
     try {
       const commonPayload = {
         name: name.trim(),
-        description: description.trim() || null,
         body: body.trim() || null,
         organizerName: organizerName.trim() || null,
         ...(organizerEmail.trim() && { organizerEmail: organizerEmail.trim() }),
@@ -706,22 +704,7 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
           <div className="space-y-3 animate-slide-down border-t border-hairline-soft pt-4">
 
             {/* === Group: Event details === */}
-            <CollapsibleSection title="Event details" description="Description, location, timezone, and extra details">
-              <div>
-                <label htmlFor="description" className="block text-sm font-medium text-body mb-1.5">
-                  Description <span className="text-faint font-normal">(optional)</span>
-                </label>
-                <input
-                  id="description"
-                  type="text"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder={copy.form.description_placeholder}
-                  className={inputClass}
-                  maxLength={500}
-                />
-              </div>
-
+            <CollapsibleSection title="Event details" description="Location, timezone, and extra details">
               <div>
                 <label className="block text-sm font-medium text-body mb-1.5">
                   Location <span className="text-faint font-normal">(optional)</span>
@@ -795,7 +778,7 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
 
               <div className="border-t border-hairline-soft pt-4 space-y-3">
                 <p className="text-xs font-semibold text-faint uppercase tracking-wider">Show / hide</p>
-                {MODULE_TOGGLES.map(({ key, label, hint }) => (
+                {MODULE_TOGGLES.filter(({ key }) => eventType === 'fixed' || !FIXED_ONLY_MODULES.includes(key)).map(({ key, label, hint }) => (
                   <label key={key} className="flex items-start gap-3 cursor-pointer">
                     <input
                       type="checkbox"

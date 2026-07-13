@@ -6,7 +6,6 @@ export const EVENT_COLOR_PRESETS: { hex: string; name: string }[] = [
   { hex: '#6366F1', name: 'Indigo' },
   { hex: '#7C3AED', name: 'Violet' },
   { hex: '#DB2777', name: 'Pink' },
-  { hex: '#E11D48', name: 'Rose' },
   { hex: '#EA580C', name: 'Orange' },
   { hex: '#059669', name: 'Emerald' },
   { hex: '#0D9488', name: 'Teal' },

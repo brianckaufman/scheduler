@@ -67,6 +67,14 @@ export const MODULE_TOGGLES: { key: keyof EventModules; label: string; hint: str
   { key: 'map', label: 'Map preview', hint: 'Static map for physical locations' },
   { key: 'calendar', label: 'Add to calendar', hint: 'ICS / calendar buttons' },
   { key: 'organizer', label: 'Organizer attribution', hint: 'Show who’s hosting' },
-  { key: 'description', label: 'Description block', hint: 'Show the details text' },
+  { key: 'description', label: 'Details block', hint: 'Show your Additional Details text' },
   { key: 'confetti', label: 'Celebratory confetti', hint: 'Confetti burst on RSVP' },
 ];
+
+/**
+ * Toggles that only affect the fixed (RSVP) event view — attendee avatars,
+ * RSVP progress, "add to calendar", and confetti are all rendered exclusively
+ * in RSVPView. Hidden from the Show/hide list when creating or editing a
+ * Find-a-Time (availability) event, since toggling them has no visible effect there.
+ */
+export const FIXED_ONLY_MODULES: (keyof EventModules)[] = ['attendeeStack', 'rsvpProgress', 'calendar', 'confetti'];

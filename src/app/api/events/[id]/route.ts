@@ -157,7 +157,14 @@ export async function PATCH(
     }
   }
   if ('body' in updates) {
-    safeUpdate.body = updates.body ? sanitizeHtml(String(updates.body)) : null;
+    const safeBody = updates.body ? sanitizeHtml(String(updates.body)) : null;
+    safeUpdate.body = safeBody;
+    // description is no longer authored separately — keep it in sync as a
+    // plain-text summary of the body (used for SEO/OG meta and ICS
+    // descriptions), unless the caller explicitly sent its own description.
+    if (!('description' in updates)) {
+      safeUpdate.description = safeBody ? sanitizeText(safeBody, 500) : null;
+    }
   }
   if ('color' in updates) {
     safeUpdate.color = typeof updates.color === 'string' ? normalizeHex(updates.color) : null;

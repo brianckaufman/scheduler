@@ -185,8 +185,11 @@ export async function POST(request: NextRequest) {
 
   // --- Sanitize text inputs ---
   const safeName = sanitizeText(name, 100);
-  const safeDescription = description ? sanitizeText(description, 500) : null;
   const safeBody = bodyText ? sanitizeHtml(bodyText) : null;
+  // description is no longer authored separately — it's a plain-text summary
+  // auto-derived from the rich Additional Details body, used for SEO/OG meta
+  // and ICS calendar descriptions.
+  const safeDescription = description ? sanitizeText(description, 500) : (safeBody ? sanitizeText(safeBody, 500) : null);
   const safeOrganizerName = organizerName ? sanitizeName(organizerName) : null;
   const safeLocation = location ? sanitizeText(location, 600) : null;
   const safeColor = typeof color === 'string' ? normalizeHex(color) : null;

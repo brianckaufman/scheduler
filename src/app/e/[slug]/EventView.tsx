@@ -364,19 +364,13 @@ export default function EventView({ event: initialEvent, organizerAvatar }: Even
                     <Countdown target={event.finalized_time} />
                   </div>
                 )}
-                {/* Description / body */}
-                {modules.description && event.description && (
-                  <p className="text-sm text-muted mt-3 leading-relaxed">{event.description}</p>
-                )}
-                {event.body && <RichTextDisplay html={event.body} />}
+                {/* Additional details — a single rich-text block for both event types */}
+                {modules.description && event.body && <RichTextDisplay html={event.body} />}
               </>
             ) : (
               <>
-                {/* Availability event: description first, then vertical detail rows */}
-                {event.description && (
-                  <p className="text-sm text-muted mt-1 leading-relaxed">{event.description}</p>
-                )}
-                {event.body && <RichTextDisplay html={event.body} />}
+                {/* Availability event: additional details, then vertical detail rows */}
+                {modules.description && event.body && <RichTextDisplay html={event.body} />}
                 <div className="space-y-3 mt-3">
                   {modules.organizer && event.organizer_name && (
                     <div className="flex items-center gap-3">
