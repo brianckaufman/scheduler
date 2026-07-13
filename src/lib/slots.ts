@@ -55,6 +55,23 @@ export function zonedToUtc(dateStr: string, timeStr: string, tz: string): Date {
 }
 
 /**
+ * Reverse of zonedToUtc: format a UTC instant as separate date/time strings
+ * ('yyyy-MM-dd' / 'HH:mm') as they read in a given IANA timezone. Used to
+ * pre-fill an edit form from a stored finalized_time without drifting a day
+ * off for organizers browsing from a different timezone than the event's.
+ */
+export function utcToZoned(date: Date, tz: string): { dateStr: string; timeStr: string } {
+  const parts = new Intl.DateTimeFormat('sv-SE', {
+    timeZone: tz,
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit',
+    hour12: false,
+  }).format(date); // "YYYY-MM-DD HH:MM:SS"
+  const [dateStr, timeStr] = parts.split(' ');
+  return { dateStr, timeStr: timeStr.slice(0, 5) };
+}
+
+/**
  * One slot key per calendar day, at midnight in the event's timezone,
  * UTC-normalized via zonedToUtc — unlike generateSlots (which uses the
  * viewer's local browser time), whole-day slots need every participant to

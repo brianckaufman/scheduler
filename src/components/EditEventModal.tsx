@@ -10,6 +10,10 @@ import EventImageUpload from '@/components/EventImageUpload';
 import { getModules, MODULE_TOGGLES, type EventModules } from '@/lib/eventConfig';
 import { EVENT_KINDS } from '@/lib/eventTypes';
 import QuestionsEditor from '@/components/QuestionsEditor';
+import DateRangeCalendar from '@/components/DateRangeCalendar';
+import { TIME_OPTIONS, formatTimeLabel, enumDurationEndTimeOptions } from '@/lib/timeOptions';
+import { zonedToUtc, utcToZoned } from '@/lib/slots';
+import { getTimezoneLabel } from '@/lib/timezones';
 
 const DURATION_OPTIONS = [
   { value: 10, label: '10 min' },
@@ -34,6 +38,26 @@ interface EditEventModalProps {
 type DeleteStep = 'idle' | 'confirm' | 'typing';
 
 export default function EditEventModal({ event, organizerToken, onClose, onSave, onDelete }: EditEventModalProps) {
+  const isFixed = event.event_type === 'fixed';
+
+  // Reschedule state (fixed events only). Pre-filled from finalized_time in
+  // the event's own timezone — not the viewer's browser timezone — so an
+  // organizer editing from elsewhere doesn't see a day/hour drift.
+  const initialZoned = isFixed && event.finalized_time
+    ? utcToZoned(new Date(event.finalized_time), event.timezone)
+    : null;
+  const [fixedDate, setFixedDate] = useState(initialZoned?.dateStr || '');
+  const [fixedEndDate, setFixedEndDate] = useState(event.finalized_end_date || '');
+  const [fixedTime, setFixedTime] = useState(initialZoned?.timeStr || '09:00');
+  const [fixedEndTime, setFixedEndTime] = useState(() => {
+    if (!initialZoned) return '10:00';
+    const opts = enumDurationEndTimeOptions(initialZoned.timeStr);
+    return opts.find((o) => o.minutes === event.duration_minutes)?.value
+      ?? opts.find((o) => o.minutes === 60)?.value
+      ?? opts[0]?.value
+      ?? '10:00';
+  });
+
   const [name, setName] = useState(event.name);
   const [color, setColor] = useState(event.color || '');
   const [hideGuestList, setHideGuestList] = useState(event.hide_guest_list ?? false);
@@ -68,12 +92,45 @@ export default function EditEventModal({ event, organizerToken, onClose, onSave,
   const [deleting, setDeleting] = useState(false);
 
   const minDeadline = format(addDays(new Date(), 1), 'yyyy-MM-dd');
+  const minFixedDate = format(new Date(), 'yyyy-MM-dd');
   const deleteConfirmRequired = 'DELETE';
 
   const handleSave = async () => {
     if (!name.trim() || !organizerName.trim()) {
       setError('Event name and your name are required');
       return;
+    }
+
+    // Reschedule (fixed events only) — only include fields that actually
+    // changed, both to avoid an unnecessary "time changed" notification
+    // email and to match this file's existing "only send if changed" idiom.
+    const reschedule: Record<string, unknown> = {};
+    if (isFixed) {
+      if (!fixedDate) {
+        setError('Event date is required');
+        return;
+      }
+      if (event.all_day) {
+        if (fixedEndDate && fixedEndDate < fixedDate) {
+          setError('End date must be on or after the start date');
+          return;
+        }
+        const newFinalizedTime = zonedToUtc(fixedDate, '00:00', event.timezone).toISOString();
+        const newEndDate = fixedEndDate || fixedDate;
+        if (newFinalizedTime !== event.finalized_time) reschedule.finalized_time = newFinalizedTime;
+        if (newEndDate !== (event.finalized_end_date || fixedDate)) reschedule.finalized_end_date = newEndDate;
+      } else {
+        const [sh, sm] = fixedTime.split(':').map(Number);
+        const [eh, em] = fixedEndTime.split(':').map(Number);
+        const durationMins = (eh * 60 + em) - (sh * 60 + sm);
+        if (durationMins <= 0) {
+          setError('End time must be after start time');
+          return;
+        }
+        const newFinalizedTime = zonedToUtc(fixedDate, fixedTime, event.timezone).toISOString();
+        if (newFinalizedTime !== event.finalized_time) reschedule.finalized_time = newFinalizedTime;
+        if (durationMins !== event.duration_minutes) reschedule.duration_minutes = durationMins;
+      }
     }
 
     setSaving(true);
@@ -92,10 +149,11 @@ export default function EditEventModal({ event, organizerToken, onClose, onSave,
           body: body.trim() || null,
           organizer_name: organizerName.trim(),
           location: location.trim() || null,
-          // Duration is a meaningless sentinel for all-day events — never
-          // touch it from here so editing other fields can't silently
-          // corrupt it into a "real" duration while all_day stays true.
-          ...(!event.all_day && { duration_minutes: durationMinutes }),
+          // Availability events only — a fixed event's duration comes from
+          // the reschedule fields above (derived from start/end time), and
+          // it's a meaningless sentinel for all-day events either way.
+          ...(!isFixed && !event.all_day && { duration_minutes: durationMinutes }),
+          ...reschedule,
           max_participants: maxP,
           min_responses: minResponses ? parseInt(minResponses, 10) : null,
           // Only send color when changed, so edits still work if the color
@@ -289,8 +347,76 @@ export default function EditEventModal({ event, organizerToken, onClose, onSave,
             <label className="block text-xs font-medium text-secondary mb-1">Location</label>
             <LocationInput value={location} onChange={setLocation} inputClassName={inputClass} />
           </div>
-          <div className={event.all_day ? '' : 'grid grid-cols-2 gap-3'}>
-            {!event.all_day && (
+
+          {/* === Reschedule (fixed/RSVP events only) === */}
+          {isFixed && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="block text-xs font-medium text-secondary">
+                  {event.all_day ? 'Event date' : 'Event date & time'}
+                </label>
+                <span className="text-[11px] text-faint">{getTimezoneLabel(event.timezone)}</span>
+              </div>
+              {event.all_day ? (
+                <>
+                  <DateRangeCalendar
+                    startDate={fixedDate}
+                    endDate={fixedEndDate}
+                    onChange={(s, e) => { setFixedDate(s); setFixedEndDate(e); }}
+                  />
+                  {fixedDate && (
+                    <p className="text-xs text-teal-600 dark:text-teal-400 font-medium">
+                      {fixedEndDate && fixedEndDate !== fixedDate
+                        ? `${fixedDate} – ${fixedEndDate}`
+                        : 'Single day — tap another day to make it a range'}
+                    </p>
+                  )}
+                </>
+              ) : (
+                <>
+                  <input
+                    type="date"
+                    value={fixedDate}
+                    min={minFixedDate}
+                    onChange={(e) => setFixedDate(e.target.value)}
+                    className={selectClass}
+                  />
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-medium text-secondary mb-1">Start time</label>
+                      <select
+                        value={fixedTime}
+                        onChange={(e) => {
+                          const newStart = e.target.value;
+                          setFixedTime(newStart);
+                          const opts = enumDurationEndTimeOptions(newStart);
+                          if (!opts.some((o) => o.value === fixedEndTime)) {
+                            setFixedEndTime(opts.find((o) => o.minutes === 60)?.value ?? opts[0]?.value ?? newStart);
+                          }
+                        }}
+                        className={selectClass}
+                      >
+                        {TIME_OPTIONS.map((t) => (
+                          <option key={t} value={t}>{formatTimeLabel(t)}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-secondary mb-1">End time</label>
+                      <select value={fixedEndTime} onChange={(e) => setFixedEndTime(e.target.value)} className={selectClass}>
+                        {enumDurationEndTimeOptions(fixedTime).map((o) => (
+                          <option key={o.value} value={o.value}>{o.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+
+          <div className={!isFixed && !event.all_day ? 'grid grid-cols-2 gap-3' : ''}>
+            {!isFixed && !event.all_day && (
               <div>
                 <label className="block text-xs font-medium text-secondary mb-1">Duration needed</label>
                 <select value={durationMinutes} onChange={(e) => setDurationMinutes(Number(e.target.value))}

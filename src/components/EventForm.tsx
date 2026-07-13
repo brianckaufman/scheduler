@@ -26,29 +26,13 @@ import EventColorPicker from '@/components/EventColorPicker';
 import EventImagePicker from '@/components/EventImagePicker';
 import { EVENT_KINDS } from '@/lib/eventTypes';
 import { getModules, MODULE_TOGGLES, type EventModules } from '@/lib/eventConfig';
+import { TIME_OPTIONS, formatTimeLabel, enumDurationEndTimeOptions } from '@/lib/timeOptions';
+import DateRangeCalendar from '@/components/DateRangeCalendar';
 
 interface EventFormProps {
   enableFixedEvents?: boolean;
 }
 
-function generateTimeOptions() {
-  const options: string[] = [];
-  for (let h = 0; h < 24; h++) {
-    for (let m = 0; m < 60; m += 30) {
-      options.push(`${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`);
-    }
-  }
-  return options;
-}
-
-function formatTimeLabel(time: string) {
-  const [h, m] = time.split(':').map(Number);
-  const ampm = h >= 12 ? 'PM' : 'AM';
-  const hour = h === 0 ? 12 : h > 12 ? h - 12 : h;
-  return `${hour}:${m.toString().padStart(2, '0')} ${ampm}`;
-}
-
-const TIME_OPTIONS = generateTimeOptions();
 const DURATION_OPTIONS = [
   { value: 10,  label: '10 minutes' },
   { value: 15,  label: '15 minutes' },
@@ -259,69 +243,6 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
     );
   };
 
-  // Two/three-tap range picker for all-day fixed events: tap a start day, tap
-  // an end day (tapping the same day again makes a single-day range), tap
-  // again after a full range is set to start over.
-  const handleRangeDayClick = (day: Date) => {
-    if (isBefore(day, today)) return;
-    const dayStr = format(day, 'yyyy-MM-dd');
-    if (!fixedDate) {
-      setFixedDate(dayStr);
-      setFixedEndDate('');
-    } else if (!fixedEndDate) {
-      if (dayStr < fixedDate) setFixedDate(dayStr);
-      else setFixedEndDate(dayStr);
-    } else {
-      setFixedDate(dayStr);
-      setFixedEndDate('');
-    }
-  };
-
-  const renderRangeCalendar = () => {
-    const monthStart = startOfMonth(currentMonth);
-    const monthEnd = endOfMonth(currentMonth);
-    const calStart = startOfWeek(monthStart);
-    const calEnd = endOfWeek(monthEnd);
-    const days = eachDayOfInterval({ start: calStart, end: calEnd });
-    const rangeEnd = fixedEndDate || fixedDate;
-
-    return (
-      <div>
-        {renderMonthNav()}
-        {renderWeekdayHeader()}
-        <div className="grid grid-cols-7 gap-1">
-          {days.map((day) => {
-            const inMonth = isSameMonth(day, currentMonth);
-            const past = isBefore(day, today);
-            const dayStr = format(day, 'yyyy-MM-dd');
-            const isStart = !!fixedDate && dayStr === fixedDate;
-            const isEnd = !!rangeEnd && dayStr === rangeEnd;
-            const inRange = !!fixedDate && dayStr >= fixedDate && dayStr <= rangeEnd;
-
-            return (
-              <button
-                key={day.toISOString()}
-                type="button"
-                disabled={past || !inMonth}
-                onClick={() => handleRangeDayClick(day)}
-                className={`
-                  py-2 text-sm font-medium transition-all duration-150
-                  ${!inMonth ? 'invisible' : ''}
-                  ${past ? 'text-faint2 cursor-not-allowed' : 'cursor-pointer active:scale-90'}
-                  ${isStart || isEnd ? 'bg-teal-500 text-white shadow-sm animate-pop' : inRange ? 'bg-teal-100 dark:bg-[#0D2E2A] text-teal-700 dark:text-teal-300' : ''}
-                  ${!inRange && !past && inMonth ? 'text-body hover:bg-fill' : ''}
-                  ${isToday(day) && !inRange ? 'ring-1 ring-teal-500' : ''}
-                  ${isStart && !isEnd ? 'rounded-l-lg' : isEnd && !isStart ? 'rounded-r-lg' : inRange && !isStart && !isEnd ? '' : 'rounded-lg'}
-                `}
-              >
-                {format(day, 'd')}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-    );
-  };
 
   // Clear scheduling state when switching event type — otherwise a range or
   // all-day toggle picked in one flow silently carries into the other (e.g.
@@ -627,7 +548,11 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
               <label className="block text-sm font-medium text-body mb-2">
                 Event date{fixedEndDate ? ' range' : ''}
               </label>
-              {renderRangeCalendar()}
+              <DateRangeCalendar
+                startDate={fixedDate}
+                endDate={fixedEndDate}
+                onChange={(s, e) => { setFixedDate(s); setFixedEndDate(e); }}
+              />
               {fixedDate && (
                 <p className="mt-2 text-sm text-teal-600 dark:text-teal-400 font-medium animate-fade-in">
                   {fixedEndDate && fixedEndDate !== fixedDate
@@ -664,14 +589,11 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
                     onChange={(e) => {
                       const newStart = e.target.value;
                       setFixedTime(newStart);
-                      // Auto-advance end time if it's no longer after start
-                      const [sh, sm] = newStart.split(':').map(Number);
-                      const [eh, em] = fixedEndTime.split(':').map(Number);
-                      if (eh * 60 + em <= sh * 60 + sm) {
-                        const next = sh * 60 + sm + 60;
-                        const nh = Math.floor(next / 60) % 24;
-                        const nm = next % 60;
-                        setFixedEndTime(`${nh.toString().padStart(2, '0')}:${nm.toString().padStart(2, '0')}`);
+                      // Keep the end time valid: DB only allows a fixed set of
+                      // durations, so re-pick from that set relative to the new start.
+                      const opts = enumDurationEndTimeOptions(newStart);
+                      if (!opts.some((o) => o.value === fixedEndTime)) {
+                        setFixedEndTime(opts.find((o) => o.minutes === 60)?.value ?? opts[0]?.value ?? newStart);
                       }
                     }}
                     className={selectClass}
@@ -691,19 +613,9 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
                     onChange={(e) => setFixedEndTime(e.target.value)}
                     className={selectClass}
                   >
-                    {TIME_OPTIONS.filter((t) => t > fixedTime).map((t) => {
-                      const [sh, sm] = fixedTime.split(':').map(Number);
-                      const [eh, em] = t.split(':').map(Number);
-                      const mins = (eh * 60 + em) - (sh * 60 + sm);
-                      const durLabel = mins < 60
-                        ? `${mins} min`
-                        : mins % 60 === 0
-                          ? `${mins / 60} hr`
-                          : `${Math.floor(mins / 60)}.5 hr`;
-                      return (
-                        <option key={t} value={t}>{formatTimeLabel(t)} ({durLabel})</option>
-                      );
-                    })}
+                    {enumDurationEndTimeOptions(fixedTime).map((o) => (
+                      <option key={o.value} value={o.value}>{o.label}</option>
+                    ))}
                   </select>
                 </div>
               </div>
