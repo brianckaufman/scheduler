@@ -355,13 +355,13 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
     setLoading(true);
     setError('');
 
-    // Resolve duration: all-day events store a full-day sentinel (the column
-    // stays NOT NULL; 1439 not 1440 to stay within the 00:00–23:59 sentinel
-    // window the API validates duration against); fixed events use start/end
-    // times; availability events use the selected duration, or span the full
-    // time window for "All day" (value 0).
+    // Resolve duration: all-day events send 240 — a pure sentinel (duration is
+    // meaningless for a whole-day event) that satisfies the DB's duration
+    // CHECK constraint, which only allows a fixed enum of values; fixed events
+    // use start/end times; availability events use the selected duration, or
+    // span the full time window for "All day" (value 0).
     const resolvedDuration = allDay
-      ? 1439
+      ? 240
       : eventType === 'fixed'
         ? (() => {
             const [sh, sm] = fixedTime.split(':').map(Number);
