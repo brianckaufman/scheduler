@@ -1,10 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { format, addMinutes } from 'date-fns';
 import type { Event } from '@/types';
 import { firstName } from '@/lib/names';
 import { parseLocation, locationLabel } from '@/lib/location';
+import { buildICS } from '@/lib/calendar';
+import { formatEventDateRange } from '@/lib/dateRange';
 
 interface FinalizedBannerProps {
   event: Event;
@@ -14,45 +15,7 @@ interface FinalizedBannerProps {
   participantName?: string;
 }
 
-function generateICS(event: Event): string {
-  const start = new Date(event.finalized_time!);
-  const end = addMinutes(start, event.duration_minutes || 60);
-  const fmt = (d: Date) => d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
-
-  return [
-    'BEGIN:VCALENDAR',
-    'VERSION:2.0',
-    'BEGIN:VEVENT',
-    `DTSTART:${fmt(start)}`,
-    `DTEND:${fmt(end)}`,
-    `SUMMARY:${event.name}`,
-    event.description ? `DESCRIPTION:${event.description}` : '',
-    event.location ? `LOCATION:${locationLabel(parseLocation(event.location))}` : '',
-    'END:VEVENT',
-    'END:VCALENDAR',
-  ].filter(Boolean).join('\r\n');
-}
-
-function getGoogleCalendarUrl(event: Event): string {
-  const start = new Date(event.finalized_time!);
-  const end = addMinutes(start, event.duration_minutes || 60);
-  const fmt = (d: Date) => d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
-
-  const params = new URLSearchParams({
-    action: 'TEMPLATE',
-    text: event.name,
-    dates: `${fmt(start)}/${fmt(end)}`,
-    ...(event.description && { details: event.description }),
-    ...(event.location && { location: locationLabel(parseLocation(event.location)) }),
-  });
-
-  return `https://calendar.google.com/calendar/render?${params}`;
-}
-
 function buildConfirmationText(event: Event, forOrganizer: boolean): string {
-  const start = new Date(event.finalized_time!);
-  const end = addMinutes(start, event.duration_minutes || 60);
-
   const lines: string[] = [];
   if (forOrganizer) {
     lines.push(`Hey everyone! We've locked in a time for ${event.name}.`);
@@ -61,8 +24,7 @@ function buildConfirmationText(event: Event, forOrganizer: boolean): string {
     lines.push(`${event.name} is confirmed!`);
     lines.push('');
   }
-  lines.push(`📅 ${format(start, 'EEEE, MMMM d, yyyy')}`);
-  lines.push(`🕐 ${format(start, 'h:mm a')} – ${format(end, 'h:mm a')}`);
+  lines.push(`📅 ${formatEventDateRange(event.finalized_time!, event.finalized_end_date, !!event.all_day)}`);
   if (event.location) {
     lines.push(`📍 ${locationLabel(parseLocation(event.location))}`);
   }
@@ -75,11 +37,18 @@ function buildConfirmationText(event: Event, forOrganizer: boolean): string {
 }
 
 export default function FinalizedBanner({ event, isOrganizer, organizerToken, onUnfinalize, participantName }: FinalizedBannerProps) {
-  const start = new Date(event.finalized_time!);
   const [copied, setCopied] = useState(false);
 
   const handleDownloadICS = () => {
-    const ics = generateICS(event);
+    const ics = buildICS({
+      name: event.name,
+      startISO: event.finalized_time!,
+      durationMinutes: event.duration_minutes || 60,
+      description: event.description,
+      location: event.location ? locationLabel(parseLocation(event.location)) : null,
+      allDay: event.all_day,
+      endDateISO: event.finalized_end_date,
+    });
     const blob = new Blob([ics], { type: 'text/calendar' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -113,7 +82,7 @@ export default function FinalizedBanner({ event, isOrganizer, organizerToken, on
     await fetch(`/api/events/${event.id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ finalized_time: null, organizer_token: organizerToken }),
+      body: JSON.stringify({ finalized_time: null, finalized_end_date: null, organizer_token: organizerToken }),
     });
     onUnfinalize();
   };
@@ -127,7 +96,7 @@ export default function FinalizedBanner({ event, isOrganizer, organizerToken, on
             : 'Time confirmed!'}
         </p>
         <p className="text-lg font-bold text-success-fg mt-1">
-          {format(start, 'EEEE, MMM d')} at {format(start, 'h:mm a')}
+          {formatEventDateRange(event.finalized_time!, event.finalized_end_date, !!event.all_day)}
         </p>
         {event.location && (
           <p className="text-sm text-success-fg mt-1">{locationLabel(parseLocation(event.location))}</p>

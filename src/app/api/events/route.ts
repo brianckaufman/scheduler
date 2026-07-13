@@ -6,6 +6,7 @@ import { sanitizeText, sanitizeName, sanitizeHtml, isValidTime, isValidDate, isV
 import { normalizeHex } from '@/lib/eventColors';
 import { isEventKind } from '@/lib/eventTypes';
 import { sanitizeConfig } from '@/lib/eventConfig';
+import { zonedToUtc } from '@/lib/slots';
 
 function getClientIp(request: NextRequest): string {
   return (
@@ -13,23 +14,6 @@ function getClientIp(request: NextRequest): string {
     request.headers.get('x-real-ip') ||
     'unknown'
   );
-}
-
-/**
- * Convert a local date+time string in a given IANA timezone to a UTC Date.
- * Uses the Intl.DateTimeFormat trick: format the naive-UTC date in the target
- * timezone, measure the drift, then apply the inverse offset.
- */
-function zonedToUtc(dateStr: string, timeStr: string, tz: string): Date {
-  const naiveUtc = new Date(`${dateStr}T${timeStr}:00.000Z`);
-  const localRepr = new Intl.DateTimeFormat('sv-SE', {
-    timeZone: tz,
-    year: 'numeric', month: '2-digit', day: '2-digit',
-    hour: '2-digit', minute: '2-digit', second: '2-digit',
-  }).format(naiveUtc);
-  const localDate = new Date(localRepr.replace(' ', 'T') + 'Z');
-  const offset = naiveUtc.getTime() - localDate.getTime();
-  return new Date(naiveUtc.getTime() + offset);
 }
 
 /** Add minutes to a HH:MM time string, wrapping at midnight. Returns HH:MM. */
@@ -73,7 +57,16 @@ export async function POST(request: NextRequest) {
     dates, timeStart, timeEnd,
     // Fixed-mode fields
     eventType, fixedDate, fixedTime,
+    // All-day mode (both flows) — whole days instead of times-of-day.
+    allDay, fixedEndDate,
   } = body;
+
+  const safeAllDay = allDay === true;
+  // All-day events still store NOT NULL time_start/time_end — these sentinels
+  // are never read for slot math (generateAllDaySlots is used instead), only
+  // stored to satisfy the column constraint.
+  const ALL_DAY_TIME_START = '00:00';
+  const ALL_DAY_TIME_END = '23:59';
 
   // --- Shared validation ---
   if (!name || typeof name !== 'string' || !name.trim()) {
@@ -96,18 +89,38 @@ export async function POST(request: NextRequest) {
   let safeTimeStart: string;
   let safeTimeEnd: string;
   let finalizedTime: string | null = null;
+  let finalizedEndDate: string | null = null;
 
   if (safeEventType === 'fixed') {
     if (!fixedDate || !isValidDate(fixedDate)) {
       return NextResponse.json({ error: 'A valid event date is required' }, { status: 400 });
     }
-    if (!fixedTime || !isValidTime(fixedTime)) {
-      return NextResponse.json({ error: 'A valid start time is required' }, { status: 400 });
-    }
     safeDates = [fixedDate];
-    safeTimeStart = fixedTime;
-    safeTimeEnd = addMinutesToTime(fixedTime, safeDuration);
-    finalizedTime = zonedToUtc(fixedDate, fixedTime, timezone || 'UTC').toISOString();
+
+    if (safeAllDay) {
+      // Optional range end — a single all-day date if omitted.
+      let rangeEnd = fixedDate;
+      if (fixedEndDate) {
+        if (!isValidDate(fixedEndDate)) {
+          return NextResponse.json({ error: 'Invalid end date' }, { status: 400 });
+        }
+        if (fixedEndDate < fixedDate) {
+          return NextResponse.json({ error: 'End date must be on or after the start date' }, { status: 400 });
+        }
+        rangeEnd = fixedEndDate;
+      }
+      safeTimeStart = ALL_DAY_TIME_START;
+      safeTimeEnd = ALL_DAY_TIME_END;
+      finalizedTime = zonedToUtc(fixedDate, ALL_DAY_TIME_START, timezone || 'UTC').toISOString();
+      finalizedEndDate = rangeEnd;
+    } else {
+      if (!fixedTime || !isValidTime(fixedTime)) {
+        return NextResponse.json({ error: 'A valid start time is required' }, { status: 400 });
+      }
+      safeTimeStart = fixedTime;
+      safeTimeEnd = addMinutesToTime(fixedTime, safeDuration);
+      finalizedTime = zonedToUtc(fixedDate, fixedTime, timezone || 'UTC').toISOString();
+    }
   } else {
     if (!Array.isArray(dates) || dates.length === 0 || dates.length > 31) {
       return NextResponse.json({ error: 'Select between 1 and 31 dates' }, { status: 400 });
@@ -117,15 +130,21 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: `Invalid date: ${d}` }, { status: 400 });
       }
     }
-    if (!timeStart || !timeEnd || !isValidTime(timeStart) || !isValidTime(timeEnd)) {
-      return NextResponse.json({ error: 'Valid start and end times are required' }, { status: 400 });
-    }
-    if (timeStart >= timeEnd) {
-      return NextResponse.json({ error: 'End time must be after start time' }, { status: 400 });
-    }
     safeDates = dates;
-    safeTimeStart = timeStart;
-    safeTimeEnd = timeEnd;
+
+    if (safeAllDay) {
+      safeTimeStart = ALL_DAY_TIME_START;
+      safeTimeEnd = ALL_DAY_TIME_END;
+    } else {
+      if (!timeStart || !timeEnd || !isValidTime(timeStart) || !isValidTime(timeEnd)) {
+        return NextResponse.json({ error: 'Valid start and end times are required' }, { status: 400 });
+      }
+      if (timeStart >= timeEnd) {
+        return NextResponse.json({ error: 'End time must be after start time' }, { status: 400 });
+      }
+      safeTimeStart = timeStart;
+      safeTimeEnd = timeEnd;
+    }
   }
 
   // Validate max participants (optional)
@@ -207,6 +226,9 @@ export async function POST(request: NextRequest) {
     duration_minutes: safeDuration,
     event_type: safeEventType,
     ...(finalizedTime && { finalized_time: finalizedTime }),
+    // all_day / finalized_end_date require supabase-all-day-events-migration.sql.
+    ...(safeAllDay && { all_day: true }),
+    ...(finalizedEndDate && { finalized_end_date: finalizedEndDate }),
     ...(safeDescription && { description: safeDescription }),
     ...(safeOrganizerName && { organizer_name: safeOrganizerName }),
     // organizer_email requires supabase-organizer-email-migration.sql to be run first.

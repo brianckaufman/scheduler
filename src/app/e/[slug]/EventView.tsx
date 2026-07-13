@@ -11,6 +11,7 @@ import { recordRespondedEvent } from '@/hooks/useRespondedEvents';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import ParticipantEntry from '@/components/ParticipantEntry';
 import TimeGrid from '@/components/TimeGrid';
+import AllDayGrid from '@/components/AllDayGrid';
 import RSVPView from '@/components/RSVPView';
 import ShareLink from '@/components/ShareLink';
 import { FactRow } from '@/components/ui/FactRow';
@@ -20,6 +21,7 @@ import Countdown from '@/components/modules/Countdown';
 import MapPreview from '@/components/modules/MapPreview';
 import { getModules } from '@/lib/eventConfig';
 import { parseLocation } from '@/lib/location';
+import { formatEventDateRange } from '@/lib/dateRange';
 import FinalizedBanner from '@/components/FinalizedBanner';
 import EditEventModal from '@/components/EditEventModal';
 import SkeletonLoader from '@/components/SkeletonLoader';
@@ -316,23 +318,25 @@ export default function EventView({ event: initialEvent, organizerAvatar }: Even
                 <div className="space-y-3 mt-1">
                   <FactRow
                     icon={<CalendarIcon />}
-                    value={<span className="font-semibold text-heading">{format(new Date(event.finalized_time), 'EEEE, MMMM d, yyyy')}</span>}
+                    value={<span className="font-semibold text-heading">{formatEventDateRange(event.finalized_time, event.finalized_end_date, !!event.all_day, { includeTime: false })}</span>}
                   />
-                  <FactRow
-                    icon={<ClockIcon />}
-                    value={
-                      <span className="font-semibold text-heading">
-                        {format(new Date(event.finalized_time), 'h:mm a')}
-                        {' – '}
-                        {format(addMinutes(new Date(event.finalized_time), event.duration_minutes || 60), 'h:mm a')}
-                        {event.timezone && (
-                          <span className="ml-1.5 text-xs font-normal text-faint">
-                            {getTzAbbr(event.finalized_time, event.timezone)}
-                          </span>
-                        )}
-                      </span>
-                    }
-                  />
+                  {!event.all_day && (
+                    <FactRow
+                      icon={<ClockIcon />}
+                      value={
+                        <span className="font-semibold text-heading">
+                          {format(new Date(event.finalized_time), 'h:mm a')}
+                          {' – '}
+                          {format(addMinutes(new Date(event.finalized_time), event.duration_minutes || 60), 'h:mm a')}
+                          {event.timezone && (
+                            <span className="ml-1.5 text-xs font-normal text-faint">
+                              {getTzAbbr(event.finalized_time, event.timezone)}
+                            </span>
+                          )}
+                        </span>
+                      }
+                    />
+                  )}
                   {event.location && (
                     <FactRow
                       icon={<PinIcon />}
@@ -391,7 +395,7 @@ export default function EventView({ event: initialEvent, organizerAvatar }: Even
                       value={<LocationDisplay location={event.location ?? ''} textClassName="text-sm text-body" />}
                     />
                   )}
-                  {event.duration_minutes && (
+                  {!event.all_day && event.duration_minutes && (
                     <FactRow
                       icon={<ClockIcon />}
                       value={
@@ -437,6 +441,19 @@ export default function EventView({ event: initialEvent, organizerAvatar }: Even
               participantId={participantId}
               isOrganizer={isOrganizer}
               organizerToken={localStorage.getItem(`organizer_${event.slug}`)}
+            />
+          ) : event.all_day ? (
+            <AllDayGrid
+              event={event}
+              participantId={participantId}
+              isOrganizer={isOrganizer}
+              organizerToken={localStorage.getItem(`organizer_${event.slug}`)}
+              onFinalize={(startISO, endDate) => {
+                setEvent({ ...event, finalized_time: startISO, finalized_end_date: endDate });
+                updateEvent(event.slug, { finalizedTime: startISO });
+                setShowCelebration(true);
+              }}
+              onMySlotCountChange={handleSlotCountChange}
             />
           ) : (
             <TimeGrid

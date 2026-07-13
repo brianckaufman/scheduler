@@ -125,6 +125,11 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
   const [fixedDate, setFixedDate] = useState('');
   const [fixedTime, setFixedTime] = useState('09:00');
   const [fixedEndTime, setFixedEndTime] = useState('10:00');
+  // All-day mode (both flows) — whole days, no time-of-day. fixedEndDate is
+  // only meaningful for a multi-day fixed (RSVP) range; fixedDate doubles as
+  // the range start.
+  const [allDay, setAllDay] = useState(false);
+  const [fixedEndDate, setFixedEndDate] = useState('');
   const [body, setBody] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -179,6 +184,40 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
     });
   };
 
+  const renderMonthNav = () => (
+    <div className="flex items-center justify-between mb-3">
+      <button
+        type="button"
+        onClick={() => setCurrentMonth(addMonths(currentMonth, -1))}
+        className="p-2 text-faint hover:text-secondary hover:bg-fill rounded-lg transition-colors cursor-pointer"
+      >
+        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+        </svg>
+      </button>
+      <span className="font-semibold text-heading text-sm">
+        {format(currentMonth, 'MMMM yyyy')}
+      </span>
+      <button
+        type="button"
+        onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
+        className="p-2 text-faint hover:text-secondary hover:bg-fill rounded-lg transition-colors cursor-pointer"
+      >
+        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+        </svg>
+      </button>
+    </div>
+  );
+
+  const renderWeekdayHeader = () => (
+    <div className="grid grid-cols-7 gap-1 text-center text-[11px] text-faint font-medium mb-1">
+      {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((d) => (
+        <div key={d} className="py-1">{d}</div>
+      ))}
+    </div>
+  );
+
   const renderCalendar = () => {
     const monthStart = startOfMonth(currentMonth);
     const monthEnd = endOfMonth(currentMonth);
@@ -188,34 +227,8 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
 
     return (
       <div>
-        <div className="flex items-center justify-between mb-3">
-          <button
-            type="button"
-            onClick={() => setCurrentMonth(addMonths(currentMonth, -1))}
-            className="p-2 text-faint hover:text-secondary hover:bg-fill rounded-lg transition-colors cursor-pointer"
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-            </svg>
-          </button>
-          <span className="font-semibold text-heading text-sm">
-            {format(currentMonth, 'MMMM yyyy')}
-          </span>
-          <button
-            type="button"
-            onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
-            className="p-2 text-faint hover:text-secondary hover:bg-fill rounded-lg transition-colors cursor-pointer"
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-            </svg>
-          </button>
-        </div>
-        <div className="grid grid-cols-7 gap-1 text-center text-[11px] text-faint font-medium mb-1">
-          {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((d) => (
-            <div key={d} className="py-1">{d}</div>
-          ))}
-        </div>
+        {renderMonthNav()}
+        {renderWeekdayHeader()}
         <div className="grid grid-cols-7 gap-1">
           {days.map((day) => {
             const inMonth = isSameMonth(day, currentMonth);
@@ -246,6 +259,70 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
     );
   };
 
+  // Two/three-tap range picker for all-day fixed events: tap a start day, tap
+  // an end day (tapping the same day again makes a single-day range), tap
+  // again after a full range is set to start over.
+  const handleRangeDayClick = (day: Date) => {
+    if (isBefore(day, today)) return;
+    const dayStr = format(day, 'yyyy-MM-dd');
+    if (!fixedDate) {
+      setFixedDate(dayStr);
+      setFixedEndDate('');
+    } else if (!fixedEndDate) {
+      if (dayStr < fixedDate) setFixedDate(dayStr);
+      else setFixedEndDate(dayStr);
+    } else {
+      setFixedDate(dayStr);
+      setFixedEndDate('');
+    }
+  };
+
+  const renderRangeCalendar = () => {
+    const monthStart = startOfMonth(currentMonth);
+    const monthEnd = endOfMonth(currentMonth);
+    const calStart = startOfWeek(monthStart);
+    const calEnd = endOfWeek(monthEnd);
+    const days = eachDayOfInterval({ start: calStart, end: calEnd });
+    const rangeEnd = fixedEndDate || fixedDate;
+
+    return (
+      <div>
+        {renderMonthNav()}
+        {renderWeekdayHeader()}
+        <div className="grid grid-cols-7 gap-1">
+          {days.map((day) => {
+            const inMonth = isSameMonth(day, currentMonth);
+            const past = isBefore(day, today);
+            const dayStr = format(day, 'yyyy-MM-dd');
+            const isStart = !!fixedDate && dayStr === fixedDate;
+            const isEnd = !!rangeEnd && dayStr === rangeEnd;
+            const inRange = !!fixedDate && dayStr >= fixedDate && dayStr <= rangeEnd;
+
+            return (
+              <button
+                key={day.toISOString()}
+                type="button"
+                disabled={past || !inMonth}
+                onClick={() => handleRangeDayClick(day)}
+                className={`
+                  py-2 text-sm font-medium transition-all duration-150
+                  ${!inMonth ? 'invisible' : ''}
+                  ${past ? 'text-faint2 cursor-not-allowed' : 'cursor-pointer active:scale-90'}
+                  ${isStart || isEnd ? 'bg-teal-500 text-white shadow-sm animate-pop' : inRange ? 'bg-teal-100 dark:bg-[#0D2E2A] text-teal-700 dark:text-teal-300' : ''}
+                  ${!inRange && !past && inMonth ? 'text-body hover:bg-fill' : ''}
+                  ${isToday(day) && !inRange ? 'ring-1 ring-teal-500' : ''}
+                  ${isStart && !isEnd ? 'rounded-l-lg' : isEnd && !isStart ? 'rounded-r-lg' : inRange && !isStart && !isEnd ? '' : 'rounded-lg'}
+                `}
+              >
+                {format(day, 'd')}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !organizerName.trim()) return;
@@ -254,38 +331,48 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
 
     if (eventType === 'availability') {
       if (selectedDates.length === 0) return;
-      if (timeStart >= timeEnd) {
+      if (!allDay && timeStart >= timeEnd) {
         setError(copy.form.error_time);
         return;
       }
     } else {
       if (!fixedDate) return;
-      const [sh, sm] = fixedTime.split(':').map(Number);
-      const [eh, em] = fixedEndTime.split(':').map(Number);
-      if (eh * 60 + em <= sh * 60 + sm) {
-        setError('End time must be after start time');
-        return;
+      if (allDay) {
+        if (fixedEndDate && fixedEndDate < fixedDate) {
+          setError('End date must be on or after the start date');
+          return;
+        }
+      } else {
+        const [sh, sm] = fixedTime.split(':').map(Number);
+        const [eh, em] = fixedEndTime.split(':').map(Number);
+        if (eh * 60 + em <= sh * 60 + sm) {
+          setError('End time must be after start time');
+          return;
+        }
       }
     }
 
     setLoading(true);
     setError('');
 
-    // Resolve duration: fixed events use start/end times; availability events
+    // Resolve duration: all-day events store a full-day sentinel (the column
+    // stays NOT NULL); fixed events use start/end times; availability events
     // use the selected duration, or span the full time window for "All day" (value 0).
-    const resolvedDuration = eventType === 'fixed'
-      ? (() => {
-          const [sh, sm] = fixedTime.split(':').map(Number);
-          const [eh, em] = fixedEndTime.split(':').map(Number);
-          return (eh * 60 + em) - (sh * 60 + sm);
-        })()
-      : durationMinutes === 0
+    const resolvedDuration = allDay
+      ? 1440
+      : eventType === 'fixed'
         ? (() => {
-            const [sh, sm] = timeStart.split(':').map(Number);
-            const [eh, em] = timeEnd.split(':').map(Number);
+            const [sh, sm] = fixedTime.split(':').map(Number);
+            const [eh, em] = fixedEndTime.split(':').map(Number);
             return (eh * 60 + em) - (sh * 60 + sm);
           })()
-        : durationMinutes;
+        : durationMinutes === 0
+          ? (() => {
+              const [sh, sm] = timeStart.split(':').map(Number);
+              const [eh, em] = timeEnd.split(':').map(Number);
+              return (eh * 60 + em) - (sh * 60 + sm);
+            })()
+          : durationMinutes;
 
     try {
       const commonPayload = {
@@ -296,6 +383,7 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
         ...(organizerEmail.trim() && { organizerEmail: organizerEmail.trim() }),
         ...(color && { color }),
         ...(hideGuestList && { hideGuestList: true }),
+        ...(allDay && { allDay: true }),
         location: location.trim() || null,
         durationMinutes: resolvedDuration,
         timezone,
@@ -307,7 +395,7 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
       };
 
       const typePayload = eventType === 'fixed'
-        ? { fixedDate, fixedTime }
+        ? { fixedDate, fixedTime, ...(allDay && fixedEndDate && { fixedEndDate }) }
         : {
             dates: selectedDates.map((d) => format(d, 'yyyy-MM-dd')),
             timeStart,
@@ -506,85 +594,122 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
       {/* === Section 2a: Fixed time scheduling === */}
       {eventType === 'fixed' && (
         <div className="space-y-4 animate-fade-in">
-          <div>
-            <label htmlFor="fixedDate" className="block text-sm font-medium text-body mb-1.5">
-              Event date
-            </label>
+          <label className="flex items-center gap-3 cursor-pointer">
             <input
-              id="fixedDate"
-              type="date"
-              value={fixedDate}
-              min={minFixedDate}
-              onChange={(e) => setFixedDate(e.target.value)}
-              className={selectClass}
-              required
+              type="checkbox"
+              checked={allDay}
+              onChange={(e) => { setAllDay(e.target.checked); setFixedEndDate(''); }}
+              className="h-4 w-4 rounded border-strong accent-teal-500 cursor-pointer shrink-0"
             />
-          </div>
+            <span className="text-sm font-medium text-body">All-day event</span>
+          </label>
 
-          <div className="grid grid-cols-2 gap-3">
+          {allDay ? (
             <div>
-              <label htmlFor="fixedTime" className="block text-sm font-medium text-body mb-1.5">
-                Start time
+              <label className="block text-sm font-medium text-body mb-2">
+                Event date{fixedEndDate ? ' range' : ''}
               </label>
-              <select
-                id="fixedTime"
-                value={fixedTime}
-                onChange={(e) => {
-                  const newStart = e.target.value;
-                  setFixedTime(newStart);
-                  // Auto-advance end time if it's no longer after start
-                  const [sh, sm] = newStart.split(':').map(Number);
-                  const [eh, em] = fixedEndTime.split(':').map(Number);
-                  if (eh * 60 + em <= sh * 60 + sm) {
-                    const next = sh * 60 + sm + 60;
-                    const nh = Math.floor(next / 60) % 24;
-                    const nm = next % 60;
-                    setFixedEndTime(`${nh.toString().padStart(2, '0')}:${nm.toString().padStart(2, '0')}`);
-                  }
-                }}
-                className={selectClass}
-              >
-                {TIME_OPTIONS.map((t) => (
-                  <option key={t} value={t}>{formatTimeLabel(t)}</option>
-                ))}
-              </select>
+              {renderRangeCalendar()}
+              {fixedDate && (
+                <p className="mt-2 text-sm text-teal-600 dark:text-teal-400 font-medium animate-fade-in">
+                  {fixedEndDate && fixedEndDate !== fixedDate
+                    ? `${fixedDate} – ${fixedEndDate}`
+                    : 'Single day — tap another day to make it a range'}
+                </p>
+              )}
             </div>
-            <div>
-              <label htmlFor="fixedEndTime" className="block text-sm font-medium text-body mb-1.5">
-                End time
-              </label>
-              <select
-                id="fixedEndTime"
-                value={fixedEndTime}
-                onChange={(e) => setFixedEndTime(e.target.value)}
-                className={selectClass}
-              >
-                {TIME_OPTIONS.filter((t) => t > fixedTime).map((t) => {
-                  const [sh, sm] = fixedTime.split(':').map(Number);
-                  const [eh, em] = t.split(':').map(Number);
-                  const mins = (eh * 60 + em) - (sh * 60 + sm);
-                  const durLabel = mins < 60
-                    ? `${mins} min`
-                    : mins % 60 === 0
-                      ? `${mins / 60} hr`
-                      : `${Math.floor(mins / 60)}.5 hr`;
-                  return (
-                    <option key={t} value={t}>{formatTimeLabel(t)} ({durLabel})</option>
-                  );
-                })}
-              </select>
-            </div>
-          </div>
+          ) : (
+            <>
+              <div>
+                <label htmlFor="fixedDate" className="block text-sm font-medium text-body mb-1.5">
+                  Event date
+                </label>
+                <input
+                  id="fixedDate"
+                  type="date"
+                  value={fixedDate}
+                  min={minFixedDate}
+                  onChange={(e) => setFixedDate(e.target.value)}
+                  className={selectClass}
+                  required
+                />
+              </div>
 
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label htmlFor="fixedTime" className="block text-sm font-medium text-body mb-1.5">
+                    Start time
+                  </label>
+                  <select
+                    id="fixedTime"
+                    value={fixedTime}
+                    onChange={(e) => {
+                      const newStart = e.target.value;
+                      setFixedTime(newStart);
+                      // Auto-advance end time if it's no longer after start
+                      const [sh, sm] = newStart.split(':').map(Number);
+                      const [eh, em] = fixedEndTime.split(':').map(Number);
+                      if (eh * 60 + em <= sh * 60 + sm) {
+                        const next = sh * 60 + sm + 60;
+                        const nh = Math.floor(next / 60) % 24;
+                        const nm = next % 60;
+                        setFixedEndTime(`${nh.toString().padStart(2, '0')}:${nm.toString().padStart(2, '0')}`);
+                      }
+                    }}
+                    className={selectClass}
+                  >
+                    {TIME_OPTIONS.map((t) => (
+                      <option key={t} value={t}>{formatTimeLabel(t)}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label htmlFor="fixedEndTime" className="block text-sm font-medium text-body mb-1.5">
+                    End time
+                  </label>
+                  <select
+                    id="fixedEndTime"
+                    value={fixedEndTime}
+                    onChange={(e) => setFixedEndTime(e.target.value)}
+                    className={selectClass}
+                  >
+                    {TIME_OPTIONS.filter((t) => t > fixedTime).map((t) => {
+                      const [sh, sm] = fixedTime.split(':').map(Number);
+                      const [eh, em] = t.split(':').map(Number);
+                      const mins = (eh * 60 + em) - (sh * 60 + sm);
+                      const durLabel = mins < 60
+                        ? `${mins} min`
+                        : mins % 60 === 0
+                          ? `${mins / 60} hr`
+                          : `${Math.floor(mins / 60)}.5 hr`;
+                      return (
+                        <option key={t} value={t}>{formatTimeLabel(t)} ({durLabel})</option>
+                      );
+                    })}
+                  </select>
+                </div>
+              </div>
+            </>
+          )}
         </div>
       )}
 
       {/* === Section 2b: Availability scheduling === */}
       {eventType === 'availability' && (
         <div className="space-y-4">
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={allDay}
+              onChange={(e) => setAllDay(e.target.checked)}
+              className="h-4 w-4 rounded border-strong accent-social-500 cursor-pointer shrink-0"
+            />
+            <span className="text-sm font-medium text-body">All-day (whole days, not times)</span>
+          </label>
+
           <div>
             <label className="block text-sm font-medium text-body mb-2">
-              {copy.form.dates_label}
+              {allDay ? 'Which days might work?' : copy.form.dates_label}
             </label>
             {renderCalendar()}
             {selectedDates.length > 0 && (
@@ -599,28 +724,30 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
             )}
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label htmlFor="timeStart" className="block text-sm font-medium text-body mb-1.5">
-                {copy.form.earliest_label}
-              </label>
-              <select id="timeStart" value={timeStart} onChange={(e) => setTimeStart(e.target.value)} className={selectClass}>
-                {TIME_OPTIONS.map((t) => (
-                  <option key={t} value={t}>{formatTimeLabel(t)}</option>
-                ))}
-              </select>
+          {!allDay && (
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label htmlFor="timeStart" className="block text-sm font-medium text-body mb-1.5">
+                  {copy.form.earliest_label}
+                </label>
+                <select id="timeStart" value={timeStart} onChange={(e) => setTimeStart(e.target.value)} className={selectClass}>
+                  {TIME_OPTIONS.map((t) => (
+                    <option key={t} value={t}>{formatTimeLabel(t)}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label htmlFor="timeEnd" className="block text-sm font-medium text-body mb-1.5">
+                  {copy.form.latest_label}
+                </label>
+                <select id="timeEnd" value={timeEnd} onChange={(e) => setTimeEnd(e.target.value)} className={selectClass}>
+                  {TIME_OPTIONS.map((t) => (
+                    <option key={t} value={t}>{formatTimeLabel(t)}</option>
+                  ))}
+                </select>
+              </div>
             </div>
-            <div>
-              <label htmlFor="timeEnd" className="block text-sm font-medium text-body mb-1.5">
-                {copy.form.latest_label}
-              </label>
-              <select id="timeEnd" value={timeEnd} onChange={(e) => setTimeEnd(e.target.value)} className={selectClass}>
-                {TIME_OPTIONS.map((t) => (
-                  <option key={t} value={t}>{formatTimeLabel(t)}</option>
-                ))}
-              </select>
-            </div>
-          </div>
+          )}
 
         </div>
       )}
@@ -747,17 +874,19 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
 
             {eventType === 'availability' && (
               <>
-                {/* Meeting length */}
-                <div>
-                  <label htmlFor="duration" className="block text-sm font-medium text-body mb-1.5">
-                    {copy.form.duration_label}
-                  </label>
-                  <select id="duration" value={durationMinutes} onChange={(e) => setDurationMinutes(Number(e.target.value))} className={selectClass}>
-                    {DURATION_OPTIONS.map((d) => (
-                      <option key={d.value} value={d.value}>{d.label}</option>
-                    ))}
-                  </select>
-                </div>
+                {/* Meeting length — moot for all-day (the unit is a whole day) */}
+                {!allDay && (
+                  <div>
+                    <label htmlFor="duration" className="block text-sm font-medium text-body mb-1.5">
+                      {copy.form.duration_label}
+                    </label>
+                    <select id="duration" value={durationMinutes} onChange={(e) => setDurationMinutes(Number(e.target.value))} className={selectClass}>
+                      {DURATION_OPTIONS.map((d) => (
+                        <option key={d.value} value={d.value}>{d.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
 
                 {/* Minimum responses */}
                 <div>

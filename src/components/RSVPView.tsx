@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
-import { format, addMinutes } from 'date-fns';
 import { useCopy } from '@/contexts/CopyContext';
 import { useMonetization } from '@/contexts/MonetizationContext';
 import SupportBanner from './SupportBanner';
@@ -20,6 +19,8 @@ import { recordRespondedEvent } from '@/hooks/useRespondedEvents';
 import { formatDisplayName, firstName } from '@/lib/names';
 import { buildInviteText } from '@/lib/invite';
 import { parseLocation, locationLabel } from '@/lib/location';
+import { buildICS } from '@/lib/calendar';
+import { formatEventDateRange } from '@/lib/dateRange';
 import type { Event, RsvpValue } from '@/types';
 
 interface RSVPViewProps {
@@ -80,22 +81,6 @@ const RSVP_CONFIG = {
     dotClass: 'bg-strong',
   },
 } as const;
-
-// ── ICS generator ───────────────────────────────────────────────────────────
-
-function generateICS(event: Event): string {
-  const start = new Date(event.finalized_time!);
-  const end = addMinutes(start, event.duration_minutes || 60);
-  const fmt = (d: Date) => d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
-  return [
-    'BEGIN:VCALENDAR', 'VERSION:2.0', 'BEGIN:VEVENT',
-    `DTSTART:${fmt(start)}`, `DTEND:${fmt(end)}`,
-    `SUMMARY:${event.name}`,
-    event.description ? `DESCRIPTION:${event.description}` : '',
-    event.location ? `LOCATION:${locationLabel(parseLocation(event.location))}` : '',
-    'END:VEVENT', 'END:VCALENDAR',
-  ].filter(Boolean).join('\r\n');
-}
 
 // ── Accordion section ────────────────────────────────────────────────────────
 
@@ -439,7 +424,15 @@ export default function RSVPView({ event, participantId, isOrganizer, organizerT
   }, [event.id, organizerToken, removeParticipant]);
 
   const handleDownloadICS = useCallback(() => {
-    const ics = generateICS(event);
+    const ics = buildICS({
+      name: event.name,
+      startISO: event.finalized_time!,
+      durationMinutes: event.duration_minutes || 60,
+      description: event.description,
+      location: event.location ? locationLabel(parseLocation(event.location)) : null,
+      allDay: event.all_day,
+      endDateISO: event.finalized_end_date,
+    });
     const blob = new Blob([ics], { type: 'text/calendar' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -450,12 +443,10 @@ export default function RSVPView({ event, participantId, isOrganizer, organizerT
   }, [event]);
 
   const handleCopyDetails = useCallback(async () => {
-    const start = new Date(event.finalized_time!);
-    const end = addMinutes(start, event.duration_minutes || 60);
+    const dateLine = formatEventDateRange(event.finalized_time!, event.finalized_end_date, !!event.all_day);
     const text = [
       event.name, '',
-      format(start, 'EEEE, MMMM d, yyyy'),
-      `${format(start, 'h:mm a')} - ${format(end, 'h:mm a')}`,
+      dateLine,
       ...(event.location ? [locationLabel(parseLocation(event.location))] : []),
     ].join('\n');
     try {

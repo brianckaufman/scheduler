@@ -36,6 +36,34 @@ export function generateSlots(
   return slots;
 }
 
+/**
+ * Convert a local date+time string in a given IANA timezone to a UTC Date.
+ * Uses the Intl.DateTimeFormat trick: format the naive-UTC date in the target
+ * timezone, measure the drift, then apply the inverse offset. Works in both
+ * server and browser contexts (Intl.DateTimeFormat is universal).
+ */
+export function zonedToUtc(dateStr: string, timeStr: string, tz: string): Date {
+  const naiveUtc = new Date(`${dateStr}T${timeStr}:00.000Z`);
+  const localRepr = new Intl.DateTimeFormat('sv-SE', {
+    timeZone: tz,
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit',
+  }).format(naiveUtc);
+  const localDate = new Date(localRepr.replace(' ', 'T') + 'Z');
+  const offset = naiveUtc.getTime() - localDate.getTime();
+  return new Date(naiveUtc.getTime() + offset);
+}
+
+/**
+ * One slot key per calendar day, at midnight in the event's timezone,
+ * UTC-normalized via zonedToUtc — unlike generateSlots (which uses the
+ * viewer's local browser time), whole-day slots need every participant to
+ * agree on what "Aug 1" means regardless of where they're browsing from.
+ */
+export function generateAllDaySlots(dates: string[], timezone: string): string[] {
+  return dates.map((dateStr) => zonedToUtc(dateStr, '00:00', timezone).toISOString());
+}
+
 export function formatSlotTime(isoString: string): string {
   const date = new Date(isoString);
   return format(date, 'h:mm a');

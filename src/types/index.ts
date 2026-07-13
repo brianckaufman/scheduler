@@ -27,6 +27,11 @@ export interface Event {
   icon_bg?: string | null;
   icon_fg?: string | null;
   config?: import('@/lib/eventConfig').EventConfig | null;
+  // All-day events — whole days instead of times-of-day (vacations, conferences).
+  all_day?: boolean;
+  // Inclusive end date ('yyyy-MM-dd') of a finalized all-day range. Null/absent
+  // for a single-day all-day event (same day as finalized_time) or a timed event.
+  finalized_end_date?: string | null;
 }
 
 export type RsvpValue = 'yes' | 'maybe' | 'no';

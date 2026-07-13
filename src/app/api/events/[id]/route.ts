@@ -8,6 +8,7 @@ import { sanitizeText, sanitizeName, sanitizeHtml } from '@/lib/sanitize';
 import { normalizeHex } from '@/lib/eventColors';
 import { sanitizeConfig } from '@/lib/eventConfig';
 import { isEventKind } from '@/lib/eventTypes';
+import { formatEventDateRange } from '@/lib/dateRange';
 
 function getClientIp(request: NextRequest): string {
   return (
@@ -78,6 +79,27 @@ export async function PATCH(
 
   if ('finalized_time' in updates) {
     safeUpdate.finalized_time = updates.finalized_time || null;
+  }
+  if ('finalized_end_date' in updates) {
+    const endDate = updates.finalized_end_date;
+    if (endDate) {
+      if (typeof endDate !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(endDate)) {
+        return NextResponse.json({ error: 'Invalid end date' }, { status: 400 });
+      }
+      // A range end needs a range start in the same request (or already set).
+      const startISO = ('finalized_time' in updates ? updates.finalized_time : null)
+        ?? (await supabase.from('events').select('finalized_time').eq('id', id).single()).data?.finalized_time
+        ?? null;
+      if (!startISO) {
+        return NextResponse.json({ error: 'finalized_end_date requires finalized_time to be set' }, { status: 400 });
+      }
+      if (endDate < startISO.slice(0, 10)) {
+        return NextResponse.json({ error: 'End date must be on or after the start date' }, { status: 400 });
+      }
+      safeUpdate.finalized_end_date = endDate;
+    } else {
+      safeUpdate.finalized_end_date = null;
+    }
   }
   if ('name' in updates && typeof updates.name === 'string') {
     const safeName = sanitizeText(updates.name, 100);
@@ -179,9 +201,7 @@ export async function PATCH(
 
   // Notify participants when a time is finalized (not when un-finalizing)
   if (updates.finalized_time && data) {
-    const finalDate = new Date(updates.finalized_time);
-    const timeStr = finalDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
-      + ' at ' + finalDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+    const timeStr = formatEventDateRange(updates.finalized_time, data.finalized_end_date, !!data.all_day, { withWeekday: false });
     const organizerName = data.organizer_name || 'The organizer';
 
     const origin = request.headers.get('origin')
@@ -217,6 +237,8 @@ export async function PATCH(
           durationMinutes: data.duration_minutes || 60,
           description: data.description,
           location: locLabel,
+          allDay: !!data.all_day,
+          endDateISO: data.finalized_end_date ?? null,
         },
       }),
     ]);
