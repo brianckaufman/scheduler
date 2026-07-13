@@ -28,6 +28,7 @@ import { EVENT_KINDS } from '@/lib/eventTypes';
 import { getModules, MODULE_TOGGLES, type EventModules } from '@/lib/eventConfig';
 import { TIME_OPTIONS, formatTimeLabel, enumDurationEndTimeOptions } from '@/lib/timeOptions';
 import DateRangeCalendar from '@/components/DateRangeCalendar';
+import CollapsibleSection from '@/components/ui/CollapsibleSection';
 
 interface EventFormProps {
   enableFixedEvents?: boolean;
@@ -702,264 +703,281 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
         )}
 
         {showOptional && (
-          <div className="space-y-4 animate-slide-down">
-            <div className="border-t border-hairline-soft pt-4">
-              <p className="text-xs font-medium text-faint uppercase tracking-wider mb-3">More options</p>
-            </div>
+          <div className="space-y-3 animate-slide-down border-t border-hairline-soft pt-4">
 
-            {/* Event type preset */}
-            <div>
-              <label htmlFor="eventKind" className="block text-sm font-medium text-body mb-1.5">
-                Event type
-              </label>
-              <select id="eventKind" value={eventKind} onChange={(e) => { const k = e.target.value; setEventKind(k); setModules(getModules({ event_kind: k })); }} className={selectClass}>
-                {EVENT_KINDS.map((k) => (
-                  <option key={k.key} value={k.key}>{k.emoji} {k.label}</option>
-                ))}
-              </select>
-              <p className="text-xs text-faint mt-1">Sets sensible defaults for what shows on the event — tweak anytime.</p>
-            </div>
+            {/* === Group: Event details === */}
+            <CollapsibleSection title="Event details" description="Description, location, timezone, and extra details">
+              <div>
+                <label htmlFor="description" className="block text-sm font-medium text-body mb-1.5">
+                  Description <span className="text-faint font-normal">(optional)</span>
+                </label>
+                <input
+                  id="description"
+                  type="text"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder={copy.form.description_placeholder}
+                  className={inputClass}
+                  maxLength={500}
+                />
+              </div>
 
-            {/* Your email */}
-            <div>
-              <label htmlFor="organizerEmail" className="block text-sm font-medium text-body mb-1.5">
-                Your email <span className="text-faint font-normal">(optional)</span>
-              </label>
-              <input
-                id="organizerEmail"
-                type="email"
-                value={organizerEmail}
-                onChange={(e) => setOrganizerEmail(e.target.value)}
-                placeholder="you@example.com"
-                autoComplete="email"
-                inputMode="email"
-                className={inputClass}
-                maxLength={254}
+              <div>
+                <label className="block text-sm font-medium text-body mb-1.5">
+                  Location <span className="text-faint font-normal">(optional)</span>
+                </label>
+                <LocationInput value={location} onChange={setLocation} inputClassName={inputClass} />
+              </div>
+
+              <div>
+                <label htmlFor="timezone" className="block text-sm font-medium text-body mb-1.5">
+                  Timezone
+                </label>
+                <select id="timezone" value={timezone} onChange={(e) => setTimezone(e.target.value)} className={selectClass}>
+                  {POPULAR_TIMEZONES.map((tz) => (
+                    <option key={tz.value} value={tz.value}>{tz.label}</option>
+                  ))}
+                  {!POPULAR_TIMEZONES.find((t) => t.value === timezone) && (
+                    <option value={timezone}>{getTimezoneLabel(timezone)}</option>
+                  )}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-body mb-1.5">
+                  Additional Details <span className="text-faint font-normal">(optional)</span>
+                </label>
+                <Suspense fallback={<div className="h-32 rounded-xl border border-strong bg-subtle animate-pulse" />}>
+                  <RichTextEditor
+                    value={body}
+                    onChange={setBody}
+                    placeholder="Add more context, agenda, directions, or anything guests should know…"
+                    minHeight={100}
+                  />
+                </Suspense>
+              </div>
+            </CollapsibleSection>
+
+            {/* === Group: Look & feel === */}
+            <CollapsibleSection title="Look & feel" description="Event type, color, photo, logo, and what's shown">
+              <div>
+                <label htmlFor="eventKind" className="block text-sm font-medium text-body mb-1.5">
+                  Event type
+                </label>
+                <select id="eventKind" value={eventKind} onChange={(e) => { const k = e.target.value; setEventKind(k); setModules(getModules({ event_kind: k })); }} className={selectClass}>
+                  {EVENT_KINDS.map((k) => (
+                    <option key={k.key} value={k.key}>{k.emoji} {k.label}</option>
+                  ))}
+                </select>
+                <p className="text-xs text-faint mt-1">Sets sensible defaults for what shows on the event — tweak anytime.</p>
+              </div>
+
+              <EventColorPicker value={color} onChange={setColor} />
+
+              <EventImagePicker
+                kind="photo"
+                preview={photoPreview}
+                onPick={pickPhoto}
+                onClear={clearPhoto}
+                label="Event photo"
+                hint="Wide hero image. Drag to crop; auto-optimized for fast loading."
+                aspect="photo"
               />
-              <p className="text-xs text-faint mt-1">
-                {eventType === 'fixed'
-                  ? "We'll email you when people RSVP."
-                  : "We'll email you when enough people have responded so you can pick the time."}
-              </p>
-            </div>
-
-            {/* Description */}
-            <div>
-              <label htmlFor="description" className="block text-sm font-medium text-body mb-1.5">
-                Description <span className="text-faint font-normal">(optional)</span>
-              </label>
-              <input
-                id="description"
-                type="text"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder={copy.form.description_placeholder}
-                className={inputClass}
-                maxLength={500}
+              <EventImagePicker
+                kind="logo"
+                preview={logoPreview}
+                onPick={pickLogo}
+                onClear={clearLogo}
+                label="Event logo"
+                hint="Replaces the default lockup. Transparent PNG/SVG works best."
+                aspect="logo"
               />
-            </div>
 
-            {/* Location */}
-            <div>
-              <label className="block text-sm font-medium text-body mb-1.5">
-                Location <span className="text-faint font-normal">(optional)</span>
-              </label>
-              <LocationInput value={location} onChange={setLocation} inputClassName={inputClass} />
-            </div>
-
-            {/* Timezone */}
-            <div>
-              <label htmlFor="timezone" className="block text-sm font-medium text-body mb-1.5">
-                Timezone
-              </label>
-              <select id="timezone" value={timezone} onChange={(e) => setTimezone(e.target.value)} className={selectClass}>
-                {POPULAR_TIMEZONES.map((tz) => (
-                  <option key={tz.value} value={tz.value}>{tz.label}</option>
-                ))}
-                {!POPULAR_TIMEZONES.find((t) => t.value === timezone) && (
-                  <option value={timezone}>{getTimezoneLabel(timezone)}</option>
-                )}
-              </select>
-            </div>
-
-            {/* Max participants / capacity (both types) */}
-            <div>
-              <label htmlFor="maxParticipants" className="block text-sm font-medium text-body mb-1.5">
-                {eventType === 'fixed' ? 'Max guests' : 'Max participants'} <span className="text-faint font-normal">(optional)</span>
-              </label>
-              <input
-                id="maxParticipants"
-                type="number"
-                value={maxParticipants}
-                onChange={(e) => setMaxParticipants(e.target.value)}
-                placeholder="No limit"
-                min={2}
-                max={1000}
-                className={inputClass}
-              />
-              {maxParticipants && parseInt(maxParticipants, 10) > 0 && (
-                <p className="text-xs text-faint mt-1">
-                  {eventType === 'fixed'
-                    ? `Caps RSVPs at ${maxParticipants} — guests see a "spots filled" meter.`
-                    : `New participants will be blocked after ${maxParticipants} have joined.`}
-                </p>
-              )}
-            </div>
-
-            {eventType === 'availability' && (
-              <>
-                {/* Meeting length — moot for all-day (the unit is a whole day) */}
-                {!allDay && (
-                  <div>
-                    <label htmlFor="duration" className="block text-sm font-medium text-body mb-1.5">
-                      {copy.form.duration_label}
-                    </label>
-                    <select id="duration" value={durationMinutes} onChange={(e) => setDurationMinutes(Number(e.target.value))} className={selectClass}>
-                      {DURATION_OPTIONS.map((d) => (
-                        <option key={d.value} value={d.value}>{d.label}</option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-
-                {/* Minimum responses */}
-                <div>
-                  <label htmlFor="minResponses" className="block text-sm font-medium text-body mb-1.5">
-                    Responses needed to pick a time{' '}
-                    <span className="text-faint font-normal">(including yours, optional)</span>
+              <div className="border-t border-hairline-soft pt-4 space-y-3">
+                <p className="text-xs font-semibold text-faint uppercase tracking-wider">Show / hide</p>
+                {MODULE_TOGGLES.map(({ key, label, hint }) => (
+                  <label key={key} className="flex items-start gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={modules[key]}
+                      onChange={(e) => setModules((m) => ({ ...m, [key]: e.target.checked }))}
+                      className="mt-0.5 h-4 w-4 rounded border-strong accent-social-500 cursor-pointer shrink-0"
+                    />
+                    <span>
+                      <span className="block text-sm font-medium text-body">{label}</span>
+                      <span className="block text-xs text-faint mt-0.5">{hint}</span>
+                    </span>
                   </label>
-                  {!minResponsesCustom ? (
-                    <select
-                      id="minResponses"
-                      value={minResponses}
-                      onChange={(e) => {
-                        if (e.target.value === 'custom') {
-                          setMinResponsesCustom(true);
-                          setMinResponses('');
-                        } else {
-                          setMinResponses(e.target.value);
-                        }
-                      }}
-                      className={selectClass}
-                    >
-                      <option value="">No minimum</option>
-                      {Array.from({ length: 14 }, (_, i) => i + 2).map((n) => (
-                        <option key={n} value={n}>{n} people</option>
-                      ))}
-                      <option value="custom">Enter a number...</option>
-                    </select>
-                  ) : (
-                    <div className="flex gap-2">
-                      <input
-                        id="minResponses"
-                        type="text"
-                        inputMode="numeric"
-                        value={minResponses}
-                        onChange={(e) => setMinResponses(e.target.value.replace(/\D/g, '').slice(0, 3))}
-                        placeholder="e.g. 25 (minimum 2)"
-                        className={inputClass}
-                        autoFocus
-                      />
-                      <button
-                        type="button"
-                        onClick={() => { setMinResponsesCustom(false); setMinResponses(''); }}
-                        className="shrink-0 px-3 py-2 text-xs text-faint hover:text-secondary border border-hairline rounded-xl transition-colors cursor-pointer"
-                      >
-                        Reset
-                      </button>
+                ))}
+              </div>
+            </CollapsibleSection>
+
+            {/* === Group: Capacity & timing === */}
+            <CollapsibleSection
+              title="Capacity & timing"
+              description={eventType === 'fixed' ? 'Max guests' : 'Limits, meeting length, and response deadline'}
+            >
+              <div>
+                <label htmlFor="maxParticipants" className="block text-sm font-medium text-body mb-1.5">
+                  {eventType === 'fixed' ? 'Max guests' : 'Max participants'} <span className="text-faint font-normal">(optional)</span>
+                </label>
+                <input
+                  id="maxParticipants"
+                  type="number"
+                  value={maxParticipants}
+                  onChange={(e) => setMaxParticipants(e.target.value)}
+                  placeholder="No limit"
+                  min={2}
+                  max={1000}
+                  className={inputClass}
+                />
+                {maxParticipants && parseInt(maxParticipants, 10) > 0 && (
+                  <p className="text-xs text-faint mt-1">
+                    {eventType === 'fixed'
+                      ? `Caps RSVPs at ${maxParticipants} — guests see a "spots filled" meter.`
+                      : `New participants will be blocked after ${maxParticipants} have joined.`}
+                  </p>
+                )}
+              </div>
+
+              {eventType === 'availability' && (
+                <>
+                  {/* Meeting length — moot for all-day (the unit is a whole day) */}
+                  {!allDay && (
+                    <div>
+                      <label htmlFor="duration" className="block text-sm font-medium text-body mb-1.5">
+                        {copy.form.duration_label}
+                      </label>
+                      <select id="duration" value={durationMinutes} onChange={(e) => setDurationMinutes(Number(e.target.value))} className={selectClass}>
+                        {DURATION_OPTIONS.map((d) => (
+                          <option key={d.value} value={d.value}>{d.label}</option>
+                        ))}
+                      </select>
                     </div>
                   )}
-                  {minResponses && parseInt(minResponses, 10) >= 2 && (
-                    <p className="text-xs text-faint mt-1">
-                      The Pick a Time panel will wait until {minResponses} people have responded, including you.
-                    </p>
-                  )}
-                </div>
 
-                {/* Sequential block — trips/vacations need consecutive days, not scattered ones */}
-                {allDay && (
+                  {/* Minimum responses */}
                   <div>
-                    <label htmlFor="minBlockDays" className="block text-sm font-medium text-body mb-1.5">
-                      Require a consecutive block of days?{' '}
-                      <span className="text-faint font-normal">(for trips, optional)</span>
+                    <label htmlFor="minResponses" className="block text-sm font-medium text-body mb-1.5">
+                      Responses needed to pick a time{' '}
+                      <span className="text-faint font-normal">(including yours, optional)</span>
                     </label>
-                    <select
-                      id="minBlockDays"
-                      value={minBlockDays}
-                      onChange={(e) => setMinBlockDays(e.target.value)}
-                      className={selectClass}
-                    >
-                      <option value="">No — any overlapping days are fine</option>
-                      {[2, 3, 4, 5, 6, 7, 10, 14].map((n) => (
-                        <option key={n} value={n}>{n} days in a row</option>
-                      ))}
-                    </select>
-                    {minBlockDays && parseInt(minBlockDays, 10) >= 2 && (
+                    {!minResponsesCustom ? (
+                      <select
+                        id="minResponses"
+                        value={minResponses}
+                        onChange={(e) => {
+                          if (e.target.value === 'custom') {
+                            setMinResponsesCustom(true);
+                            setMinResponses('');
+                          } else {
+                            setMinResponses(e.target.value);
+                          }
+                        }}
+                        className={selectClass}
+                      >
+                        <option value="">No minimum</option>
+                        {Array.from({ length: 14 }, (_, i) => i + 2).map((n) => (
+                          <option key={n} value={n}>{n} people</option>
+                        ))}
+                        <option value="custom">Enter a number...</option>
+                      </select>
+                    ) : (
+                      <div className="flex gap-2">
+                        <input
+                          id="minResponses"
+                          type="text"
+                          inputMode="numeric"
+                          value={minResponses}
+                          onChange={(e) => setMinResponses(e.target.value.replace(/\D/g, '').slice(0, 3))}
+                          placeholder="e.g. 25 (minimum 2)"
+                          className={inputClass}
+                          autoFocus
+                        />
+                        <button
+                          type="button"
+                          onClick={() => { setMinResponsesCustom(false); setMinResponses(''); }}
+                          className="shrink-0 px-3 py-2 text-xs text-faint hover:text-secondary border border-hairline rounded-xl transition-colors cursor-pointer"
+                        >
+                          Reset
+                        </button>
+                      </div>
+                    )}
+                    {minResponses && parseInt(minResponses, 10) >= 2 && (
                       <p className="text-xs text-faint mt-1">
-                        We&apos;ll only suggest unbroken blocks of at least {minBlockDays} consecutive days that work for everyone.
+                        The Pick a Time panel will wait until {minResponses} people have responded, including you.
                       </p>
                     )}
                   </div>
-                )}
 
-                {/* Respond by */}
-                <div>
-                  <label htmlFor="deadline" className="block text-sm font-medium text-body mb-1.5">
-                    Respond by <span className="text-faint font-normal">(optional)</span>
-                  </label>
-                  <input
-                    id="deadline"
-                    type="date"
-                    value={responseDeadline}
-                    min={minDeadline}
-                    onChange={(e) => setResponseDeadline(e.target.value)}
-                    className={selectClass}
-                  />
-                </div>
+                  {/* Sequential block — trips/vacations need consecutive days, not scattered ones */}
+                  {allDay && (
+                    <div>
+                      <label htmlFor="minBlockDays" className="block text-sm font-medium text-body mb-1.5">
+                        Require a consecutive block of days?{' '}
+                        <span className="text-faint font-normal">(for trips, optional)</span>
+                      </label>
+                      <select
+                        id="minBlockDays"
+                        value={minBlockDays}
+                        onChange={(e) => setMinBlockDays(e.target.value)}
+                        className={selectClass}
+                      >
+                        <option value="">No — any overlapping days are fine</option>
+                        {[2, 3, 4, 5, 6, 7, 10, 14].map((n) => (
+                          <option key={n} value={n}>{n} days in a row</option>
+                        ))}
+                      </select>
+                      {minBlockDays && parseInt(minBlockDays, 10) >= 2 && (
+                        <p className="text-xs text-faint mt-1">
+                          We&apos;ll only suggest unbroken blocks of at least {minBlockDays} consecutive days that work for everyone.
+                        </p>
+                      )}
+                    </div>
+                  )}
 
-              </>
-            )}
+                  {/* Respond by */}
+                  <div>
+                    <label htmlFor="deadline" className="block text-sm font-medium text-body mb-1.5">
+                      Respond by <span className="text-faint font-normal">(optional)</span>
+                    </label>
+                    <input
+                      id="deadline"
+                      type="date"
+                      value={responseDeadline}
+                      min={minDeadline}
+                      onChange={(e) => setResponseDeadline(e.target.value)}
+                      className={selectClass}
+                    />
+                  </div>
+                </>
+              )}
+            </CollapsibleSection>
 
-            {/* Additional Details */}
-            <div>
-              <label className="block text-sm font-medium text-body mb-1.5">
-                Additional Details <span className="text-faint font-normal">(optional)</span>
-              </label>
-              <Suspense fallback={<div className="h-32 rounded-xl border border-strong bg-subtle animate-pulse" />}>
-                <RichTextEditor
-                  value={body}
-                  onChange={setBody}
-                  placeholder="Add more context, agenda, directions, or anything guests should know…"
-                  minHeight={100}
+            {/* === Group: Notifications & privacy === */}
+            <CollapsibleSection title="Notifications & privacy" description="Your contact email and guest list visibility">
+              <div>
+                <label htmlFor="organizerEmail" className="block text-sm font-medium text-body mb-1.5">
+                  Your email <span className="text-faint font-normal">(optional)</span>
+                </label>
+                <input
+                  id="organizerEmail"
+                  type="email"
+                  value={organizerEmail}
+                  onChange={(e) => setOrganizerEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  autoComplete="email"
+                  inputMode="email"
+                  className={inputClass}
+                  maxLength={254}
                 />
-              </Suspense>
-            </div>
+                <p className="text-xs text-faint mt-1">
+                  {eventType === 'fixed'
+                    ? "We'll email you when people RSVP."
+                    : "We'll email you when enough people have responded so you can pick the time."}
+                </p>
+              </div>
 
-            {/* Event color */}
-            <EventColorPicker value={color} onChange={setColor} />
-
-            {/* Event photo + logo — cropped/optimized locally, uploaded after create */}
-            <EventImagePicker
-              kind="photo"
-              preview={photoPreview}
-              onPick={pickPhoto}
-              onClear={clearPhoto}
-              label="Event photo"
-              hint="Wide hero image. Drag to crop; auto-optimized for fast loading."
-              aspect="photo"
-            />
-            <EventImagePicker
-              kind="logo"
-              preview={logoPreview}
-              onPick={pickLogo}
-              onClear={clearLogo}
-              label="Event logo"
-              hint="Replaces the default lockup. Transparent PNG/SVG works best."
-              aspect="logo"
-            />
-
-            {/* Guest list privacy */}
-            <div className="border-t border-hairline-soft pt-4">
               <label className="flex items-start gap-3 cursor-pointer">
                 <input
                   type="checkbox"
@@ -972,26 +990,7 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
                   <span className="block text-xs text-faint mt-0.5">Only you will see who responded — guests still see the totals, just not the names.</span>
                 </span>
               </label>
-            </div>
-
-            {/* Show / hide modules */}
-            <div className="border-t border-hairline-soft pt-4 space-y-3">
-              <p className="text-xs font-semibold text-faint uppercase tracking-wider">Show / hide</p>
-              {MODULE_TOGGLES.map(({ key, label, hint }) => (
-                <label key={key} className="flex items-start gap-3 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={modules[key]}
-                    onChange={(e) => setModules((m) => ({ ...m, [key]: e.target.checked }))}
-                    className="mt-0.5 h-4 w-4 rounded border-strong accent-social-500 cursor-pointer shrink-0"
-                  />
-                  <span>
-                    <span className="block text-sm font-medium text-body">{label}</span>
-                    <span className="block text-xs text-faint mt-0.5">{hint}</span>
-                  </span>
-                </label>
-              ))}
-            </div>
+            </CollapsibleSection>
           </div>
         )}
       </div>
