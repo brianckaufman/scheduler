@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { format } from 'date-fns';
 import { createClient } from '@/lib/supabase/server';
+import { formatEventDateRange } from '@/lib/dateRange';
 import ProfileEditor from '@/components/account/ProfileEditor';
 import RemoveSavedButton from '@/components/account/RemoveSavedButton';
 import AvatarUpload from '@/components/account/AvatarUpload';
@@ -16,11 +16,13 @@ interface EventLite {
   name: string;
   event_type: string;
   finalized_time: string | null;
+  finalized_end_date?: string | null;
+  all_day?: boolean;
   user_id?: string | null;
 }
 
 function statusLabel(e: EventLite): string {
-  if (e.finalized_time) return format(new Date(e.finalized_time), 'EEE MMM d, h:mm a');
+  if (e.finalized_time) return formatEventDateRange(e.finalized_time, e.finalized_end_date, !!e.all_day, { withWeekday: false });
   return e.event_type === 'fixed' ? 'Awaiting RSVPs' : 'Collecting availability';
 }
 
@@ -57,13 +59,13 @@ export default async function AccountPage() {
   const [{ data: profile }, { data: created }, { data: joinedRaw }, { data: savedRaw }] = await Promise.all([
     supabase.from('profiles').select('display_name, avatar_url').eq('id', user.id).maybeSingle(),
     supabase.from('events')
-      .select('id, slug, name, event_type, finalized_time, created_at')
+      .select('id, slug, name, event_type, finalized_time, finalized_end_date, all_day, created_at')
       .eq('user_id', user.id).order('created_at', { ascending: false }),
     supabase.from('participants')
-      .select('event_id, events(id, slug, name, event_type, finalized_time, user_id)')
+      .select('event_id, events(id, slug, name, event_type, finalized_time, finalized_end_date, all_day, user_id)')
       .eq('user_id', user.id),
     supabase.from('saved_events')
-      .select('event_id, created_at, events(id, slug, name, event_type, finalized_time)')
+      .select('event_id, created_at, events(id, slug, name, event_type, finalized_time, finalized_end_date, all_day)')
       .order('created_at', { ascending: false }),
   ]);
 

@@ -92,7 +92,10 @@ export default function EditEventModal({ event, organizerToken, onClose, onSave,
           body: body.trim() || null,
           organizer_name: organizerName.trim(),
           location: location.trim() || null,
-          duration_minutes: durationMinutes,
+          // Duration is a meaningless sentinel for all-day events — never
+          // touch it from here so editing other fields can't silently
+          // corrupt it into a "real" duration while all_day stays true.
+          ...(!event.all_day && { duration_minutes: durationMinutes }),
           max_participants: maxP,
           min_responses: minResponses ? parseInt(minResponses, 10) : null,
           // Only send color when changed, so edits still work if the color
@@ -286,16 +289,18 @@ export default function EditEventModal({ event, organizerToken, onClose, onSave,
             <label className="block text-xs font-medium text-secondary mb-1">Location</label>
             <LocationInput value={location} onChange={setLocation} inputClassName={inputClass} />
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-medium text-secondary mb-1">Duration needed</label>
-              <select value={durationMinutes} onChange={(e) => setDurationMinutes(Number(e.target.value))}
-                className={selectClass}>
-                {DURATION_OPTIONS.map((d) => (
-                  <option key={d.value} value={d.value}>{d.label}</option>
-                ))}
-              </select>
-            </div>
+          <div className={event.all_day ? '' : 'grid grid-cols-2 gap-3'}>
+            {!event.all_day && (
+              <div>
+                <label className="block text-xs font-medium text-secondary mb-1">Duration needed</label>
+                <select value={durationMinutes} onChange={(e) => setDurationMinutes(Number(e.target.value))}
+                  className={selectClass}>
+                  {DURATION_OPTIONS.map((d) => (
+                    <option key={d.value} value={d.value}>{d.label}</option>
+                  ))}
+                </select>
+              </div>
+            )}
             <div>
               <label className="block text-xs font-medium text-secondary mb-1">Respond by</label>
               <input type="date" value={responseDeadline} min={minDeadline}

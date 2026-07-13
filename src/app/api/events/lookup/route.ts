@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
 
   const { data, error } = await supabase
     .from('events')
-    .select('name, finalized_time')
+    .select('name, finalized_time, finalized_end_date, all_day')
     .eq('slug', slug)
     .single();
 

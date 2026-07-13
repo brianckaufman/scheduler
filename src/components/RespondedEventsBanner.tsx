@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { format } from 'date-fns';
+import { formatEventDateRange } from '@/lib/dateRange';
 import type { useRespondedEvents, RsvpValue } from '@/hooks/useRespondedEvents';
 
 const DEFAULT_VISIBLE = 3;
@@ -42,10 +42,14 @@ export default function RespondedEventsBanner({ respondedEvents, title }: Respon
               const data = await res.json();
               if (
                 data.finalized_time !== (event.finalizedTime || null) ||
+                !!data.all_day !== !!event.allDay ||
+                data.finalized_end_date !== (event.finalizedEndDate || null) ||
                 (data.name && data.name !== event.name)
               ) {
                 updateEvent(event.slug, {
                   finalizedTime: data.finalized_time || null,
+                  allDay: !!data.all_day,
+                  finalizedEndDate: data.finalized_end_date || null,
                   name: data.name || event.name,
                 });
               }
@@ -100,7 +104,7 @@ export default function RespondedEventsBanner({ respondedEvents, title }: Respon
     if (event.finalizedTime) {
       try {
         return {
-          text: format(new Date(event.finalizedTime), 'EEE, MMM d · h:mm a'),
+          text: formatEventDateRange(event.finalizedTime, event.finalizedEndDate, !!event.allDay, { withWeekday: false }),
           tone: 'text-success-fg',
         };
       } catch {

@@ -1,13 +1,14 @@
 'use client';
 
 import { useState } from 'react';
-import { format, formatDistanceToNow, isPast, addMinutes } from 'date-fns';
+import { format, formatDistanceToNow, isPast } from 'date-fns';
 import { useCopy, interpolate } from '@/contexts/CopyContext';
 import { useBranding } from '@/contexts/BrandingContext';
 import { optimizedLogoUrl } from '@/lib/image';
 import Logo from '@/components/Logo';
 import { formatDisplayName, firstName } from '@/lib/names';
 import LocationDisplay from '@/components/LocationDisplay';
+import { formatEventDateRange } from '@/lib/dateRange';
 import type { Event } from '@/types';
 
 interface ParticipantEntryProps {
@@ -139,30 +140,28 @@ export default function ParticipantEntry({ event, onJoin }: ParticipantEntryProp
               {/* Event details */}
               <div className="px-6 py-4 space-y-2.5 border-b border-hairline-soft">
                 {/* Fixed: show confirmed date/time prominently */}
-                {isFixed && event.finalized_time && (() => {
-                  const start = new Date(event.finalized_time);
-                  const end = addMinutes(start, event.duration_minutes || 60);
-                  return (
-                    <>
-                      <div className="flex items-center gap-3">
-                        <svg className="w-5 h-5 text-accent-fg shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
-                        </svg>
-                        <span className="text-base font-semibold text-heading">
-                          {format(start, 'EEEE, MMMM d')}
-                        </span>
-                      </div>
+                {isFixed && event.finalized_time && (
+                  <>
+                    <div className="flex items-center gap-3">
+                      <svg className="w-5 h-5 text-accent-fg shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
+                      </svg>
+                      <span className="text-base font-semibold text-heading">
+                        {formatEventDateRange(event.finalized_time, event.finalized_end_date, !!event.all_day, { includeTime: false })}
+                      </span>
+                    </div>
+                    {!event.all_day && (
                       <div className="flex items-center gap-3">
                         <svg className="w-5 h-5 text-accent-fg shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                         <span className="text-base text-body">
-                          {format(start, 'h:mm a')} – {format(end, 'h:mm a')}
+                          {format(new Date(event.finalized_time), 'h:mm a')}
                         </span>
                       </div>
-                    </>
-                  );
-                })()}
+                    )}
+                  </>
+                )}
 
                 {event.organizer_name && (
                   <div className="flex items-center gap-3">
@@ -183,7 +182,7 @@ export default function ParticipantEntry({ event, onJoin }: ParticipantEntryProp
                     <LocationDisplay location={event.location ?? ''} textClassName="text-sm text-body" />
                   </div>
                 )}
-                {event.duration_minutes && !isFixed && (
+                {event.duration_minutes && !isFixed && !event.all_day && (
                   <div className="flex items-center gap-3">
                     <svg className="w-5 h-5 text-faint shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />

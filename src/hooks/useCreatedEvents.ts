@@ -7,6 +7,8 @@ export interface CreatedEvent {
   name: string;
   createdAt: string;
   finalizedTime?: string | null;
+  allDay?: boolean;
+  finalizedEndDate?: string | null;
   pinned?: boolean;
 }
 

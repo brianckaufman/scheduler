@@ -1,6 +1,7 @@
-import { format, addMinutes } from 'date-fns';
+import { format } from 'date-fns';
 import { firstName } from './names';
 import { parseLocation, locationLabel } from './location';
+import { formatEventDateRange } from './dateRange';
 import type { Event } from '@/types';
 
 /**
@@ -19,14 +20,13 @@ export function buildInviteText(event: Event, url?: string): string {
     : `Let us know if you can make it:`;
 
   if (event.event_type === 'fixed' && event.finalized_time) {
-    const start = new Date(event.finalized_time);
-    const end = addMinutes(start, event.duration_minutes || 60);
+    const dateLine = formatEventDateRange(event.finalized_time, event.finalized_end_date, !!event.all_day, { includeTime: false });
     const lines = [
       `You're invited! 🎉`,
       ``,
       event.name,
-      `📅 ${format(start, 'EEEE, MMMM d')}`,
-      `⏰ ${format(start, 'h:mm a')} – ${format(end, 'h:mm a')}`,
+      `📅 ${dateLine}`,
+      ...(!event.all_day ? [`⏰ ${format(new Date(event.finalized_time), 'h:mm a')}`] : []),
       ...(event.location ? [`📍 ${locationLabel(parseLocation(event.location))}`] : []),
       ``,
       letKnow,

@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react';
 import type { useCreatedEvents } from '@/hooks/useCreatedEvents';
-import { format } from 'date-fns';
+import { formatEventDateRange } from '@/lib/dateRange';
 
 const DEFAULT_VISIBLE = 3;
 
@@ -35,9 +35,15 @@ export default function ReturningUserBanner({ createdEvents, title }: ReturningU
             if (cancelled) return;
             if (res.ok) {
               const data = await res.json();
-              if (data.finalized_time !== (event.finalizedTime || null)) {
+              if (
+                data.finalized_time !== (event.finalizedTime || null) ||
+                !!data.all_day !== !!event.allDay ||
+                data.finalized_end_date !== (event.finalizedEndDate || null)
+              ) {
                 updateEvent(event.slug, {
                   finalizedTime: data.finalized_time || null,
+                  allDay: !!data.all_day,
+                  finalizedEndDate: data.finalized_end_date || null,
                   name: data.name || event.name,
                 });
               }
@@ -95,9 +101,10 @@ export default function ReturningUserBanner({ createdEvents, title }: ReturningU
     );
   }
 
-  function formatFinalizedDate(isoString: string): string {
+  function formatFinalizedDate(event: typeof events[number]): string {
+    if (!event.finalizedTime) return '';
     try {
-      return format(new Date(isoString), 'EEE, MMM d · h:mm a');
+      return formatEventDateRange(event.finalizedTime, event.finalizedEndDate, !!event.allDay, { withWeekday: false });
     } catch {
       return '';
     }
@@ -155,7 +162,7 @@ export default function ReturningUserBanner({ createdEvents, title }: ReturningU
                   {event.name}
                 </p>
                 <p className={`text-xs truncate ${event.finalizedTime ? 'text-success-fg' : 'text-faint'}`}>
-                  {event.finalizedTime ? formatFinalizedDate(event.finalizedTime) : 'Awaiting responses'}
+                  {event.finalizedTime ? formatFinalizedDate(event) : 'Awaiting responses'}
                 </p>
               </div>
               <svg className="w-4 h-4 text-faint2 group-hover:text-social-fg transition-colors shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

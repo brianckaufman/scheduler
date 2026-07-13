@@ -198,7 +198,7 @@ export default function BestDays({
                   key={key}
                   type="button"
                   onClick={() => handleDayClick(idx)}
-                  className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all duration-150 cursor-pointer ${
+                  className={`min-h-[44px] px-3 rounded-lg text-xs font-medium transition-all duration-150 cursor-pointer inline-flex items-center justify-center ${
                     inRange
                       ? 'bg-teal-500 text-white'
                       : count > 0

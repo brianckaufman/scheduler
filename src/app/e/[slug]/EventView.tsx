@@ -96,8 +96,10 @@ export default function EventView({ event: initialEvent, organizerAvatar }: Even
     recordRespondedEvent(event.slug, event.name, {
       eventType: event.event_type as 'fixed' | 'availability',
       finalizedTime: event.finalized_time ?? null,
+      allDay: event.all_day,
+      finalizedEndDate: event.finalized_end_date ?? null,
     });
-  }, [loaded, hasSession, participantId, event.slug, event.name, event.event_type, event.finalized_time]);
+  }, [loaded, hasSession, participantId, event.slug, event.name, event.event_type, event.finalized_time, event.all_day, event.finalized_end_date]);
 
   useEffect(() => {
     try {

@@ -323,6 +323,22 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
     );
   };
 
+  // Clear scheduling state when switching event type — otherwise a range or
+  // all-day toggle picked in one flow silently carries into the other (e.g.
+  // "All-day" already checked, or a stale date range still highlighted).
+  const handleChangeType = () => {
+    setEventType(null);
+    setAllDay(false);
+    setSelectedDates([]);
+    setFixedDate('');
+    setFixedEndDate('');
+    setFixedTime('09:00');
+    setFixedEndTime('10:00');
+    setTimeStart('09:00');
+    setTimeEnd('17:00');
+    setDurationMinutes(60);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !organizerName.trim()) return;
@@ -542,7 +558,7 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
           </div>
           <button
             type="button"
-            onClick={() => setEventType(null)}
+            onClick={handleChangeType}
             className="flex items-center gap-1 text-xs text-faint hover:text-secondary transition-colors cursor-pointer px-2 py-1"
           >
             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

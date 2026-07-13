@@ -13,6 +13,10 @@ export interface RespondedEvent {
   eventType?: 'fixed' | 'availability';
   /** The event's confirmed time, once known (ISO) — also when it "happens". */
   finalizedTime?: string | null;
+  /** Whole-day event (no time-of-day); finalizedTime is the range start. */
+  allDay?: boolean;
+  /** Inclusive end date ('yyyy-MM-dd') of a finalized all-day range. */
+  finalizedEndDate?: string | null;
   /** The user's RSVP, for fixed events. */
   rsvp?: RsvpValue | null;
   /** Pinned events never auto-expire. */
@@ -108,7 +112,7 @@ export function useRespondedEvents() {
 export function recordRespondedEvent(
   slug: string,
   name: string,
-  opts: Partial<Pick<RespondedEvent, 'eventType' | 'finalizedTime' | 'rsvp'>> = {}
+  opts: Partial<Pick<RespondedEvent, 'eventType' | 'finalizedTime' | 'allDay' | 'finalizedEndDate' | 'rsvp'>> = {}
 ) {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
@@ -124,6 +128,9 @@ export function recordRespondedEvent(
         eventType: opts.eventType ?? prev.eventType,
         finalizedTime:
           opts.finalizedTime !== undefined ? opts.finalizedTime : prev.finalizedTime,
+        allDay: opts.allDay ?? prev.allDay,
+        finalizedEndDate:
+          opts.finalizedEndDate !== undefined ? opts.finalizedEndDate : prev.finalizedEndDate,
         rsvp: opts.rsvp !== undefined ? opts.rsvp : prev.rsvp,
       };
       // No-op if nothing actually changed (avoids needless writes/renders).
@@ -139,6 +146,8 @@ export function recordRespondedEvent(
       respondedAt: new Date().toISOString(),
       eventType: opts.eventType,
       finalizedTime: opts.finalizedTime ?? null,
+      allDay: opts.allDay,
+      finalizedEndDate: opts.finalizedEndDate ?? null,
       rsvp: opts.rsvp ?? null,
     };
     localStorage.setItem(

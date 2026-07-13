@@ -330,9 +330,11 @@ export default function RSVPView({ event, participantId, isOrganizer, organizerT
     recordRespondedEvent(event.slug, event.name, {
       eventType: 'fixed',
       finalizedTime: event.finalized_time ?? null,
+      allDay: event.all_day,
+      finalizedEndDate: event.finalized_end_date ?? null,
       rsvp: myRsvp,
     });
-  }, [myRsvp, event.slug, event.name, event.finalized_time]);
+  }, [myRsvp, event.slug, event.name, event.finalized_time, event.all_day, event.finalized_end_date]);
 
   // Capacity: when a max is set, the cap counts "yes" responders plus the
   // guests they're bringing. Drives the public "spots filled" meter + limits.
