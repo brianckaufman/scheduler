@@ -145,6 +145,17 @@ export async function PATCH(
       }
     }
   }
+  if ('min_block_days' in updates) {
+    const val = updates.min_block_days;
+    if (val === null || val === '' || val === 0) {
+      safeUpdate.min_block_days = null;
+    } else {
+      const num = Number(val);
+      if (Number.isInteger(num) && num >= 2 && num <= 31) {
+        safeUpdate.min_block_days = num;
+      }
+    }
+  }
   if ('body' in updates) {
     safeUpdate.body = updates.body ? sanitizeHtml(String(updates.body)) : null;
   }

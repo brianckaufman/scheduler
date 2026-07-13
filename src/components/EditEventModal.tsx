@@ -52,6 +52,9 @@ export default function EditEventModal({ event, organizerToken, onClose, onSave,
   const [minResponses, setMinResponses] = useState<string>(
     event.min_responses ? String(event.min_responses) : ''
   );
+  const [minBlockDays, setMinBlockDays] = useState<string>(
+    event.min_block_days ? String(event.min_block_days) : ''
+  );
   // If the saved value is outside the dropdown range, start in custom mode
   const [minResponsesCustom, setMinResponsesCustom] = useState(
     !!event.min_responses && event.min_responses > 15
@@ -95,6 +98,11 @@ export default function EditEventModal({ event, organizerToken, onClose, onSave,
           duration_minutes: durationMinutes,
           max_participants: maxP,
           min_responses: minResponses ? parseInt(minResponses, 10) : null,
+          // Only send when changed, so edits still work if the block-days
+          // migration hasn't been run (avoids referencing a missing column).
+          ...(minBlockDays !== (event.min_block_days ? String(event.min_block_days) : '')
+            ? { min_block_days: minBlockDays ? parseInt(minBlockDays, 10) : null }
+            : {}),
           // Only send color when changed, so edits still work if the color
           // migration hasn't been run (avoids referencing a missing column).
           ...(color !== (event.color || '') ? { color: color || null } : {}),
@@ -377,6 +385,31 @@ export default function EditEventModal({ event, organizerToken, onClose, onSave,
               {minResponses && parseInt(minResponses, 10) >= 2 && (
                 <p className="text-xs text-faint mt-1">
                   The Pick a Time panel will wait until {minResponses} people have responded, including you.
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Sequential block — all-day availability events only */}
+          {event.event_type !== 'fixed' && event.all_day && (
+            <div>
+              <label className="block text-xs font-medium text-secondary mb-1">
+                Require a consecutive block of days?
+                <span className="text-faint font-normal ml-1">(for trips, optional)</span>
+              </label>
+              <select
+                value={minBlockDays}
+                onChange={(e) => setMinBlockDays(e.target.value)}
+                className={selectClass}
+              >
+                <option value="">No — any overlapping days are fine</option>
+                {[2, 3, 4, 5, 6, 7, 10, 14].map((n) => (
+                  <option key={n} value={n}>{n} days in a row</option>
+                ))}
+              </select>
+              {minBlockDays && parseInt(minBlockDays, 10) >= 2 && (
+                <p className="text-xs text-faint mt-1">
+                  Only unbroken blocks of at least {minBlockDays} consecutive days that work for everyone are suggested.
                 </p>
               )}
             </div>

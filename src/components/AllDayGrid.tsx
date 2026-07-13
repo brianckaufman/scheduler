@@ -5,11 +5,12 @@ import { format, parseISO } from 'date-fns';
 import { createClient } from '@/lib/supabase/client';
 import { formatDisplayName } from '@/lib/names';
 import { generateAllDaySlots } from '@/lib/slots';
-import { computeOverlap } from '@/lib/overlap';
+import { computeOverlap, findConsecutiveWindows } from '@/lib/overlap';
 import { useRealtimeSlots } from '@/hooks/useRealtimeSlots';
 import { useRealtimeParticipants } from '@/hooks/useRealtimeParticipants';
 import TimeGridSlot, { PARTICIPANT_COLORS } from './TimeGridSlot';
 import BestDays from './BestDays';
+import BestBlocks from './BestBlocks';
 import AnimatedNumber from './AnimatedNumber';
 import { getTimezoneLabel } from '@/lib/timezones';
 import type { Event } from '@/types';
@@ -171,6 +172,10 @@ export default function AllDayGrid({ event, participantId, isOrganizer, organize
     draggedSlots.current = new Set();
   }, []);
 
+  // Sequential-block ("vacation") mode: the picker needs an unbroken run of at
+  // least this many consecutive days, not a scatter of individually-free days.
+  const minBlock = event.min_block_days && event.min_block_days >= 2 ? event.min_block_days : null;
+
   // Best available overlap across all proposed days.
   const { maxOverlap, bestSlotKeys } = useMemo(() => {
     let max = 0;
@@ -186,12 +191,37 @@ export default function AllDayGrid({ event, participantId, isOrganizer, organize
     return { maxOverlap: max, bestSlotKeys: best };
   }, [overlapMap]);
 
+  // Block-mode: the strongest run of >= minBlock consecutive days, and whether
+  // one works for everyone. Its days drive the "best available" highlight so
+  // guests see the target block, not just isolated high-overlap days.
+  const { hasFullBlock, hasAnyBlock, blockHighlightKeys } = useMemo(() => {
+    if (!minBlock || totalParticipants < 2) {
+      return { hasFullBlock: false, hasAnyBlock: false, blockHighlightKeys: new Set<string>() };
+    }
+    const windows = findConsecutiveWindows(dayKeys, sortedDates, overlapMap, {
+      minLength: minBlock,
+      minAttendees: 2,
+    });
+    const full = windows.filter((w) => w.attendees.size === totalParticipants);
+    const target = full[0] ?? windows[0];
+    const highlight = new Set<string>();
+    if (target) {
+      for (let i = target.startIdx; i <= target.endIdx; i++) highlight.add(dayKeys[i]);
+    }
+    return { hasFullBlock: full.length > 0, hasAnyBlock: windows.length > 0, blockHighlightKeys: highlight };
+  }, [minBlock, dayKeys, sortedDates, overlapMap, totalParticipants]);
+
   const overlapStatus = useMemo(() => {
     if (totalParticipants < 2) return 'waiting' as const;
+    if (minBlock) {
+      if (hasFullBlock) return 'found' as const;
+      if (hasAnyBlock) return 'partial' as const;
+      return 'none' as const;
+    }
     if (maxOverlap >= totalParticipants) return 'found' as const;
     if (maxOverlap >= 2) return 'partial' as const;
     return 'none' as const;
-  }, [totalParticipants, maxOverlap]);
+  }, [totalParticipants, minBlock, hasFullBlock, hasAnyBlock, maxOverlap]);
 
   const handleDeleteParticipant = useCallback(async (pid: string) => {
     if (!organizerToken) return;
@@ -291,7 +321,9 @@ export default function AllDayGrid({ event, participantId, isOrganizer, organize
       )}
       {overlapStatus === 'none' && !event.finalized_time && (
         <div className="animate-fade-in bg-amber-50 dark:bg-[#302817] rounded-xl p-4 text-center text-sm text-amber-700 dark:text-amber-400">
-          No days overlap yet. But we&apos;re getting there.
+          {minBlock
+            ? `No block of ${minBlock} consecutive days overlaps yet. But we're getting there.`
+            : 'No days overlap yet. But we’re getting there.'}
           {isOrganizer && (
             <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">Consider proposing a wider range of days.</p>
           )}
@@ -304,20 +336,24 @@ export default function AllDayGrid({ event, participantId, isOrganizer, organize
             onClick={() => setShowDayPicker(true)}
             className="px-8 py-3 bg-teal-500 text-white text-base font-semibold rounded-full hover:bg-teal-600 shadow-md hover:shadow-lg transition-all duration-200 active:scale-95 cursor-pointer min-w-[180px]"
           >
-            Pick Days
+            {minBlock ? 'Find a Block' : 'Pick Days'}
           </button>
         </div>
       )}
       {overlapStatus === 'found' && !event.finalized_time && (
         <div className="animate-fade-in-scale bg-green-50 dark:bg-[#112D25] rounded-xl p-4 text-center">
-          <p className="text-sm text-success-fg font-medium">We found days that work for everyone!</p>
+          <p className="text-sm text-success-fg font-medium">
+            {minBlock
+              ? `We found a ${minBlock}-day block that works for everyone!`
+              : 'We found days that work for everyone!'}
+          </p>
           {isOrganizer ? (
             <button
               type="button"
               onClick={() => setShowDayPicker(true)}
               className="mt-3 px-8 py-3 bg-teal-500 text-white text-base font-semibold rounded-full hover:bg-teal-600 shadow-md hover:shadow-lg transition-all duration-200 active:scale-95 cursor-pointer min-w-[180px]"
             >
-              Pick Days
+              {minBlock ? 'Pick the Block' : 'Pick Days'}
             </button>
           ) : (
             <p className="text-xs text-success-fg mt-1">Waiting for the organizer to make the call</p>
@@ -342,7 +378,8 @@ export default function AllDayGrid({ event, participantId, isOrganizer, organize
           if (isMine && participantSet && !participantSet.has(participantId)) othersCount += 1;
           else if (!isMine && participantSet?.has(participantId)) othersCount -= 1;
           const isAllMatch = totalParticipants > 1 && othersCount === totalParticipants;
-          const isBest = overlapStatus === 'partial' && !isAllMatch && bestSlotKeys.has(slotKey);
+          const isBest = overlapStatus === 'partial' && !isAllMatch
+            && (minBlock ? blockHighlightKeys.has(slotKey) : bestSlotKeys.has(slotKey));
 
           const slotParticipantColors: string[] = [];
           if (isMine) slotParticipantColors.push(participantColorMap.get(participantId) || PARTICIPANT_COLORS[0]);
@@ -420,7 +457,7 @@ export default function AllDayGrid({ event, participantId, isOrganizer, organize
         >
           <div className="bg-surface w-full max-w-md rounded-t-2xl sm:rounded-2xl shadow-xl animate-slide-up max-h-[85vh] overflow-y-auto">
             <div className="sticky top-0 bg-surface border-b border-hairline-soft px-5 py-4 flex items-center justify-between rounded-t-2xl">
-              <h2 className="text-lg font-bold text-heading">Pick Days</h2>
+              <h2 className="text-lg font-bold text-heading">{minBlock ? 'Find a Block' : 'Pick Days'}</h2>
               <button
                 type="button"
                 onClick={() => setShowDayPicker(false)}
@@ -433,16 +470,32 @@ export default function AllDayGrid({ event, participantId, isOrganizer, organize
             </div>
             <div className="p-5 space-y-2">
               <p className="text-sm text-muted mb-4">
-                Choose the best days for <span className="font-medium text-body">{event.name}</span>
+                {minBlock
+                  ? <>Find a {minBlock}-day block for <span className="font-medium text-body">{event.name}</span></>
+                  : <>Choose the best days for <span className="font-medium text-body">{event.name}</span></>}
               </p>
-              <BestDays
-                dayKeys={dayKeys}
-                overlapMap={overlapMap}
-                totalParticipants={totalParticipants}
-                participants={participants}
-                minResponses={event.min_responses}
-                onFinalize={isOrganizer ? handleFinalizeRange : undefined}
-              />
+              {minBlock ? (
+                <BestBlocks
+                  dayKeys={dayKeys}
+                  sortedDates={sortedDates}
+                  overlapMap={overlapMap}
+                  totalParticipants={totalParticipants}
+                  participants={participants}
+                  minBlockDays={minBlock}
+                  minResponses={event.min_responses}
+                  onFinalize={isOrganizer ? handleFinalizeRange : undefined}
+                />
+              ) : (
+                <BestDays
+                  dayKeys={dayKeys}
+                  sortedDates={sortedDates}
+                  overlapMap={overlapMap}
+                  totalParticipants={totalParticipants}
+                  participants={participants}
+                  minResponses={event.min_responses}
+                  onFinalize={isOrganizer ? handleFinalizeRange : undefined}
+                />
+              )}
             </div>
           </div>
         </div>
