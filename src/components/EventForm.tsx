@@ -260,6 +260,7 @@ export default function EventForm({ enableFixedEvents = false }: EventFormProps)
     setTimeStart('09:00');
     setTimeEnd('17:00');
     setDurationMinutes(60);
+    setMinBlockDays('');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
