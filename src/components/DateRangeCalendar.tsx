@@ -23,6 +23,8 @@ interface DateRangeCalendarProps {
   onChange: (startDate: string, endDate: string) => void;
   /** Earliest selectable day. Defaults to today. */
   minDate?: Date;
+  /** 'single': every tap just moves the one selected day (endDate stays ''). Default 'range'. */
+  mode?: 'single' | 'range';
 }
 
 /**
@@ -31,7 +33,7 @@ interface DateRangeCalendarProps {
  * full range is set to start over. Shared by EventForm (all-day RSVP
  * creation) and EditEventModal (rescheduling an all-day RSVP).
  */
-export default function DateRangeCalendar({ startDate, endDate, onChange, minDate }: DateRangeCalendarProps) {
+export default function DateRangeCalendar({ startDate, endDate, onChange, minDate, mode = 'range' }: DateRangeCalendarProps) {
   const [currentMonth, setCurrentMonth] = useState(() => (startDate ? new Date(startDate) : new Date()));
   const today = minDate ?? startOfDay(new Date());
   const rangeEnd = endDate || startDate;
@@ -39,7 +41,9 @@ export default function DateRangeCalendar({ startDate, endDate, onChange, minDat
   const handleDayClick = (day: Date) => {
     if (isBefore(day, today)) return;
     const dayStr = format(day, 'yyyy-MM-dd');
-    if (!startDate) {
+    if (mode === 'single') {
+      onChange(dayStr, '');
+    } else if (!startDate) {
       onChange(dayStr, '');
     } else if (!endDate) {
       if (dayStr < startDate) onChange(dayStr, '');

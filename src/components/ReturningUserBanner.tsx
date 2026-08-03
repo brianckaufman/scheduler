@@ -86,9 +86,9 @@ export default function ReturningUserBanner({ createdEvents, title }: ReturningU
 
   const handleDuplicate = useCallback((event: typeof events[0]) => {
     setMenuSlug(null);
-    // Navigate to homepage with pre-filled event data via query params
+    // Open the creation wizard with the event name pre-filled
     const params = new URLSearchParams({ duplicate: event.name });
-    window.location.href = `/?${params.toString()}`;
+    window.location.href = `/new?${params.toString()}`;
   }, []);
 
   if (!loaded) return null;

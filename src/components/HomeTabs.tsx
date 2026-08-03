@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, type ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { useCreatedEvents, getUserDisplayName } from '@/hooks/useCreatedEvents';
 import { useRespondedEvents } from '@/hooks/useRespondedEvents';
 import { firstName } from '@/lib/names';
@@ -8,7 +8,7 @@ import ReturningUserBanner from './ReturningUserBanner';
 import RespondedEventsBanner from './RespondedEventsBanner';
 
 interface HomeTabsProps {
-  children: ReactNode; // The EventForm card
+  children: ReactNode; // The "start creating" launcher card(s)
 }
 
 export default function HomeTabs({ children }: HomeTabsProps) {
@@ -17,15 +17,6 @@ export default function HomeTabs({ children }: HomeTabsProps) {
   const { events, loaded } = createdEvents;
   const { events: joined, loaded: joinedLoaded } = respondedEvents;
   const [activeTab, setActiveTab] = useState<'new' | 'events' | 'joined'>('new');
-  const [creating, setCreating] = useState(false);
-
-  // EventForm announces when the user has picked a type (begins creating) so we
-  // can hide the tab bar and let them focus on building the event.
-  useEffect(() => {
-    const onCreating = (e: Event) => setCreating((e as CustomEvent<boolean>).detail);
-    window.addEventListener('eventform-creating', onCreating);
-    return () => window.removeEventListener('eventform-creating', onCreating);
-  }, []);
 
   // Don't show tabs until something exists to list — just render the form.
   const hasCreated = loaded && events.length > 0;
@@ -54,8 +45,6 @@ export default function HomeTabs({ children }: HomeTabsProps) {
     // relative z-20 keeps open row menus (Pin / Duplicate) above the later
     // "See a live example" section, which otherwise paints over them.
     <div className="animate-fade-in relative z-20">
-      {/* Tab bar — hidden once the user begins creating an event */}
-      {!creating && (
       <div className="flex bg-fill rounded-xl p-1 mb-4 gap-0.5">
         <button type="button" onClick={() => setActiveTab('new')} className={tabClass(activeTab === 'new')}>
           <span className="flex items-center justify-center gap-1.5">
@@ -90,7 +79,6 @@ export default function HomeTabs({ children }: HomeTabsProps) {
           </button>
         )}
       </div>
-      )}
 
       {/* Tab content */}
       {activeTab === 'events' ? (
