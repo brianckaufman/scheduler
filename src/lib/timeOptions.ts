@@ -28,18 +28,32 @@ export function addMinutesToTime(time: string, minutes: number): string {
 }
 
 /**
- * The events_duration_valid DB CHECK constraint only allows this fixed enum —
- * not an arbitrary bounded range. Any UI offering a duration/end-time pick
- * for a fixed (timed) event must stay within this set or the insert/update
- * fails.
+ * Durations offered in the UI, in minutes. Fine-grained for short meetings,
+ * coarser for long events — a party or conference doesn't need 15-minute
+ * precision at the 8-hour mark.
+ *
+ * The DB's events_duration_valid CHECK allows anything in 1..1440 once
+ * supabase-duration-range-migration.sql has been run; before that migration it
+ * only permitted values up to 240, so anything longer is rejected on insert.
  */
-export const ALLOWED_DURATIONS = [10, 15, 30, 45, 60, 90, 120, 180, 240];
+export const ALLOWED_DURATIONS = [
+  10, 15, 30, 45, 60, 90, 120, 180, 240, 300, 360, 420, 480, 540, 600, 720,
+];
+
+/** Largest duration the DB accepts (a full day); the UI also stops at midnight. */
+export const MAX_DURATION_MINUTES = 1440;
+
+/** "45 min" / "2 hr" / "1.5 hr" — for duration pickers and end-time labels. */
+export function formatDurationLabel(minutes: number): string {
+  if (minutes < 60) return `${minutes} min`;
+  const hours = minutes / 60;
+  return `${Number.isInteger(hours) ? hours : hours.toFixed(1)} hr`;
+}
 
 /**
- * End-time <select> options for a fixed event's time picker, constrained to
- * durations the DB actually allows (see ALLOWED_DURATIONS) — every value
- * returned here is safe to submit. Excludes durations that would cross
- * midnight into the next day.
+ * End-time <select> options for a fixed event's time picker. Excludes
+ * durations that would run past midnight — a timed event that spans days
+ * should use all-day mode instead.
  */
 export function enumDurationEndTimeOptions(startTime: string): { value: string; minutes: number; label: string }[] {
   const [sh, sm] = startTime.split(':').map(Number);
@@ -51,7 +65,6 @@ export function enumDurationEndTimeOptions(startTime: string): { value: string; 
       const eh = Math.floor(endMin / 60);
       const em = endMin % 60;
       const value = `${eh.toString().padStart(2, '0')}:${em.toString().padStart(2, '0')}`;
-      const durLabel = d < 60 ? `${d} min` : d % 60 === 0 ? `${d / 60} hr` : `${Math.floor(d / 60)}.5 hr`;
-      return { value, minutes: d, label: `${formatTimeLabel(value)} (${durLabel})` };
+      return { value, minutes: d, label: `${formatTimeLabel(value)} (${formatDurationLabel(d)})` };
     });
 }

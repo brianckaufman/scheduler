@@ -9,6 +9,7 @@ import { normalizeHex } from '@/lib/eventColors';
 import { sanitizeConfig } from '@/lib/eventConfig';
 import { isEventKind } from '@/lib/eventTypes';
 import { formatEventDateRange } from '@/lib/dateRange';
+import { MAX_DURATION_MINUTES } from '@/lib/timeOptions';
 
 function getClientIp(request: NextRequest): string {
   return (
@@ -118,9 +119,9 @@ export async function PATCH(
     safeUpdate.location = updates.location ? sanitizeText(updates.location, 600) : null;
   }
   if ('duration_minutes' in updates) {
-    const valid = [10, 15, 30, 45, 60, 90, 120, 180, 240];
-    if (valid.includes(updates.duration_minutes)) {
-      safeUpdate.duration_minutes = updates.duration_minutes;
+    const d = Number(updates.duration_minutes);
+    if (Number.isInteger(d) && d > 0 && d <= MAX_DURATION_MINUTES) {
+      safeUpdate.duration_minutes = d;
     }
   }
   if ('response_deadline' in updates) {

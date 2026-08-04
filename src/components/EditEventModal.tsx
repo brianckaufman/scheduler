@@ -11,21 +11,16 @@ import { getModules, MODULE_TOGGLES, FIXED_ONLY_MODULES, type EventModules } fro
 import { EVENT_KINDS } from '@/lib/eventTypes';
 import QuestionsEditor from '@/components/QuestionsEditor';
 import DateRangeCalendar from '@/components/DateRangeCalendar';
-import { TIME_OPTIONS, formatTimeLabel, enumDurationEndTimeOptions } from '@/lib/timeOptions';
+import {
+  TIME_OPTIONS, formatTimeLabel, enumDurationEndTimeOptions, ALLOWED_DURATIONS, formatDurationLabel,
+} from '@/lib/timeOptions';
 import { zonedToUtc, utcToZoned } from '@/lib/slots';
 import { getTimezoneLabel } from '@/lib/timezones';
 
-const DURATION_OPTIONS = [
-  { value: 10, label: '10 min' },
-  { value: 15, label: '15 min' },
-  { value: 30, label: '30 min' },
-  { value: 45, label: '45 min' },
-  { value: 60, label: '1 hr' },
-  { value: 90, label: '1.5 hr' },
-  { value: 120, label: '2 hr' },
-  { value: 180, label: '3 hr' },
-  { value: 240, label: '4 hr' },
-];
+const DURATION_OPTIONS = ALLOWED_DURATIONS.map((value) => ({
+  value,
+  label: formatDurationLabel(value),
+}));
 
 interface EditEventModalProps {
   event: Event;

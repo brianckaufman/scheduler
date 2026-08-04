@@ -78,9 +78,9 @@ export async function POST(request: NextRequest) {
   }
 
   // Accept any duration 1–1440 min; default 60 if invalid. All-day events get
-  // a fixed 240 sentinel — the events_duration_valid CHECK constraint only
-  // allows a fixed enum (10/15/30/45/60/90/120/180/240 minutes), and duration
-  // is meaningless for a whole-day event anyway (never shown when all_day).
+  // a fixed 240 sentinel — duration is meaningless for a whole-day event and
+  // is never shown when all_day. Durations above 240 need
+  // supabase-duration-range-migration.sql to have been run.
   const safeDuration = safeAllDay
     ? 240
     : Number.isInteger(durationMinutes) && durationMinutes > 0 && durationMinutes <= 1440
@@ -292,6 +292,14 @@ export async function POST(request: NextRequest) {
   const { data, error } = result;
 
   if (error || !data) {
+    // The old duration CHECK only allowed durations up to 4 hours. If it's
+    // still in place, say so in plain language instead of leaking Postgres.
+    if (/events_duration_valid/i.test(error?.message ?? '')) {
+      return NextResponse.json(
+        { error: 'Events longer than 4 hours need a quick database update — run supabase-duration-range-migration.sql.' },
+        { status: 400 },
+      );
+    }
     return NextResponse.json({ error: error?.message || 'Failed to create event' }, { status: 500 });
   }
 
