@@ -1,99 +1,160 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { QUESTION_TYPES, needsOptions, type EventQuestion, type QuestionType } from '@/lib/questions';
+import { useEffect, useMemo, useState } from 'react';
+import Button from '@/components/ui/Button';
+import QuestionListEditor from '@/components/questions/QuestionListEditor';
+import {
+  isLegacyType,
+  validateQuestion,
+  type EventQuestion,
+  type QuestionDraft,
+  type ResponseValue,
+} from '@/lib/questions';
 
-type Draft = Pick<EventQuestion, 'type' | 'label' | 'options' | 'required'>;
+/** Strip the client-only React key so two draft lists compare cleanly. */
+function fingerprint(drafts: QuestionDraft[]): string {
+  return JSON.stringify(
+    drafts.map(({ id, type, label, options, required }) => ({ id, type, label, options, required })),
+  );
+}
 
-const blank: Draft = { type: 'short_text', label: '', options: [], required: false };
+function toDrafts(qs: EventQuestion[]): QuestionDraft[] {
+  return qs.map((q, i) => ({
+    key: `saved-${q.id ?? i}`,
+    id: q.id,
+    type: q.type,
+    label: q.label,
+    options: Array.isArray(q.options) ? q.options : [],
+    required: !!q.required,
+  }));
+}
 
 /**
- * Organizer-facing custom-question builder (lives in the Customize panel).
- * Self-saving: loads the current set, edits locally, PUTs the whole set.
+ * Organizer-side question builder: loads the saved set, hands it to the
+ * presentational editor, and saves it back. Drafts keep their `id` so the API
+ * updates rows in place rather than replacing them — which is what protects
+ * the answers people have already given.
  */
-export default function QuestionsEditor({ eventId, organizerToken }: { eventId: string; organizerToken: string }) {
-  const [drafts, setDrafts] = useState<Draft[]>([]);
-  const [loaded, setLoaded] = useState(false);
+export default function QuestionsEditor({
+  eventId,
+  organizerToken,
+}: {
+  eventId: string;
+  organizerToken: string;
+}) {
+  const [drafts, setDrafts] = useState<QuestionDraft[]>([]);
+  const [savedPrint, setSavedPrint] = useState('[]');
+  const [answerCounts, setAnswerCounts] = useState<Record<string, number>>({});
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
+    let cancelled = false;
+
     fetch(`/api/events/${eventId}/questions`)
       .then((r) => r.json())
-      .then((d) => setDrafts((d.questions ?? []).map((q: EventQuestion) => ({ type: q.type, label: q.label, options: q.options ?? [], required: q.required }))))
+      .then((d) => {
+        if (cancelled) return;
+        const next = toDrafts(d.questions ?? []);
+        setDrafts(next);
+        setSavedPrint(fingerprint(next));
+      })
       .catch(() => {})
-      .finally(() => setLoaded(true));
-  }, [eventId]);
+      .finally(() => { if (!cancelled) setLoading(false); });
 
-  const update = (i: number, patch: Partial<Draft>) =>
-    setDrafts((d) => d.map((q, j) => (j === i ? { ...q, ...patch } : q)));
-  const remove = (i: number) => setDrafts((d) => d.filter((_, j) => j !== i));
-  const add = () => setDrafts((d) => [...d, { ...blank }]);
+    // How many answers exist per question — drives the delete warning and locks
+    // the answer style. Non-fatal: no counts simply means nothing is locked.
+    fetch(`/api/events/${eventId}/responses?organizer_token=${encodeURIComponent(organizerToken)}`)
+      .then((r) => r.json())
+      .then((d) => {
+        if (cancelled) return;
+        const counts: Record<string, number> = {};
+        for (const row of (d.responses ?? []) as { question_id: string; value: ResponseValue }[]) {
+          const v = row.value;
+          const empty = v === null || v === undefined || v === '' || (Array.isArray(v) && v.length === 0);
+          if (!empty) counts[row.question_id] = (counts[row.question_id] ?? 0) + 1;
+        }
+        setAnswerCounts(counts);
+      })
+      .catch(() => {});
+
+    return () => { cancelled = true; };
+  }, [eventId, organizerToken]);
+
+  const invalidCount = useMemo(
+    () => drafts.filter((d) => !isLegacyType(d.type) && validateQuestion(d) !== null).length,
+    [drafts],
+  );
+  const dirty = fingerprint(drafts) !== savedPrint;
+
+  const handleChange = (next: QuestionDraft[]) => {
+    setDrafts(next);
+    setSaved(false);
+    setError('');
+  };
 
   const save = async () => {
-    setSaving(true); setError(''); setSaved(false);
+    setSaving(true);
+    setError('');
     try {
       const res = await fetch(`/api/events/${eventId}/questions`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ organizer_token: organizerToken, questions: drafts }),
+        body: JSON.stringify({
+          organizer_token: organizerToken,
+          questions: drafts.map(({ id, type, label, options, required }) => ({
+            ...(id && { id }),
+            type,
+            label,
+            options: options.map((o) => o.trim()).filter(Boolean),
+            required,
+          })),
+        }),
       });
-      if (!res.ok) { const d = await res.json().catch(() => ({})); setError(d.error || 'Could not save'); return; }
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error || 'Could not save');
+      const next = toDrafts(d.questions ?? []);
+      setDrafts(next);
+      setSavedPrint(fingerprint(next));
       setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
-    } catch { setError('Could not save'); } finally { setSaving(false); }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not save');
+    } finally {
+      setSaving(false);
+    }
   };
 
-  if (!loaded) return <p className="text-xs text-faint">Loading questions…</p>;
-
-  const fieldClass = 'w-full px-3 py-2 rounded-field border border-hairline bg-surface text-sm text-heading focus:outline-none focus:ring-2 focus:ring-social-500';
+  if (loading) return <p className="text-xs text-faint">Loading questions…</p>;
 
   return (
     <div className="space-y-3">
-      {drafts.map((q, i) => (
-        <div key={i} className="rounded-card border border-hairline-soft p-3 space-y-2 bg-subtle">
-          <div className="flex items-center gap-2">
-            <input
-              value={q.label}
-              onChange={(e) => update(i, { label: e.target.value })}
-              placeholder="Question (e.g. Any dietary needs?)"
-              className={`${fieldClass} flex-1`}
-              maxLength={200}
-            />
-            <button type="button" onClick={() => remove(i)} className="text-xs text-faint hover:text-red-500 shrink-0 cursor-pointer">Remove</button>
-          </div>
-          <div className="flex items-center gap-2">
-            <select value={q.type} onChange={(e) => update(i, { type: e.target.value as QuestionType })} className={`${fieldClass} flex-1`}>
-              {QUESTION_TYPES.map((t) => <option key={t.type} value={t.type}>{t.label}</option>)}
-            </select>
-            <label className="flex items-center gap-1.5 text-xs text-secondary cursor-pointer shrink-0">
-              <input type="checkbox" checked={q.required} onChange={(e) => update(i, { required: e.target.checked })} className="h-4 w-4 rounded border-strong accent-social-500 cursor-pointer" />
-              Required
-            </label>
-          </div>
-          {needsOptions(q.type) && (
-            <textarea
-              value={q.options.join('\n')}
-              onChange={(e) => update(i, { options: e.target.value.split('\n') })}
-              placeholder="One choice per line"
-              rows={3}
-              className={`${fieldClass} resize-none`}
-            />
-          )}
-        </div>
-      ))}
+      <QuestionListEditor
+        drafts={drafts}
+        onChange={handleChange}
+        answerCounts={answerCounts}
+        accent="social"
+      />
 
-      <div className="flex items-center justify-between">
-        <button type="button" onClick={add} className="text-xs font-semibold text-accent-fg hover:underline cursor-pointer">+ Add question</button>
-        <div className="flex items-center gap-3">
-          {error && <span className="text-xs text-red-500">{error}</span>}
-          {saved && <span className="text-xs text-success-fg">Saved</span>}
-          <button type="button" onClick={save} disabled={saving} className="text-xs font-semibold px-3 py-1.5 rounded-field bg-social-500 text-white hover:bg-social-600 disabled:opacity-50 cursor-pointer">
-            {saving ? 'Saving…' : 'Save questions'}
-          </button>
-        </div>
-      </div>
+      {error && <p className="text-sm text-red-500">{error}</p>}
+
+      {invalidCount > 0 && (
+        <p className="text-sm text-red-500">
+          Fix the highlighted question{invalidCount === 1 ? '' : 's'} above to save.
+        </p>
+      )}
+
+      <Button
+        variant="primary"
+        accent="social"
+        fullWidth
+        loading={saving}
+        disabled={invalidCount > 0 || !dirty}
+        onClick={save}
+      >
+        {saved && !dirty ? 'Saved ✓' : 'Save questions'}
+      </Button>
     </div>
   );
 }

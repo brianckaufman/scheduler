@@ -13,13 +13,13 @@ interface ReviewStepProps {
   totalSteps: number;
   accent: 'social' | 'teal';
   /** Jump straight back to a step to fix something. */
-  onEdit: (stepId: 'name' | 'date' | 'time' | 'extras') => void;
+  onEdit: (stepId: 'name' | 'date' | 'time' | 'extras' | 'questions') => void;
 }
 
 interface Row {
   label: string;
   value: string;
-  step: 'name' | 'date' | 'time' | 'extras';
+  step: 'name' | 'date' | 'time' | 'extras' | 'questions';
 }
 
 function summarizeDraft(draft: EventDraft): Row[] {
@@ -63,6 +63,13 @@ function summarizeDraft(draft: EventDraft): Row[] {
   const details = stripHtml(draft.body).trim();
   if (details) {
     rows.push({ label: 'Details', value: details.length > 80 ? `${details.slice(0, 80)}…` : details, step: 'extras' });
+  }
+  if (draft.questions.length > 0) {
+    rows.push({
+      label: 'You’ll ask',
+      value: draft.questions.map((q) => q.label.trim()).filter(Boolean).join(' · '),
+      step: 'questions',
+    });
   }
   return rows;
 }

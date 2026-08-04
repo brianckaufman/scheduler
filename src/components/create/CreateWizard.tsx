@@ -8,11 +8,12 @@ import NameStep from './steps/NameStep';
 import DateStep from './steps/DateStep';
 import TimeStep from './steps/TimeStep';
 import ExtrasStep from './steps/ExtrasStep';
+import QuestionsStep from './steps/QuestionsStep';
 import ReviewStep from './steps/ReviewStep';
 import SuccessStep from './steps/SuccessStep';
 import { useEventDraft } from '@/hooks/useEventDraft';
 
-type StepId = 'type' | 'name' | 'date' | 'time' | 'extras' | 'review';
+type StepId = 'type' | 'name' | 'date' | 'time' | 'extras' | 'questions' | 'review';
 
 interface CreateWizardProps {
   enableFixedEvents: boolean;
@@ -49,7 +50,7 @@ export default function CreateWizard({ enableFixedEvents }: CreateWizardProps) {
     if (enableFixedEvents && !presetType) list.push('type');
     list.push('name', 'date');
     if (!draft.allDay) list.push('time');
-    list.push('extras', 'review');
+    list.push('extras', 'questions', 'review');
     return list;
   }, [enableFixedEvents, presetType, draft.allDay]);
 
@@ -121,8 +122,18 @@ export default function CreateWizard({ enableFixedEvents }: CreateWizardProps) {
       onPrimary={isReview ? handleCreate : goNext}
       primaryDisabled={!draft.stepValid[stepId]}
       primaryLoading={isReview && draft.loading}
-      secondaryLabel={stepId === 'extras' ? 'Skip this' : undefined}
-      onSecondary={stepId === 'extras' ? goNext : undefined}
+      secondaryLabel={
+        stepId === 'extras'
+          ? 'Skip this'
+          : stepId === 'questions' && draft.questions.length === 0
+            ? 'Skip — no questions'
+            : undefined
+      }
+      onSecondary={
+        stepId === 'extras' || (stepId === 'questions' && draft.questions.length === 0)
+          ? goNext
+          : undefined
+      }
       hideNav={stepId === 'type'}
     >
       <div key={stepId}>
@@ -140,6 +151,9 @@ export default function CreateWizard({ enableFixedEvents }: CreateWizardProps) {
         )}
         {stepId === 'extras' && (
           <ExtrasStep draft={draft} stepNumber={stepNumber} totalSteps={totalSteps} accent={stepAccent} />
+        )}
+        {stepId === 'questions' && (
+          <QuestionsStep draft={draft} stepNumber={stepNumber} totalSteps={totalSteps} accent={stepAccent} />
         )}
         {stepId === 'review' && (
           <ReviewStep draft={draft} stepNumber={stepNumber} totalSteps={totalSteps} accent={stepAccent} onEdit={goToId} />

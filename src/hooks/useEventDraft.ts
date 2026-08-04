@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { format, isBefore, isSameDay, startOfDay } from 'date-fns';
 import { detectUserTimezone } from '@/lib/timezones';
 import { useCreatedEvents, saveUserDisplayName, getUserDisplayName } from '@/hooks/useCreatedEvents';
+import { isQuestionType, validateQuestion, MAX_QUESTIONS, type QuestionDraft } from '@/lib/questions';
 
 export type EventDraftType = 'availability' | 'fixed' | null;
 
@@ -26,6 +27,7 @@ interface DraftSnapshot {
   timezone: string;
   location: string;
   body: string;
+  questions: QuestionDraft[];
 }
 
 /**
@@ -55,6 +57,9 @@ export function useEventDraft() {
   const [timezone, setTimezone] = useState(detectUserTimezone);
   const [location, setLocation] = useState('');
   const [body, setBody] = useState('');
+  // Custom questions built during creation. No ids yet — the event doesn't
+  // exist, so these are PUT immediately after it's created.
+  const [questions, setQuestions] = useState<QuestionDraft[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const restored = useRef(false);
@@ -88,6 +93,13 @@ export function useEventDraft() {
         if (snap.timezone) setTimezone(snap.timezone);
         setLocation(snap.location ?? '');
         setBody(snap.body ?? '');
+        setQuestions(
+          Array.isArray(snap.questions)
+            ? snap.questions
+                .filter((q) => q && typeof q.label === 'string' && isQuestionType(q.type))
+                .slice(0, MAX_QUESTIONS)
+            : []
+        );
       }
     } catch { /* corrupt draft — start clean */ }
 
@@ -105,13 +117,13 @@ export function useEventDraft() {
         eventType, name, organizerName, allDay,
         selectedDates: selectedDates.map((d) => d.toISOString()),
         fixedDate, fixedEndDate, fixedTime, fixedEndTime,
-        timeStart, timeEnd, timezone, location, body,
+        timeStart, timeEnd, timezone, location, body, questions,
       };
       try { sessionStorage.setItem(DRAFT_KEY, JSON.stringify(snap)); } catch { /* storage full/blocked */ }
     }, 400);
     return () => clearTimeout(t);
   }, [eventType, name, organizerName, allDay, selectedDates, fixedDate, fixedEndDate,
-      fixedTime, fixedEndTime, timeStart, timeEnd, timezone, location, body]);
+      fixedTime, fixedEndTime, timeStart, timeEnd, timezone, location, body, questions]);
 
   const clearDraft = useCallback(() => {
     try { sessionStorage.removeItem(DRAFT_KEY); } catch { /* ignore */ }
@@ -175,11 +187,12 @@ export function useEventDraft() {
     date: hasDates && (!allDay || eventType !== 'fixed' || !fixedEndDate || fixedEndDate >= fixedDate),
     time: timeValid,
     extras: true,
+    questions: questions.every((q) => validateQuestion(q) === null),
     review: hasName && hasOrganizer && hasDates && timeValid,
   };
 
-  /** Create the event. Resolves with the new slug; throws with a user-facing message. */
-  const submit = useCallback(async (): Promise<{ slug: string }> => {
+  /** Create the event. Resolves with the new slug + id; throws with a user-facing message. */
+  const submit = useCallback(async (): Promise<{ slug: string; id: string }> => {
     if (!eventType || !name.trim() || !organizerName.trim()) {
       throw new Error('Missing required fields');
     }
@@ -233,7 +246,7 @@ export function useEventDraft() {
         throw new Error(data.error || 'Failed to create event');
       }
 
-      const { slug, organizerToken, organizerParticipantId, organizerName: returnedName } = await res.json();
+      const { id, slug, organizerToken, organizerParticipantId, organizerName: returnedName } = await res.json();
       localStorage.setItem(`organizer_${slug}`, organizerToken);
       if (organizerParticipantId && returnedName) {
         localStorage.setItem(
@@ -242,11 +255,32 @@ export function useEventDraft() {
         );
       }
 
+      // Questions need the event to exist first (the PUT is organizer-token
+      // authed). Non-fatal: the event matters more, and they can still be
+      // added later from Customize → Custom questions.
+      if (id && questions.length > 0) {
+        try {
+          await fetch(`/api/events/${id}/questions`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              organizer_token: organizerToken,
+              questions: questions.map(({ type, label, options, required }) => ({
+                type,
+                label,
+                options: options.map((o) => o.trim()).filter(Boolean),
+                required,
+              })),
+            }),
+          });
+        } catch { /* skip — see above */ }
+      }
+
       addEvent(slug, name.trim());
       saveUserDisplayName(organizerName.trim());
       clearDraft();
       setLoading(false);
-      return { slug };
+      return { slug, id };
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Something went wrong';
       setError(message);
@@ -255,17 +289,17 @@ export function useEventDraft() {
     }
   }, [eventType, name, organizerName, allDay, fixedDate, fixedEndDate, fixedTime,
       fixedEndTime, selectedDates, timeStart, timeEnd, timezone, location, body,
-      addEvent, clearDraft]);
+      questions, addEvent, clearDraft]);
 
   return {
     // fields
     eventType, name, organizerName, allDay, selectedDates,
     fixedDate, fixedEndDate, fixedTime, fixedEndTime,
-    timeStart, timeEnd, timezone, location, body,
+    timeStart, timeEnd, timezone, location, body, questions,
     // setters
     setEventType, setName, setOrganizerName, setAllDay, setSelectedDates,
     setFixedDate, setFixedEndDate, setFixedTime, setFixedEndTime,
-    setTimeStart, setTimeEnd, setTimezone, setLocation, setBody,
+    setTimeStart, setTimeEnd, setTimezone, setLocation, setBody, setQuestions,
     toggleDate,
     // derived + actions
     stepValid, loading, error, setError, submit, clearDraft,

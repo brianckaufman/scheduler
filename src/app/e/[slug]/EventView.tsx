@@ -69,6 +69,7 @@ export default function EventView({ event: initialEvent, organizerAvatar }: Even
   // Guest progress: has a saved response / has unsaved changes (from grid or RSVP view)
   const [guestResponded, setGuestResponded] = useState(false);
   const [guestPending, setGuestPending] = useState(false);
+  const [guestQuestionsPending, setGuestQuestionsPending] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
   const [participantName, setParticipantName] = useState(() => {
     try {
@@ -85,10 +86,14 @@ export default function EventView({ event: initialEvent, organizerAvatar }: Even
     if (count > 0) setHasSelections(true);
   }, []);
 
-  const handleResponseStateChange = useCallback((responded: boolean, pending: boolean) => {
-    setGuestResponded(responded);
-    setGuestPending(pending);
-  }, []);
+  const handleResponseStateChange = useCallback(
+    (responded: boolean, pending: boolean, questionsPending = false) => {
+      setGuestResponded(responded);
+      setGuestPending(pending);
+      setGuestQuestionsPending(questionsPending);
+    },
+    [],
+  );
 
   useEffect(() => {
     const token = localStorage.getItem(`organizer_${event.slug}`);
@@ -211,6 +216,7 @@ export default function EventView({ event: initialEvent, organizerAvatar }: Even
             eventType={event.event_type}
             responded={guestResponded}
             pending={guestPending}
+            questionsPending={guestQuestionsPending}
           />
         )}
         {/* Logo — per-event logo wins, else the global brand lockup */}

@@ -14,8 +14,14 @@ import BestBlocks from './BestBlocks';
 import AnimatedNumber from './AnimatedNumber';
 import GuestSaveBar from './GuestSaveBar';
 import GuestDoneCard from './GuestDoneCard';
+import GuestQuestions from './GuestQuestions';
+import OrganizerResponses from './OrganizerResponses';
 import HowItWorksModal from './HowItWorksModal';
 import { getTimezoneLabel } from '@/lib/timezones';
+import {
+  csvJoin, csvFilename, downloadCsv, buildAnswerMap, answerCells, dedupeHeaders, type AnswerRow,
+} from '@/lib/csv';
+import type { EventQuestion } from '@/lib/questions';
 import type { Event } from '@/types';
 
 function haptic() {
@@ -33,8 +39,8 @@ interface AllDayGridProps {
   onFinalize?: (startISO: string, endDate: string) => void;
   onMySlotCountChange?: (count: number) => void;
   onParticipantCountChange?: (count: number) => void;
-  /** Reports (savedResponse, unsavedChanges) so the page can show progress. */
-  onResponseStateChange?: (responded: boolean, pending: boolean) => void;
+  /** Reports (savedResponse, unsavedChanges, questionsStillNeeded) so the page can show progress. */
+  onResponseStateChange?: (responded: boolean, pending: boolean, questionsPending?: boolean) => void;
 }
 
 /**
@@ -57,6 +63,28 @@ export default function AllDayGrid({ event, participantId, participantName, isOr
   // Save failures surface in the sticky save bar with a retry, never silently.
   const [saveError, setSaveError] = useState('');
   const [showHow, setShowHow] = useState(false);
+
+  // The host's custom questions, asked once the days are saved.
+  const [questions, setQuestions] = useState<EventQuestion[]>([]);
+  const [qRequiredMet, setQRequiredMet] = useState(true);
+  const [qPending, setQPending] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const questionsRef = useRef<HTMLDivElement>(null);
+  const wasSavedRef = useRef(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`/api/events/${event.id}/questions`)
+      .then((r) => r.json())
+      .then((d) => { if (!cancelled) setQuestions(d.questions ?? []); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [event.id]);
+
+  const handleQuestionsState = useCallback((met: boolean, pending: boolean) => {
+    setQRequiredMet(met);
+    setQPending(pending);
+  }, []);
 
   const [showDayPicker, setShowDayPicker] = useState(false);
   const [showBreakdown, setShowBreakdown] = useState(false);
@@ -97,10 +125,29 @@ export default function AllDayGrid({ event, participantId, participantName, isOr
   useEffect(() => { onMySlotCountChange?.(mySlotCount); }, [mySlotCount, onMySlotCountChange]);
 
   // Report saved/pending state so the page-level progress banner tracks it.
+  // "Done" means days saved AND the host's required questions answered.
   const savedCount = serverMySlots.size;
+  const availabilitySaved = savedCount > 0 && !hasStagedChanges;
+  const questionsBlocking = availabilitySaved && questions.some((q) => q.required) && !qRequiredMet;
+  const fullyDone = availabilitySaved && !questionsBlocking;
+
   useEffect(() => {
-    onResponseStateChange?.(savedCount > 0, hasStagedChanges);
-  }, [savedCount, hasStagedChanges, onResponseStateChange]);
+    onResponseStateChange?.(
+      fullyDone,
+      hasStagedChanges,
+      questionsBlocking || (availabilitySaved && qPending),
+    );
+  }, [fullyDone, hasStagedChanges, questionsBlocking, availabilitySaved, qPending, onResponseStateChange]);
+
+  // Reveal the questions the moment the days land, so they're not missed.
+  useEffect(() => {
+    if (availabilitySaved && !wasSavedRef.current && questions.length > 0) {
+      const t = setTimeout(() => questionsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300);
+      wasSavedRef.current = availabilitySaved;
+      return () => clearTimeout(t);
+    }
+    wasSavedRef.current = availabilitySaved;
+  }, [availabilitySaved, questions.length]);
 
   // Don't let unsaved taps silently vanish on a closed tab.
   useEffect(() => {
@@ -283,44 +330,61 @@ export default function AllDayGrid({ event, participantId, participantName, isOr
       .filter((d) => d.count > 0);
   }, [isOrganizer, showBreakdown, participants, dayKeys, sortedDates, overlapMap]);
 
-  const handleExportCsv = useCallback(() => {
-    const esc = (v: string) => (v.includes(',') || v.includes('"') || v.includes('\n') ? `"${v.replace(/"/g, '""')}"` : v);
-    const rows: string[] = [];
-    rows.push(`Event,${esc(event.name)}`);
-    if (event.organizer_name) rows.push(`Organizer,${esc(event.organizer_name)}`);
-    rows.push(`Dates,${esc(sortedDates.map((d) => format(parseISO(d), 'EEE MMM d yyyy')).join('; '))}`);
-    rows.push(`Timezone,${event.timezone}`);
-    rows.push(
-      event.finalized_time
-        ? `Finalized,${esc(format(new Date(event.finalized_time), 'EEE MMM d yyyy'))}${event.finalized_end_date ? ` to ${esc(format(parseISO(event.finalized_end_date), 'EEE MMM d yyyy'))}` : ''}`
-        : `Finalized,Not yet set`
-    );
-    rows.push(`Total participants,${participants.length}`);
-    rows.push('');
-    rows.push(['Name', ...sortedDates.map((d) => esc(format(parseISO(d), 'EEE MMM d')))].join(','));
-    for (const p of participants) {
-      const pDays = new Set(
-        allSlots.filter((s) => s.participant_id === p.id).map((s) => new Date(s.slot_start).toISOString())
-      );
-      const cells = dayKeys.map((k) => (pDays.has(k) ? '✓' : ''));
-      rows.push([esc(p.name), ...cells].join(','));
+  // One combined file: metadata, the day matrix, and a column per question.
+  const handleExportCsv = useCallback(async () => {
+    setExporting(true);
+    try {
+      let answers: AnswerRow[] = [];
+      if (questions.length > 0 && organizerToken) {
+        try {
+          const r = await fetch(
+            `/api/events/${event.id}/responses?organizer_token=${encodeURIComponent(organizerToken)}`,
+          );
+          answers = (await r.json()).responses ?? [];
+        } catch { /* fall back to availability only */ }
+      }
+      const answerMap = buildAnswerMap(answers);
+      const qHeaders = dedupeHeaders(questions.map((q) => q.label));
+
+      const finalized = event.finalized_time
+        ? `${format(new Date(event.finalized_time), 'EEE MMM d yyyy')}${
+            event.finalized_end_date ? ` to ${format(parseISO(event.finalized_end_date), 'EEE MMM d yyyy')}` : ''
+          }`
+        : 'Not yet set';
+
+      const rows: string[][] = [
+        ['Event', event.name],
+        ...(event.organizer_name ? [['Organizer', event.organizer_name]] : []),
+        ['Dates', sortedDates.map((d) => format(parseISO(d), 'EEE MMM d yyyy')).join('; ')],
+        ['Timezone', event.timezone],
+        ['Finalized', finalized],
+        ['Total participants', String(participants.length)],
+        [],
+        ['Name', 'Days selected', ...sortedDates.map((d) => format(parseISO(d), 'EEE MMM d')), ...qHeaders],
+      ];
+
+      for (const p of participants) {
+        const pDays = new Set(
+          allSlots.filter((s) => s.participant_id === p.id).map((s) => new Date(s.slot_start).toISOString())
+        );
+        rows.push([
+          p.name,
+          String(pDays.size),
+          ...dayKeys.map((k) => (pDays.has(k) ? '✓' : '')),
+          ...answerCells(questions, answerMap, p.id),
+        ]);
+      }
+
+      downloadCsv(csvFilename(event.name, 'availability'), csvJoin(rows));
+    } finally {
+      setExporting(false);
     }
-    const csv = rows.join('\n');
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${event.name.replace(/[^a-zA-Z0-9 ]/g, '').replace(/\s+/g, '-')}-availability.csv`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  }, [allSlots, participants, event, dayKeys, sortedDates]);
+  }, [allSlots, participants, event, dayKeys, sortedDates, questions, organizerToken]);
 
   return (
     <div className="space-y-6" onMouseUp={handleDragEnd} onMouseLeave={handleDragEnd}>
       {/* Persistent "you're done" confirmation — guests with saved days */}
-      {!isOrganizer && !event.finalized_time && savedCount > 0 && !hasStagedChanges && !saveError && (
+      {!isOrganizer && !event.finalized_time && fullyDone && !saveError && (
         <GuestDoneCard
           event={event}
           participantId={participantId}
@@ -450,6 +514,19 @@ export default function AllDayGrid({ event, participantId, participantName, isOr
           );
         })}
       </div>
+
+      {/* The host's questions — asked once the days are saved */}
+      {questions.length > 0 && availabilitySaved && !event.finalized_time && (
+        <div ref={questionsRef}>
+          <GuestQuestions
+            eventId={event.id}
+            participantId={participantId}
+            questions={questions}
+            organizerName={event.organizer_name}
+            onStateChange={handleQuestionsState}
+          />
+        </div>
+      )}
 
       {/* Sticky save bar — always visible until the guest has saved */}
       {!event.finalized_time && (
@@ -629,16 +706,23 @@ export default function AllDayGrid({ event, participantId, participantName, isOr
           </div>
         )}
 
+        {isOrganizer && organizerToken && questions.length > 0 && (
+          <div className="w-full">
+            <OrganizerResponses eventId={event.id} organizerToken={organizerToken} questions={questions} />
+          </div>
+        )}
+
         {isOrganizer && participants.length > 0 && (
           <button
             type="button"
             onClick={handleExportCsv}
-            className="inline-flex items-center gap-1.5 text-xs text-faint hover:text-teal-600 transition-colors cursor-pointer"
+            disabled={exporting}
+            className="inline-flex items-center gap-1.5 text-xs text-faint hover:text-teal-600 disabled:opacity-60 transition-colors cursor-pointer"
           >
             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
-            Export CSV
+            {exporting ? 'Preparing…' : 'Export CSV'}
           </button>
         )}
       </div>

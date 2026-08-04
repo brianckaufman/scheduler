@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useCopy } from '@/contexts/CopyContext';
 import { useMonetization } from '@/contexts/MonetizationContext';
 import SupportBanner from './SupportBanner';
@@ -22,6 +22,9 @@ import { formatDisplayName, firstName } from '@/lib/names';
 import { buildInviteText } from '@/lib/invite';
 import { parseLocation, locationLabel } from '@/lib/location';
 import { buildICS } from '@/lib/calendar';
+import {
+  csvJoin, csvFilename, downloadCsv, buildAnswerMap, answerCells, dedupeHeaders, type AnswerRow,
+} from '@/lib/csv';
 import { formatEventDateRange } from '@/lib/dateRange';
 import type { Event, RsvpValue } from '@/types';
 
@@ -31,8 +34,8 @@ interface RSVPViewProps {
   participantName?: string;
   isOrganizer: boolean;
   organizerToken?: string | null;
-  /** Reports (savedResponse, unsavedChanges) so the page can show progress. */
-  onResponseStateChange?: (responded: boolean, pending: boolean) => void;
+  /** Reports (savedResponse, unsavedChanges, questionsStillNeeded) so the page can show progress. */
+  onResponseStateChange?: (responded: boolean, pending: boolean, questionsPending?: boolean) => void;
 }
 
 // ── Face icon SVGs ──────────────────────────────────────────────────────────
@@ -327,6 +330,12 @@ export default function RSVPView({ event, participantId, participantName, isOrga
   const [questions, setQuestions] = useState<EventQuestion[]>([]);
   const [guestSavedFlash, setGuestSavedFlash] = useState(false);
   const [showHow, setShowHow] = useState(false);
+  const [qRequiredMet, setQRequiredMet] = useState(true);
+  const [exporting, setExporting] = useState(false);
+  const questionsRef = useRef<HTMLDivElement>(null);
+  const celebratedRef = useRef(false);
+
+  const handleQuestionsState = useCallback((met: boolean) => setQRequiredMet(met), []);
 
   useEffect(() => {
     fetch(`/api/events/${event.id}/questions`)
@@ -338,11 +347,39 @@ export default function RSVPView({ event, participantId, participantName, isOrga
   const me = participants.find((p) => p.id === participantId);
   const myRsvp: RsvpValue | null = optimisticRsvp ?? me?.rsvp ?? null;
 
-  // Report answered-state so the page-level progress banner tracks it.
   const savedRsvp = me?.rsvp ?? null;
+
+  // Questions only apply once they're coming (or might be), and only block
+  // completion when at least one is required.
+  const hasRequiredQuestion = questions.some((q) => q.required);
+  const questionsApply = questions.length > 0 && (myRsvp === 'yes' || myRsvp === 'maybe');
+  const questionsBlocking = questionsApply && hasRequiredQuestion && !qRequiredMet;
+
+  // Report answered-state so the page-level progress banner tracks it. Not
+  // "responded" until the host's required questions are answered too.
   useEffect(() => {
-    onResponseStateChange?.(!!savedRsvp, false);
-  }, [savedRsvp, onResponseStateChange]);
+    onResponseStateChange?.(!!savedRsvp && !questionsBlocking, false, questionsBlocking);
+  }, [savedRsvp, questionsBlocking, onResponseStateChange]);
+
+  // Celebrate at the real finish line. Without this, "You're in! 🎉" fires on
+  // the RSVP tap — before the required questions have even rendered.
+  useEffect(() => {
+    if (!savedRsvp || questionsBlocking || celebratedRef.current) return;
+    if (!hasRequiredQuestion) return;
+    if (savedRsvp !== 'yes' && savedRsvp !== 'maybe') return;
+    celebratedRef.current = true;
+    setModalRsvp(savedRsvp);
+    if (savedRsvp === 'yes' && getModules(event).confetti) setShowConfetti(true);
+  }, [savedRsvp, questionsBlocking, hasRequiredQuestion, event]);
+
+  // Bring the questions into view the moment they appear, so they're never
+  // stranded below the fold after the guest taps their answer.
+  useEffect(() => {
+    if (questionsApply) {
+      const t = setTimeout(() => questionsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300);
+      return () => clearTimeout(t);
+    }
+  }, [questionsApply]);
 
   // Keep the homepage "Joined" entry's RSVP status in sync. Skip the organizer's
   // own event (it lives under their own events, not the joined list).
@@ -401,9 +438,13 @@ export default function RSVPView({ event, participantId, participantName, isOrga
         setCapacityError(d.error || 'Could not save your RSVP. Please try again.');
         return;
       }
-      // Confirmation modal + confetti only after a confirmed save.
-      setModalRsvp(value);
-      if (value === 'yes' && getModules(event).confetti) setShowConfetti(true);
+      // Confirmation modal + confetti only after a confirmed save — and only
+      // if there's nothing left to ask. When required questions exist, the
+      // effect above celebrates once those are answered instead.
+      if (!hasRequiredQuestion) {
+        setModalRsvp(value);
+        if (value === 'yes' && getModules(event).confetti) setShowConfetti(true);
+      }
       setOptimisticRsvp(null);
     } catch {
       setOptimisticRsvp(null);
@@ -411,7 +452,7 @@ export default function RSVPView({ event, participantId, participantName, isOrga
     } finally {
       setSaving(false);
     }
-  }, [participantId, event.id, saving, myGuests]);
+  }, [participantId, event.id, saving, myGuests, hasRequiredQuestion, event]);
 
   const handleGuestChange = useCallback(async (delta: number) => {
     const current = optimisticGuests ?? me?.guest_count ?? 0;
@@ -501,6 +542,57 @@ export default function RSVPView({ event, participantId, participantName, isOrga
   const cant    = sortByName(participants.filter((p) => p.rsvp === 'no'));
   const pending = sortByName(participants.filter((p) => !p.rsvp));
 
+  // One combined file: who replied what, plus a column per custom question.
+  const handleExportCsv = async () => {
+    setExporting(true);
+    try {
+      let answers: AnswerRow[] = [];
+      if (questions.length > 0 && organizerToken) {
+        try {
+          const r = await fetch(
+            `/api/events/${event.id}/responses?organizer_token=${encodeURIComponent(organizerToken)}`,
+          );
+          answers = (await r.json()).responses ?? [];
+        } catch { /* fall back to RSVPs only */ }
+      }
+      const answerMap = buildAnswerMap(answers);
+      const qHeaders = dedupeHeaders(questions.map((q) => q.label));
+
+      const rows: string[][] = [
+        ['Event', event.name],
+        ...(event.organizer_name ? [['Organizer', event.organizer_name]] : []),
+        ['Date', event.finalized_time
+          ? formatEventDateRange(event.finalized_time, event.finalized_end_date, !!event.all_day)
+          : 'Not set'],
+        ['Timezone', event.timezone],
+        ...(event.location ? [['Location', locationLabel(parseLocation(event.location))]] : []),
+        ['Total invited', String(participants.length)],
+        ['Going', String(going.length)],
+        ['Maybe', String(maybe.length)],
+        ["Can't make it", String(cant.length)],
+        ['No response', String(pending.length)],
+        [],
+        ['Name', 'Response', 'Extra guests', ...qHeaders],
+      ];
+
+      const label: Record<string, string> = {
+        yes: 'Going', maybe: 'Maybe', no: "Can't make it",
+      };
+      for (const p of [...going, ...maybe, ...cant, ...pending]) {
+        rows.push([
+          p.name,
+          p.rsvp ? label[p.rsvp] ?? p.rsvp : 'No response',
+          String(p.guest_count ?? 0),
+          ...answerCells(questions, answerMap, p.id),
+        ]);
+      }
+
+      downloadCsv(csvFilename(event.name, 'rsvps'), csvJoin(rows));
+    } finally {
+      setExporting(false);
+    }
+  };
+
   // When the organizer hides the guest list, only they see the names; everyone
   // else still sees the aggregate totals.
   const canSeeNames = isOrganizer || !event.hide_guest_list;
@@ -543,7 +635,7 @@ export default function RSVPView({ event, participantId, participantName, isOrga
 
       <div className="space-y-5">
         {/* Persistent "you're done" confirmation — guests who have answered */}
-        {!isOrganizer && savedRsvp && !optimisticRsvp && (
+        {!isOrganizer && savedRsvp && !optimisticRsvp && !questionsBlocking && (
           <GuestDoneCard
             event={event}
             participantId={participantId}
@@ -658,13 +750,36 @@ export default function RSVPView({ event, participantId, participantName, isOrga
         )}
 
         {/* Custom questions — guests answer once they're going/maybe */}
-        {questions.length > 0 && participantId && (myRsvp === 'yes' || myRsvp === 'maybe') && (
-          <GuestQuestions eventId={event.id} participantId={participantId} questions={questions} />
+        {questionsApply && participantId && (
+          <div ref={questionsRef}>
+            <GuestQuestions
+              eventId={event.id}
+              participantId={participantId}
+              questions={questions}
+              organizerName={event.organizer_name}
+              onStateChange={handleQuestionsState}
+            />
+          </div>
         )}
 
         {/* Organizer: collapsible view of all answers */}
         {questions.length > 0 && isOrganizer && organizerToken && (
           <OrganizerResponses eventId={event.id} organizerToken={organizerToken} questions={questions} />
+        )}
+
+        {/* Organizer: download everyone's replies (and answers) as one file */}
+        {isOrganizer && organizerToken && participants.length > 0 && (
+          <button
+            type="button"
+            onClick={handleExportCsv}
+            disabled={exporting}
+            className="inline-flex items-center gap-1.5 text-xs text-faint hover:text-teal-600 disabled:opacity-60 transition-colors cursor-pointer"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            {exporting ? 'Preparing…' : 'Export CSV'}
+          </button>
         )}
 
         {/* Who's coming — social proof, demoted below the guest's own job */}
