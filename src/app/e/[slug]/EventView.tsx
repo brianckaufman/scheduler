@@ -203,8 +203,10 @@ export default function EventView({ event: initialEvent, organizerAvatar }: Even
       )}
       {showCelebration && <ConfettiCelebration onComplete={() => setShowCelebration(false)} />}
       <div className="max-w-lg mx-auto px-4 py-6 relative z-10">
-        {/* Guest progress guide — always tells a guest where they are */}
-        {!isOrganizer && !event.finalized_time && (
+        {/* Guest progress guide — always tells a guest where they are.
+            Fixed events always carry finalized_time (it's their event date),
+            so only availability events hide the banner once finalized. */}
+        {!isOrganizer && (isFixed || !event.finalized_time) && (
           <GuestProgressBanner
             eventType={event.event_type}
             responded={guestResponded}

@@ -28,7 +28,7 @@ export default function GuestProgressBanner({ eventType, responded, pending, }: 
 
   return (
     <div
-      className={`sticky top-0 z-40 -mx-4 px-4 py-2.5 text-center text-sm font-semibold backdrop-blur border-b transition-colors ${
+      className={`sticky top-0 z-40 -mx-4 px-20 py-2.5 text-center text-sm font-semibold backdrop-blur border-b transition-colors ${
         done
           ? 'bg-green-50/95 dark:bg-[#112D25]/95 text-green-800 dark:text-green-300 border-green-200 dark:border-[#123428]'
           : pending
