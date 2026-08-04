@@ -13,6 +13,9 @@ import TimeGridSlot, { PARTICIPANT_COLORS } from './TimeGridSlot';
 import BestTimes from './BestTimes';
 import AnimatedNumber from './AnimatedNumber';
 import SlotTooltip from './SlotTooltip';
+import GuestSaveBar from './GuestSaveBar';
+import GuestDoneCard from './GuestDoneCard';
+import HowItWorksModal from './HowItWorksModal';
 import { getTimezoneLabel } from '@/lib/timezones';
 import type { Event } from '@/types';
 
@@ -26,14 +29,17 @@ function haptic() {
 interface TimeGridProps {
   event: Event;
   participantId: string;
+  participantName?: string;
   isOrganizer?: boolean;
   organizerToken?: string | null;
   onFinalize?: (time: string) => void;
   onMySlotCountChange?: (count: number) => void;
   onParticipantCountChange?: (count: number) => void;
+  /** Reports (savedResponse, unsavedChanges) so the page can show progress. */
+  onResponseStateChange?: (responded: boolean, pending: boolean) => void;
 }
 
-export default function TimeGrid({ event, participantId, isOrganizer, organizerToken, onFinalize, onMySlotCountChange, onParticipantCountChange }: TimeGridProps) {
+export default function TimeGrid({ event, participantId, participantName, isOrganizer, organizerToken, onFinalize, onMySlotCountChange, onParticipantCountChange, onResponseStateChange }: TimeGridProps) {
   const copy = useCopy();
   const { slots: allSlots, removeByParticipant: removeSlotsForParticipant } = useRealtimeSlots(event.id);
   const { participants, removeParticipant } = useRealtimeParticipants(event.id);
@@ -52,9 +58,10 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
   const [activeDay, setActiveDay] = useState<number>(0);
   const [isMobile, setIsMobile] = useState(false);
 
-  // "Availability saved" confirmation toast
-  const [showSavedToast, setShowSavedToast] = useState(false);
-  const savedToastTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  // Save failures surface in the sticky save bar with a retry, never silently.
+  const [saveError, setSaveError] = useState('');
+  // "How does this work?" modal — reopenable from the done card.
+  const [showHow, setShowHow] = useState(false);
 
   // Time picker modal (organizer only)
   const [showTimePicker, setShowTimePicker] = useState(false);
@@ -77,8 +84,6 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
     return () => window.removeEventListener('resize', check);
   }, []);
 
-  // Clean up toast timer on unmount
-  useEffect(() => () => clearTimeout(savedToastTimer.current), []);
 
   const durationMinutes = event.duration_minutes || 30;
 
@@ -140,6 +145,20 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
     onMySlotCountChange?.(mySlotCount);
   }, [mySlotCount, onMySlotCountChange]);
 
+  // Report saved/pending state so the page-level progress banner tracks it.
+  const savedCount = serverMySlots.size;
+  useEffect(() => {
+    onResponseStateChange?.(savedCount > 0, hasStagedChanges);
+  }, [savedCount, hasStagedChanges, onResponseStateChange]);
+
+  // Don't let unsaved taps silently vanish on a closed tab.
+  useEffect(() => {
+    if (!hasStagedChanges) return;
+    const warn = (e: BeforeUnloadEvent) => { e.preventDefault(); };
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, [hasStagedChanges]);
+
   // Report participant count to parent (for celebration component)
   const participantCount = participants.length;
   useEffect(() => {
@@ -177,6 +196,7 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
   const handleSave = useCallback(async () => {
     if (isSaving || !hasStagedChanges) return;
     setIsSaving(true);
+    setSaveError('');
 
     const supabase = createClient();
     // Only insert slots not already in DB; only delete slots that are in DB
@@ -211,12 +231,9 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
 
       setStagedAdds(new Set());
       setStagedRemoves(new Set());
-
-      setShowSavedToast(true);
-      clearTimeout(savedToastTimer.current);
-      savedToastTimer.current = setTimeout(() => setShowSavedToast(false), 3000);
     } catch (err) {
       console.error('Save failed:', err);
+      setSaveError("Couldn't save your times — check your connection.");
     } finally {
       setIsSaving(false);
     }
@@ -418,6 +435,18 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
 
   return (
     <div className="space-y-6" onMouseUp={handleDragEnd} onMouseLeave={handleDragEnd}>
+      {/* Persistent "you're done" confirmation — guests with saved availability */}
+      {!isOrganizer && !event.finalized_time && savedCount > 0 && !hasStagedChanges && !saveError && (
+        <GuestDoneCard
+          event={event}
+          participantId={participantId}
+          participantName={participantName || ''}
+          savedCount={savedCount}
+          mode="times"
+          onShowHow={() => setShowHow(true)}
+        />
+      )}
+
       {/* Always-visible status notice */}
       {overlapStatus === 'waiting' && !event.finalized_time && (
         <div className="animate-fade-in bg-subtle rounded-xl px-4 py-3 space-y-2">
@@ -511,6 +540,14 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
               {format(parseISO(date), 'EEE M/d')}
             </button>
           ))}
+        </div>
+      )}
+
+      {/* What to do here — the single most important instruction on the page */}
+      {!event.finalized_time && (
+        <div className="text-center -mb-2">
+          <h2 className="text-base font-bold text-heading">{copy.event.tap_instruction}</h2>
+          <p className="text-xs text-muted mt-0.5">Tap once to mark yourself free — tap again to undo.</p>
         </div>
       )}
 
@@ -645,41 +682,17 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
         />
       )}
 
-      {/* Save my availability — visible when there are unsaved staged changes */}
-      {hasStagedChanges && !event.finalized_time && (
-        <div className="animate-fade-in-scale space-y-1.5">
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={isSaving}
-            className="w-full py-3.5 bg-teal-500 hover:bg-teal-600 text-white font-semibold rounded-2xl text-base shadow-md hover:shadow-lg transition-all duration-200 active:scale-95 cursor-pointer disabled:opacity-60 flex items-center justify-center gap-2"
-          >
-            {isSaving ? (
-              <>
-                <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                </svg>
-                Saving…
-              </>
-            ) : (
-              <>
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                </svg>
-                Save my availability
-              </>
-            )}
-          </button>
-          <p className="text-center text-xs text-faint">
-            {stagedAdds.size > 0 && stagedRemoves.size === 0 &&
-              `${stagedAdds.size} time${stagedAdds.size !== 1 ? 's' : ''} selected — not saved yet`}
-            {stagedAdds.size === 0 && stagedRemoves.size > 0 &&
-              `${stagedRemoves.size} time${stagedRemoves.size !== 1 ? 's' : ''} removed — not saved yet`}
-            {stagedAdds.size > 0 && stagedRemoves.size > 0 &&
-              `${stagedAdds.size} added, ${stagedRemoves.size} removed — not saved yet`}
-          </p>
-        </div>
+      {/* Sticky save bar — always visible until the guest has saved */}
+      {!event.finalized_time && (
+        <GuestSaveBar
+          mode="times"
+          savedCount={savedCount}
+          addedCount={stagedAdds.size}
+          removedCount={stagedRemoves.size}
+          isSaving={isSaving}
+          error={saveError}
+          onSave={handleSave}
+        />
       )}
 
       {/* Time Picker Modal (organizer only) */}
@@ -891,17 +904,8 @@ export default function TimeGrid({ event, participantId, isOrganizer, organizerT
         )}
       </div>
 
-      {/* "Availability saved" floating toast — shows after each successful save */}
-      {showSavedToast && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 pointer-events-none animate-fade-in-scale">
-          <div className="flex items-center gap-2 px-4 py-2.5 bg-[#101828] dark:bg-[#232B36] text-white text-sm font-medium rounded-full shadow-lg whitespace-nowrap">
-            <svg className="w-4 h-4 text-[#3ADB65] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-            </svg>
-            Availability saved
-          </div>
-        </div>
-      )}
+      {/* Reopenable instructions */}
+      {showHow && <HowItWorksModal event={event} onClose={() => setShowHow(false)} />}
     </div>
   );
 }

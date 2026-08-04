@@ -12,6 +12,9 @@ import TimeGridSlot, { PARTICIPANT_COLORS } from './TimeGridSlot';
 import BestDays from './BestDays';
 import BestBlocks from './BestBlocks';
 import AnimatedNumber from './AnimatedNumber';
+import GuestSaveBar from './GuestSaveBar';
+import GuestDoneCard from './GuestDoneCard';
+import HowItWorksModal from './HowItWorksModal';
 import { getTimezoneLabel } from '@/lib/timezones';
 import type { Event } from '@/types';
 
@@ -24,11 +27,14 @@ function haptic() {
 interface AllDayGridProps {
   event: Event;
   participantId: string;
+  participantName?: string;
   isOrganizer?: boolean;
   organizerToken?: string | null;
   onFinalize?: (startISO: string, endDate: string) => void;
   onMySlotCountChange?: (count: number) => void;
   onParticipantCountChange?: (count: number) => void;
+  /** Reports (savedResponse, unsavedChanges) so the page can show progress. */
+  onResponseStateChange?: (responded: boolean, pending: boolean) => void;
 }
 
 /**
@@ -36,7 +42,7 @@ interface AllDayGridProps {
  * is one calendar day (not a date×time matrix), reusing TimeGridSlot (already
  * generic over slot keys) for the actual toggle/heat-map cell.
  */
-export default function AllDayGrid({ event, participantId, isOrganizer, organizerToken, onFinalize, onMySlotCountChange, onParticipantCountChange }: AllDayGridProps) {
+export default function AllDayGrid({ event, participantId, participantName, isOrganizer, organizerToken, onFinalize, onMySlotCountChange, onParticipantCountChange, onResponseStateChange }: AllDayGridProps) {
   const { slots: allSlots, removeByParticipant: removeSlotsForParticipant } = useRealtimeSlots(event.id);
   const { participants, removeParticipant } = useRealtimeParticipants(event.id);
 
@@ -48,15 +54,14 @@ export default function AllDayGrid({ event, participantId, isOrganizer, organize
   const [dragMode, setDragMode] = useState<'add' | 'remove'>('add');
   const draggedSlots = useRef<Set<string>>(new Set());
 
-  const [showSavedToast, setShowSavedToast] = useState(false);
-  const savedToastTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  // Save failures surface in the sticky save bar with a retry, never silently.
+  const [saveError, setSaveError] = useState('');
+  const [showHow, setShowHow] = useState(false);
 
   const [showDayPicker, setShowDayPicker] = useState(false);
   const [showBreakdown, setShowBreakdown] = useState(false);
   const [showAllParticipants, setShowAllParticipants] = useState(false);
   const [showParticipants, setShowParticipants] = useState(true);
-
-  useEffect(() => () => clearTimeout(savedToastTimer.current), []);
 
   // Sorted 'yyyy-MM-dd' dates, kept parallel with dayKeys below (index i in
   // sortedDates corresponds to index i in dayKeys) so a finalized range can be
@@ -91,6 +96,20 @@ export default function AllDayGrid({ event, participantId, isOrganizer, organize
   const mySlotCount = mySlots.size;
   useEffect(() => { onMySlotCountChange?.(mySlotCount); }, [mySlotCount, onMySlotCountChange]);
 
+  // Report saved/pending state so the page-level progress banner tracks it.
+  const savedCount = serverMySlots.size;
+  useEffect(() => {
+    onResponseStateChange?.(savedCount > 0, hasStagedChanges);
+  }, [savedCount, hasStagedChanges, onResponseStateChange]);
+
+  // Don't let unsaved taps silently vanish on a closed tab.
+  useEffect(() => {
+    if (!hasStagedChanges) return;
+    const warn = (e: BeforeUnloadEvent) => { e.preventDefault(); };
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, [hasStagedChanges]);
+
   const totalParticipants = participants.length;
   useEffect(() => { onParticipantCountChange?.(totalParticipants); }, [totalParticipants, onParticipantCountChange]);
 
@@ -117,6 +136,7 @@ export default function AllDayGrid({ event, participantId, isOrganizer, organize
   const handleSave = useCallback(async () => {
     if (isSaving || !hasStagedChanges) return;
     setIsSaving(true);
+    setSaveError('');
     const supabase = createClient();
     const toInsert = [...stagedAdds].filter((s) => !serverMySlots.has(s));
     const toDelete = [...stagedRemoves].filter((s) => serverMySlots.has(s));
@@ -139,11 +159,9 @@ export default function AllDayGrid({ event, participantId, isOrganizer, organize
       }
       setStagedAdds(new Set());
       setStagedRemoves(new Set());
-      setShowSavedToast(true);
-      clearTimeout(savedToastTimer.current);
-      savedToastTimer.current = setTimeout(() => setShowSavedToast(false), 3000);
     } catch (err) {
       console.error('Save failed:', err);
+      setSaveError("Couldn't save your days — check your connection.");
     } finally {
       setIsSaving(false);
     }
@@ -301,6 +319,18 @@ export default function AllDayGrid({ event, participantId, isOrganizer, organize
 
   return (
     <div className="space-y-6" onMouseUp={handleDragEnd} onMouseLeave={handleDragEnd}>
+      {/* Persistent "you're done" confirmation — guests with saved days */}
+      {!isOrganizer && !event.finalized_time && savedCount > 0 && !hasStagedChanges && !saveError && (
+        <GuestDoneCard
+          event={event}
+          participantId={participantId}
+          participantName={participantName || ''}
+          savedCount={savedCount}
+          mode="days"
+          onShowHow={() => setShowHow(true)}
+        />
+      )}
+
       {overlapStatus === 'waiting' && !event.finalized_time && (
         <div className="animate-fade-in bg-subtle rounded-xl px-4 py-3 space-y-2">
           <div className="flex items-center justify-center gap-3 text-sm text-muted">
@@ -361,6 +391,14 @@ export default function AllDayGrid({ event, participantId, isOrganizer, organize
         </div>
       )}
 
+      {/* What to do here — the single most important instruction on the page */}
+      {!event.finalized_time && (
+        <div className="text-center -mb-2">
+          <h2 className="text-base font-bold text-heading">Tap the days you&apos;re free</h2>
+          <p className="text-xs text-muted mt-0.5">Tap once to mark yourself free — tap again to undo.</p>
+        </div>
+      )}
+
       <div className="flex items-center justify-center gap-1.5 text-xs font-medium text-muted bg-subtle rounded-lg px-3 py-1.5 self-center mx-auto">
         <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -413,40 +451,17 @@ export default function AllDayGrid({ event, participantId, isOrganizer, organize
         })}
       </div>
 
-      {hasStagedChanges && !event.finalized_time && (
-        <div className="animate-fade-in-scale space-y-1.5">
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={isSaving}
-            className="w-full py-3.5 bg-teal-500 hover:bg-teal-600 text-white font-semibold rounded-2xl text-base shadow-md hover:shadow-lg transition-all duration-200 active:scale-95 cursor-pointer disabled:opacity-60 flex items-center justify-center gap-2"
-          >
-            {isSaving ? (
-              <>
-                <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                </svg>
-                Saving…
-              </>
-            ) : (
-              <>
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                </svg>
-                Save my availability
-              </>
-            )}
-          </button>
-          <p className="text-center text-xs text-faint">
-            {stagedAdds.size > 0 && stagedRemoves.size === 0 &&
-              `${stagedAdds.size} day${stagedAdds.size !== 1 ? 's' : ''} selected — not saved yet`}
-            {stagedAdds.size === 0 && stagedRemoves.size > 0 &&
-              `${stagedRemoves.size} day${stagedRemoves.size !== 1 ? 's' : ''} removed — not saved yet`}
-            {stagedAdds.size > 0 && stagedRemoves.size > 0 &&
-              `${stagedAdds.size} added, ${stagedRemoves.size} removed — not saved yet`}
-          </p>
-        </div>
+      {/* Sticky save bar — always visible until the guest has saved */}
+      {!event.finalized_time && (
+        <GuestSaveBar
+          mode="days"
+          savedCount={savedCount}
+          addedCount={stagedAdds.size}
+          removedCount={stagedRemoves.size}
+          isSaving={isSaving}
+          error={saveError}
+          onSave={handleSave}
+        />
       )}
 
       {/* Day-picker modal (organizer only) */}
@@ -628,16 +643,8 @@ export default function AllDayGrid({ event, participantId, isOrganizer, organize
         )}
       </div>
 
-      {showSavedToast && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 pointer-events-none animate-fade-in-scale">
-          <div className="flex items-center gap-2 px-4 py-2.5 bg-[#101828] dark:bg-[#232B36] text-white text-sm font-medium rounded-full shadow-lg whitespace-nowrap">
-            <svg className="w-4 h-4 text-[#3ADB65] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-            </svg>
-            Availability saved
-          </div>
-        </div>
-      )}
+      {/* Reopenable instructions */}
+      {showHow && <HowItWorksModal event={event} onClose={() => setShowHow(false)} />}
     </div>
   );
 }

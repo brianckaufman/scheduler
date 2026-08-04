@@ -23,6 +23,7 @@ import { getModules } from '@/lib/eventConfig';
 import { parseLocation } from '@/lib/location';
 import { formatEventDateRange } from '@/lib/dateRange';
 import FinalizedBanner from '@/components/FinalizedBanner';
+import GuestProgressBanner from '@/components/GuestProgressBanner';
 import EditEventModal from '@/components/EditEventModal';
 import SkeletonLoader from '@/components/SkeletonLoader';
 import SupportBanner from '@/components/SupportBanner';
@@ -65,6 +66,9 @@ export default function EventView({ event: initialEvent, organizerAvatar }: Even
   const gridRef = useRef<HTMLDivElement>(null);
   const [justJoined, setJustJoined] = useState(false);
   const [hasSelections, setHasSelections] = useState(false);
+  // Guest progress: has a saved response / has unsaved changes (from grid or RSVP view)
+  const [guestResponded, setGuestResponded] = useState(false);
+  const [guestPending, setGuestPending] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
   const [participantName, setParticipantName] = useState(() => {
     try {
@@ -79,6 +83,11 @@ export default function EventView({ event: initialEvent, organizerAvatar }: Even
 
   const handleSlotCountChange = useCallback((count: number) => {
     if (count > 0) setHasSelections(true);
+  }, []);
+
+  const handleResponseStateChange = useCallback((responded: boolean, pending: boolean) => {
+    setGuestResponded(responded);
+    setGuestPending(pending);
   }, []);
 
   useEffect(() => {
@@ -194,6 +203,14 @@ export default function EventView({ event: initialEvent, organizerAvatar }: Even
       )}
       {showCelebration && <ConfettiCelebration onComplete={() => setShowCelebration(false)} />}
       <div className="max-w-lg mx-auto px-4 py-6 relative z-10">
+        {/* Guest progress guide — always tells a guest where they are */}
+        {!isOrganizer && !event.finalized_time && (
+          <GuestProgressBanner
+            eventType={event.event_type}
+            responded={guestResponded}
+            pending={guestPending}
+          />
+        )}
         {/* Logo — per-event logo wins, else the global brand lockup */}
         {(event.logo_url || branding.logo_url) && (
           <div className="mb-4 flex justify-center">
@@ -435,13 +452,16 @@ export default function EventView({ event: initialEvent, organizerAvatar }: Even
             <RSVPView
               event={event}
               participantId={participantId}
+              participantName={participantName}
               isOrganizer={isOrganizer}
               organizerToken={localStorage.getItem(`organizer_${event.slug}`)}
+              onResponseStateChange={handleResponseStateChange}
             />
           ) : event.all_day ? (
             <AllDayGrid
               event={event}
               participantId={participantId}
+              participantName={participantName}
               isOrganizer={isOrganizer}
               organizerToken={localStorage.getItem(`organizer_${event.slug}`)}
               onFinalize={(startISO, endDate) => {
@@ -450,11 +470,13 @@ export default function EventView({ event: initialEvent, organizerAvatar }: Even
                 setShowCelebration(true);
               }}
               onMySlotCountChange={handleSlotCountChange}
+              onResponseStateChange={handleResponseStateChange}
             />
           ) : (
             <TimeGrid
               event={event}
               participantId={participantId}
+              participantName={participantName}
               isOrganizer={isOrganizer}
               organizerToken={localStorage.getItem(`organizer_${event.slug}`)}
               onFinalize={(time) => {
@@ -463,6 +485,7 @@ export default function EventView({ event: initialEvent, organizerAvatar }: Even
                 setShowCelebration(true);
               }}
               onMySlotCountChange={handleSlotCountChange}
+              onResponseStateChange={handleResponseStateChange}
             />
           )}
         </div>

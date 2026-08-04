@@ -11,6 +11,8 @@ import { UsersIcon, PlusIcon, MinusIcon } from './ui/icons';
 import AttendeeStack from './modules/AttendeeStack';
 import RsvpProgress from './modules/RsvpProgress';
 import GuestQuestions from './GuestQuestions';
+import GuestDoneCard from './GuestDoneCard';
+import HowItWorksModal from './HowItWorksModal';
 import OrganizerResponses from './OrganizerResponses';
 import { getModules } from '@/lib/eventConfig';
 import type { EventQuestion } from '@/lib/questions';
@@ -26,8 +28,11 @@ import type { Event, RsvpValue } from '@/types';
 interface RSVPViewProps {
   event: Event;
   participantId: string;
+  participantName?: string;
   isOrganizer: boolean;
   organizerToken?: string | null;
+  /** Reports (savedResponse, unsavedChanges) so the page can show progress. */
+  onResponseStateChange?: (responded: boolean, pending: boolean) => void;
 }
 
 // ── Face icon SVGs ──────────────────────────────────────────────────────────
@@ -261,6 +266,15 @@ function RsvpModal({
               </button>
             </div>
 
+            {/* Done — a clear, obvious way out (the × alone was easy to miss) */}
+            <button
+              type="button"
+              onClick={onClose}
+              className="w-full py-3.5 px-4 bg-teal-500 hover:bg-teal-600 text-white text-base font-semibold rounded-xl transition-all duration-200 active:scale-[0.97] cursor-pointer"
+            >
+              Done
+            </button>
+
             {/* Divider */}
             <div className="border-t border-hairline-soft" />
 
@@ -274,7 +288,7 @@ function RsvpModal({
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
                 </svg>
-                Start your own event — it's free
+                Start your own event — it&apos;s free
               </a>
 
               {monetization.buymeacoffee_url && monetization.show_on_rsvp && (
@@ -297,7 +311,7 @@ function RsvpModal({
 
 // ── Main component ───────────────────────────────────────────────────────────
 
-export default function RSVPView({ event, participantId, isOrganizer, organizerToken }: RSVPViewProps) {
+export default function RSVPView({ event, participantId, participantName, isOrganizer, organizerToken, onResponseStateChange }: RSVPViewProps) {
   const copy = useCopy();
   const rsvpCopy = copy.rsvp;
   const { participants, removeParticipant } = useRealtimeParticipants(event.id);
@@ -311,6 +325,8 @@ export default function RSVPView({ event, participantId, isOrganizer, organizerT
   const [optimisticGuests, setOptimisticGuests] = useState<number | null>(null);
   const [capacityError, setCapacityError] = useState<string | null>(null);
   const [questions, setQuestions] = useState<EventQuestion[]>([]);
+  const [guestSavedFlash, setGuestSavedFlash] = useState(false);
+  const [showHow, setShowHow] = useState(false);
 
   useEffect(() => {
     fetch(`/api/events/${event.id}/questions`)
@@ -321,6 +337,12 @@ export default function RSVPView({ event, participantId, isOrganizer, organizerT
 
   const me = participants.find((p) => p.id === participantId);
   const myRsvp: RsvpValue | null = optimisticRsvp ?? me?.rsvp ?? null;
+
+  // Report answered-state so the page-level progress banner tracks it.
+  const savedRsvp = me?.rsvp ?? null;
+  useEffect(() => {
+    onResponseStateChange?.(!!savedRsvp, false);
+  }, [savedRsvp, onResponseStateChange]);
 
   // Keep the homepage "Joined" entry's RSVP status in sync. Skip the organizer's
   // own event (it lives under their own events, not the joined list).
@@ -410,8 +432,12 @@ export default function RSVPView({ event, participantId, isOrganizer, organizerT
         return;
       }
       setOptimisticGuests(null);
+      // Visible confirmation — this control auto-saves, so say so.
+      setGuestSavedFlash(true);
+      setTimeout(() => setGuestSavedFlash(false), 2000);
     } catch {
       setOptimisticGuests(null);
+      setCapacityError('Could not update your guest count.');
     }
   }, [participantId, event.id, me?.guest_count, optimisticGuests, maxGuestsForMe]);
 
@@ -516,47 +542,20 @@ export default function RSVPView({ event, participantId, isOrganizer, organizerT
       {showConfetti && <ConfettiCelebration onComplete={() => setShowConfetti(false)} />}
 
       <div className="space-y-5">
-        {/* Going summary — overlapping avatars + count (privacy-aware) */}
-        {modules.attendeeStack && going.length > 0 && (
-          <AttendeeStack
-            names={going.map((p) => p.name)}
-            total={going.length}
-            showNames={canSeeNames}
-            label={`${going.length} going`}
+        {/* Persistent "you're done" confirmation — guests who have answered */}
+        {!isOrganizer && savedRsvp && !optimisticRsvp && (
+          <GuestDoneCard
+            event={event}
+            participantId={participantId}
+            participantName={participantName || ''}
+            savedCount={0}
+            mode="rsvp"
+            rsvpStatus={savedRsvp}
+            onShowHow={() => setShowHow(true)}
           />
         )}
 
-        {/* Capacity meter — only when the organizer set a max */}
-        {cap !== null && (
-          <div className="rounded-xl border border-hairline-soft bg-subtle p-3">
-            <div className="flex items-center justify-between mb-1.5">
-              <span className="text-sm font-semibold text-body">
-                <span className="tabular-nums">{headcount}</span>
-                <span className="text-faint font-normal"> of {cap} spots filled</span>
-              </span>
-              {isFull ? (
-                <span className="text-xs font-semibold text-red-500 dark:text-red-400">Full</span>
-              ) : capPct >= 80 ? (
-                <span className="text-xs font-semibold text-amber-600 dark:text-amber-400">Almost full</span>
-              ) : (
-                <span className="text-xs font-medium text-faint tabular-nums">{Math.max(0, cap - headcount)} left</span>
-              )}
-            </div>
-            <div className="h-2 rounded-full bg-fill overflow-hidden">
-              <div
-                className={`h-full rounded-full transition-all duration-500 ${isFull ? 'bg-red-500' : capPct >= 80 ? 'bg-amber-500' : 'bg-social-500'}`}
-                style={{ width: `${Math.max(capPct, headcount > 0 ? 6 : 0)}%` }}
-              />
-            </div>
-          </div>
-        )}
-
-        {/* RSVP breakdown */}
-        {modules.rsvpProgress && participants.length > 0 && (
-          <RsvpProgress going={going.length} maybe={maybe.length} cant={cant.length} />
-        )}
-
-        {/* RSVP buttons */}
+        {/* RSVP buttons — the guest's one job, so they come first */}
         <div>
           <p className="text-sm font-semibold text-body mb-3">
             {myRsvp ? (rsvpCopy?.change ?? 'Change response') : (rsvpCopy?.heading ?? 'Can you make it?')}
@@ -592,8 +591,19 @@ export default function RSVPView({ event, participantId, isOrganizer, organizerT
           {myRsvp === 'yes' && (maxGuestsForMe > 0 || myGuests > 0) && (
             <div className="mt-3 flex items-center justify-between rounded-xl border border-hairline px-3 py-2.5 animate-fade-in">
               <span className="text-sm text-body">
-                Bringing guests?
-                {myGuests > 0 && <span className="text-faint"> · you +{myGuests}</span>}
+                {guestSavedFlash ? (
+                  <span className="inline-flex items-center gap-1 font-medium text-success-fg animate-fade-in">
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                    Saved
+                  </span>
+                ) : (
+                  <>
+                    Bringing guests?
+                    {myGuests > 0 && <span className="text-faint"> · you +{myGuests}</span>}
+                  </>
+                )}
               </span>
               <div className="flex items-center gap-3">
                 <button
@@ -655,6 +665,46 @@ export default function RSVPView({ event, participantId, isOrganizer, organizerT
         {/* Organizer: collapsible view of all answers */}
         {questions.length > 0 && isOrganizer && organizerToken && (
           <OrganizerResponses eventId={event.id} organizerToken={organizerToken} questions={questions} />
+        )}
+
+        {/* Who's coming — social proof, demoted below the guest's own job */}
+        {modules.attendeeStack && going.length > 0 && (
+          <AttendeeStack
+            names={going.map((p) => p.name)}
+            total={going.length}
+            showNames={canSeeNames}
+            label={`${going.length} going`}
+          />
+        )}
+
+        {/* Capacity meter — only when the organizer set a max */}
+        {cap !== null && (
+          <div className="rounded-xl border border-hairline-soft bg-subtle p-3">
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-sm font-semibold text-body">
+                <span className="tabular-nums">{headcount}</span>
+                <span className="text-faint font-normal"> of {cap} spots filled</span>
+              </span>
+              {isFull ? (
+                <span className="text-xs font-semibold text-red-500 dark:text-red-400">Full</span>
+              ) : capPct >= 80 ? (
+                <span className="text-xs font-semibold text-amber-600 dark:text-amber-400">Almost full</span>
+              ) : (
+                <span className="text-xs font-medium text-faint tabular-nums">{Math.max(0, cap - headcount)} left</span>
+              )}
+            </div>
+            <div className="h-2 rounded-full bg-fill overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-all duration-500 ${isFull ? 'bg-red-500' : capPct >= 80 ? 'bg-amber-500' : 'bg-social-500'}`}
+                style={{ width: `${Math.max(capPct, headcount > 0 ? 6 : 0)}%` }}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* RSVP breakdown */}
+        {modules.rsvpProgress && participants.length > 0 && (
+          <RsvpProgress going={going.length} maybe={maybe.length} cant={cant.length} />
         )}
 
         {/* Guest list — collapsible (shown by default) */}
@@ -737,6 +787,9 @@ export default function RSVPView({ event, participantId, isOrganizer, organizerT
           onCopyDetails={handleCopyDetails}
         />
       )}
+
+      {/* Reopenable instructions */}
+      {showHow && <HowItWorksModal event={event} onClose={() => setShowHow(false)} />}
     </>
   );
 }

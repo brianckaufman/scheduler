@@ -39,17 +39,40 @@ export async function PATCH(
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
   }
 
-  const { rsvp, event_id, guest_count } = body;
-
-  if (!VALID_RSVP.includes(rsvp)) {
-    return NextResponse.json({ error: 'Invalid RSVP value. Must be yes, maybe, or no.' }, { status: 400 });
-  }
+  const { rsvp, event_id, guest_count, email } = body;
 
   if (!event_id || !isValidUUID(event_id)) {
     return NextResponse.json({ error: 'Invalid event_id' }, { status: 400 });
   }
 
   const supabase = await createClient();
+
+  // Email-only update: guests can add their email after responding, so they
+  // get notified when the time is picked. Same loose validation as join.
+  if (rsvp === undefined) {
+    if (typeof email !== 'string' || !email.trim()) {
+      return NextResponse.json({ error: 'Nothing to update' }, { status: 400 });
+    }
+    const e = email.trim().toLowerCase();
+    if (e.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)) {
+      return NextResponse.json({ error: 'Please enter a valid email, or leave it blank.' }, { status: 400 });
+    }
+    const { data: emailData, error: emailErr } = await supabase
+      .from('participants')
+      .update({ email: e })
+      .eq('id', id)
+      .eq('event_id', event_id)
+      .select()
+      .single();
+    if (emailErr || !emailData) {
+      return NextResponse.json({ error: 'Participant not found' }, { status: 404 });
+    }
+    return NextResponse.json(emailData);
+  }
+
+  if (!VALID_RSVP.includes(rsvp)) {
+    return NextResponse.json({ error: 'Invalid RSVP value. Must be yes, maybe, or no.' }, { status: 400 });
+  }
 
   // Guests only count for "Going". Clamp to the same range as the DB CHECK.
   const safeGuests = rsvp === 'yes' && Number.isInteger(guest_count) && guest_count > 0
