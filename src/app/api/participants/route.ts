@@ -3,6 +3,8 @@ import { createClient } from '@/lib/supabase/server';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { sanitizeName } from '@/lib/sanitize';
 import { sendOrganizerEmail } from '@/lib/email';
+import { getSettings } from '@/lib/settings';
+import { notificationsEnabledForEvent } from '@/lib/notifyGate';
 
 function getClientIp(request: NextRequest): string {
   return (
@@ -146,7 +148,12 @@ export async function POST(request: NextRequest) {
         .from('events').select('organizer_email').eq('id', event_id).single();
       const organizerEmail = (oe as { organizer_email?: string | null } | null)?.organizer_email ?? null;
 
-      if (organizerEmail) {
+      // Pre-launch gate: nothing sends unless the flag is on or this event
+      // belongs to an admin. See src/lib/notifyGate.ts.
+      const notifySettings = await getSettings();
+      const mayNotify = notificationsEnabledForEvent(notifySettings, { organizer_email: organizerEmail });
+
+      if (organizerEmail && mayNotify) {
         const { count } = await supabase
           .from('participants').select('id', { count: 'exact', head: true }).eq('event_id', event_id);
         const total = count ?? 0;

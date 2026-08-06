@@ -10,6 +10,8 @@ import { sanitizeConfig } from '@/lib/eventConfig';
 import { isEventKind } from '@/lib/eventTypes';
 import { formatEventDateRange } from '@/lib/dateRange';
 import { MAX_DURATION_MINUTES } from '@/lib/timeOptions';
+import { getSettings } from '@/lib/settings';
+import { notificationsEnabledForEvent } from '@/lib/notifyGate';
 
 function getClientIp(request: NextRequest): string {
   return (
@@ -236,8 +238,11 @@ export async function PATCH(
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  // Notify participants when a time is finalized (not when un-finalizing)
-  if (updates.finalized_time && data) {
+  // Notify participants when a time is finalized (not when un-finalizing).
+  // Gated pre-launch: only admin-owned events send until the flag is flipped.
+  const notifySettings = await getSettings();
+  const mayNotify = notificationsEnabledForEvent(notifySettings, data);
+  if (updates.finalized_time && data && mayNotify) {
     const timeStr = formatEventDateRange(updates.finalized_time, data.finalized_end_date, !!data.all_day, { withWeekday: false });
     const organizerName = data.organizer_name || 'The organizer';
 

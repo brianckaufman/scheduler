@@ -131,6 +131,7 @@ export default function SuccessStep({
       </div>
 
       {/* Where should updates go? Optional, and skipping it costs nothing. */}
+      {notificationsEnabled && (
       <div className="mt-4 text-left bg-surface rounded-2xl border border-hairline p-5">
         {emailState === 'saved' ? (
           <p className="text-sm font-medium text-success-fg flex items-center gap-2">
@@ -175,6 +176,7 @@ export default function SuccessStep({
           </>
         )}
       </div>
+      )}
 
       <div className="mt-6">
         <Button variant="outline" accent={accent} size="lg" fullWidth onClick={onGoToEvent}>
