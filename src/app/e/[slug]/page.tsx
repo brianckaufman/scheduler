@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { getSettings } from '@/lib/settings';
+import { notificationsEnabledForEvent } from '@/lib/notifyGate';
 import { notFound } from 'next/navigation';
 import EventView from './EventView';
 
@@ -67,7 +68,7 @@ export async function generateMetadata({ params }: EventPageProps) {
 
 export default async function EventPage({ params }: EventPageProps) {
   const { slug } = await params;
-  const supabase = await createClient();
+  const [supabase, settings] = await Promise.all([createClient(), getSettings()]);
   const { data: event } = await supabase
     .from('events')
     .select('*')
@@ -75,6 +76,9 @@ export default async function EventPage({ params }: EventPageProps) {
     .single();
 
   if (!event) notFound();
+
+  // Computed on the server so the gate can't be flipped from the browser.
+  const notificationsOn = notificationsEnabledForEvent(settings, event);
 
   // Organizer's public profile (avatar) — adds a trust cue to the event header.
   let organizerAvatar: string | null = null;
@@ -84,5 +88,7 @@ export default async function EventPage({ params }: EventPageProps) {
     organizerAvatar = prof?.avatar_url ?? null;
   }
 
-  return <EventView event={event} organizerAvatar={organizerAvatar} />;
+  return (
+    <EventView event={event} organizerAvatar={organizerAvatar} notificationsEnabled={notificationsOn} />
+  );
 }

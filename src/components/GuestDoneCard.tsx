@@ -15,6 +15,8 @@ interface GuestDoneCardProps {
   mode: 'times' | 'days' | 'rsvp';
   /** RSVP answer, only for mode='rsvp'. */
   rsvpStatus?: 'yes' | 'maybe' | 'no';
+  /** Pre-launch gate — when false, never ask for an email we won't send to. */
+  notificationsEnabled?: boolean;
   onShowHow: () => void;
 }
 
@@ -31,6 +33,7 @@ export default function GuestDoneCard({
   savedCount,
   mode,
   rsvpStatus,
+  notificationsEnabled = false,
   onShowHow,
 }: GuestDoneCardProps) {
   const [email, setEmail] = useState('');
@@ -92,7 +95,7 @@ export default function GuestDoneCard({
 
           {/* Email capture — both flows. RSVP guests need it too, or the
               day-before reminder has nowhere to go. */}
-          {emailState !== 'saved' && (
+          {notificationsEnabled && emailState !== 'saved' && (
             <div className="mt-3">
               <p className="text-xs font-semibold text-green-800 dark:text-green-300 mb-1.5">
                 {isRsvp
@@ -126,7 +129,7 @@ export default function GuestDoneCard({
               )}
             </div>
           )}
-          {emailState === 'saved' && (
+          {notificationsEnabled && emailState === 'saved' && (
             <p className="text-sm font-medium text-green-700 dark:text-green-300 mt-3 flex items-center gap-1.5">
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />

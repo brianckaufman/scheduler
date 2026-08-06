@@ -12,6 +12,8 @@ interface SuccessStepProps {
   eventName: string;
   eventType: 'availability' | 'fixed';
   accent: 'social' | 'teal';
+  /** Pre-launch gate — never ask for an email we won't send to. */
+  notificationsEnabled?: boolean;
   onGoToEvent: () => void;
 }
 
@@ -20,7 +22,15 @@ interface SuccessStepProps {
  * link" step with giant copy/share buttons and a plain-language explanation of
  * what happens next.
  */
-export default function SuccessStep({ slug, eventId, eventName, eventType, accent, onGoToEvent }: SuccessStepProps) {
+export default function SuccessStep({
+  slug,
+  eventId,
+  eventName,
+  eventType,
+  accent,
+  notificationsEnabled = false,
+  onGoToEvent,
+}: SuccessStepProps) {
   const [copied, setCopied] = useState(false);
   const [email, setEmail] = useState('');
   const [emailState, setEmailState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');

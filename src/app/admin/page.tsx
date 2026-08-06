@@ -970,6 +970,28 @@ export default function AdminDashboard() {
             <p className={helpClass}>When enabled, organizers can create RSVP-style events with a set date and time instead of polling availability.</p>
           </div>
         </label>
+
+        <label className="flex items-center gap-3 cursor-pointer">
+          <div className="relative">
+            <input
+              type="checkbox"
+              className="sr-only"
+              checked={settings.app.enable_notifications === true}
+              onChange={(e) => updateSection('app', 'enable_notifications', e.target.checked)}
+            />
+            <div className={`w-10 h-6 rounded-full transition-colors duration-200 ${settings.app.enable_notifications === true ? 'bg-teal-500' : 'bg-strong'}`} />
+            <div className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full shadow transition-transform duration-200 ${settings.app.enable_notifications === true ? 'translate-x-4' : 'translate-x-0'}`} />
+          </div>
+          <div>
+            <p className="text-sm font-medium text-body">Notifications (all users)</p>
+            <p className={helpClass}>
+              Off = pre-launch. While off, notification emails and the fields that collect
+              addresses for them appear <strong>only on events owned by an admin</strong> (matched
+              by the organizer&apos;s email against ADMIN_EMAILS), so the system can be tested live
+              without any other user seeing it. Turn on to open notifications to everyone.
+            </p>
+          </div>
+        </label>
       </div>
 
       <div>

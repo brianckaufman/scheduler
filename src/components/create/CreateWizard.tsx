@@ -17,13 +17,15 @@ type StepId = 'type' | 'name' | 'date' | 'time' | 'extras' | 'questions' | 'revi
 
 interface CreateWizardProps {
   enableFixedEvents: boolean;
+  /** Pre-launch gate — hides the success screen's email ask. */
+  notificationsEnabled?: boolean;
 }
 
 /**
  * The step-by-step creation flow. One question per screen; the step index
  * lives in ?step= so the browser's Back button walks backward naturally.
  */
-export default function CreateWizard({ enableFixedEvents }: CreateWizardProps) {
+export default function CreateWizard({ enableFixedEvents, notificationsEnabled = false }: CreateWizardProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const draft = useEventDraft();
@@ -97,6 +99,7 @@ export default function CreateWizard({ enableFixedEvents }: CreateWizardProps) {
           <SuccessStep
             slug={createdSlug}
             eventId={createdId ?? ''}
+            notificationsEnabled={notificationsEnabled}
             eventName={draft.name}
             eventType={draft.eventType}
             accent={draft.eventType === 'fixed' ? 'teal' : 'social'}

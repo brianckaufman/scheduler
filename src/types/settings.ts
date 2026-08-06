@@ -181,6 +181,12 @@ export interface SiteSettings {
     max_participants: number;
     rate_limit_events_per_hour: number;
     enable_fixed_events: boolean;
+    /**
+     * Master switch for the notification system (emails + the UI that collects
+     * addresses for them). OFF pre-launch — while off, only events owned by an
+     * allowlisted admin send or show anything. See src/lib/notifyGate.ts.
+     */
+    enable_notifications: boolean;
   };
   legal: {
     privacy_policy: string;
@@ -438,6 +444,8 @@ export const DEFAULT_SETTINGS: SiteSettings = {
     max_participants: 100,
     rate_limit_events_per_hour: 10,
     enable_fixed_events: true,
+    // Pre-launch: admins only. Flip to true to open notifications to everyone.
+    enable_notifications: false,
   },
   legal: {
     privacy_policy: `<h2>Privacy Policy</h2>

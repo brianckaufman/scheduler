@@ -24,6 +24,8 @@ const DURATION_OPTIONS = ALLOWED_DURATIONS.map((value) => ({
 
 interface EditEventModalProps {
   event: Event;
+  /** Pre-launch gate — hides the organizer-email field until notifications ship. */
+  notificationsEnabled?: boolean;
   organizerToken: string;
   onClose: () => void;
   onSave: (updated: Event) => void;
@@ -32,7 +34,14 @@ interface EditEventModalProps {
 
 type DeleteStep = 'idle' | 'confirm' | 'typing';
 
-export default function EditEventModal({ event, organizerToken, onClose, onSave, onDelete }: EditEventModalProps) {
+export default function EditEventModal({
+  event,
+  notificationsEnabled = false,
+  organizerToken,
+  onClose,
+  onSave,
+  onDelete,
+}: EditEventModalProps) {
   const isFixed = event.event_type === 'fixed';
 
   // Reschedule state (fixed events only). Pre-filled from finalized_time in
@@ -345,6 +354,7 @@ export default function EditEventModal({ event, organizerToken, onClose, onSave,
             <input type="text" value={organizerName} onChange={(e) => setOrganizerName(e.target.value)}
               className={inputClass} maxLength={50} required />
           </div>
+          {notificationsEnabled && (
           <div>
             <label className="block text-xs font-medium text-secondary mb-1">
               Your email <span className="text-faint font-normal">(optional)</span>
@@ -365,6 +375,7 @@ export default function EditEventModal({ event, organizerToken, onClose, onSave,
                 : "We'll email you once enough people have replied, so you can pick the time."}
             </p>
           </div>
+          )}
           <div>
             <label className="block text-xs font-medium text-secondary mb-1">Location</label>
             <LocationInput value={location} onChange={setLocation} inputClassName={inputClass} />

@@ -32,6 +32,8 @@ interface RSVPViewProps {
   event: Event;
   participantId: string;
   participantName?: string;
+  /** Pre-launch notification gate — passed through to GuestDoneCard. */
+  notificationsEnabled?: boolean;
   isOrganizer: boolean;
   organizerToken?: string | null;
   /** Reports (savedResponse, unsavedChanges, questionsStillNeeded) so the page can show progress. */
@@ -314,7 +316,7 @@ function RsvpModal({
 
 // ── Main component ───────────────────────────────────────────────────────────
 
-export default function RSVPView({ event, participantId, participantName, isOrganizer, organizerToken, onResponseStateChange }: RSVPViewProps) {
+export default function RSVPView({ event, participantId, participantName, notificationsEnabled = false, isOrganizer, organizerToken, onResponseStateChange }: RSVPViewProps) {
   const copy = useCopy();
   const rsvpCopy = copy.rsvp;
   const { participants, removeParticipant } = useRealtimeParticipants(event.id);
@@ -640,6 +642,7 @@ export default function RSVPView({ event, participantId, participantName, isOrga
             event={event}
             participantId={participantId}
             participantName={participantName || ''}
+            notificationsEnabled={notificationsEnabled}
             savedCount={0}
             mode="rsvp"
             rsvpStatus={savedRsvp}

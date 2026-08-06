@@ -39,6 +39,9 @@ import type { Event } from '@/types';
 interface EventViewProps {
   event: Event;
   organizerAvatar?: string | null;
+  /** Pre-launch gate (src/lib/notifyGate.ts) — hides every surface that
+   *  promises an email while the notification system isn't live. */
+  notificationsEnabled?: boolean;
 }
 
 /** Return a short timezone label like "PST", "EST", "GMT+5" for a given IANA timezone. */
@@ -50,7 +53,11 @@ function getTzAbbr(isoDateStr: string, tz: string): string {
   } catch { return tz; }
 }
 
-export default function EventView({ event: initialEvent, organizerAvatar }: EventViewProps) {
+export default function EventView({
+  event: initialEvent,
+  organizerAvatar,
+  notificationsEnabled = false,
+}: EventViewProps) {
   const copy = useCopy();
   const branding = useBranding();
   const monetization = useMonetization();
@@ -182,7 +189,8 @@ export default function EventView({ event: initialEvent, organizerAvatar }: Even
 
   const deadlinePassed = event.response_deadline && isPast(new Date(event.response_deadline));
   // Only show push prompt for availability events (fixed events have no time to announce)
-  const showPushPrompt = !isFixed && pushSupported && !isSubscribed && !pushDismissed && !event.finalized_time && !isOrganizer;
+  // Also gated: this prompt promises "we'll ping you when a time is picked".
+  const showPushPrompt = notificationsEnabled && !isFixed && pushSupported && !isSubscribed && !pushDismissed && !event.finalized_time && !isOrganizer;
 
   const modules = getModules(event);
   // Per-event accent + independent icon-chip overrides, applied as inline vars.
@@ -461,6 +469,7 @@ export default function EventView({ event: initialEvent, organizerAvatar }: Even
               event={event}
               participantId={participantId}
               participantName={participantName}
+              notificationsEnabled={notificationsEnabled}
               isOrganizer={isOrganizer}
               organizerToken={localStorage.getItem(`organizer_${event.slug}`)}
               onResponseStateChange={handleResponseStateChange}
@@ -470,6 +479,7 @@ export default function EventView({ event: initialEvent, organizerAvatar }: Even
               event={event}
               participantId={participantId}
               participantName={participantName}
+              notificationsEnabled={notificationsEnabled}
               isOrganizer={isOrganizer}
               organizerToken={localStorage.getItem(`organizer_${event.slug}`)}
               onFinalize={(startISO, endDate) => {
@@ -485,6 +495,7 @@ export default function EventView({ event: initialEvent, organizerAvatar }: Even
               event={event}
               participantId={participantId}
               participantName={participantName}
+              notificationsEnabled={notificationsEnabled}
               isOrganizer={isOrganizer}
               organizerToken={localStorage.getItem(`organizer_${event.slug}`)}
               onFinalize={(time) => {
@@ -532,6 +543,7 @@ export default function EventView({ event: initialEvent, organizerAvatar }: Even
       {showEditModal && (
         <EditEventModal
           event={event}
+          notificationsEnabled={notificationsEnabled}
           organizerToken={localStorage.getItem(`organizer_${event.slug}`) || ''}
           onClose={() => setShowEditModal(false)}
           onSave={(updated) => setEvent(updated)}

@@ -34,6 +34,8 @@ interface AllDayGridProps {
   event: Event;
   participantId: string;
   participantName?: string;
+  /** Pre-launch notification gate — passed through to GuestDoneCard. */
+  notificationsEnabled?: boolean;
   isOrganizer?: boolean;
   organizerToken?: string | null;
   onFinalize?: (startISO: string, endDate: string) => void;
@@ -48,7 +50,7 @@ interface AllDayGridProps {
  * is one calendar day (not a date×time matrix), reusing TimeGridSlot (already
  * generic over slot keys) for the actual toggle/heat-map cell.
  */
-export default function AllDayGrid({ event, participantId, participantName, isOrganizer, organizerToken, onFinalize, onMySlotCountChange, onParticipantCountChange, onResponseStateChange }: AllDayGridProps) {
+export default function AllDayGrid({ event, participantId, participantName, notificationsEnabled = false, isOrganizer, organizerToken, onFinalize, onMySlotCountChange, onParticipantCountChange, onResponseStateChange }: AllDayGridProps) {
   const { slots: allSlots, removeByParticipant: removeSlotsForParticipant } = useRealtimeSlots(event.id);
   const { participants, removeParticipant } = useRealtimeParticipants(event.id);
 
@@ -404,6 +406,7 @@ export default function AllDayGrid({ event, participantId, participantName, isOr
           event={event}
           participantId={participantId}
           participantName={participantName || ''}
+          notificationsEnabled={notificationsEnabled}
           savedCount={savedCount}
           mode="days"
           onShowHow={() => setShowHow(true)}

@@ -36,6 +36,8 @@ interface TimeGridProps {
   event: Event;
   participantId: string;
   participantName?: string;
+  /** Pre-launch notification gate — passed through to GuestDoneCard. */
+  notificationsEnabled?: boolean;
   isOrganizer?: boolean;
   organizerToken?: string | null;
   onFinalize?: (time: string) => void;
@@ -45,7 +47,7 @@ interface TimeGridProps {
   onResponseStateChange?: (responded: boolean, pending: boolean, questionsPending?: boolean) => void;
 }
 
-export default function TimeGrid({ event, participantId, participantName, isOrganizer, organizerToken, onFinalize, onMySlotCountChange, onParticipantCountChange, onResponseStateChange }: TimeGridProps) {
+export default function TimeGrid({ event, participantId, participantName, notificationsEnabled = false, isOrganizer, organizerToken, onFinalize, onMySlotCountChange, onParticipantCountChange, onResponseStateChange }: TimeGridProps) {
   const copy = useCopy();
   const { slots: allSlots, removeByParticipant: removeSlotsForParticipant } = useRealtimeSlots(event.id);
   const { participants, removeParticipant } = useRealtimeParticipants(event.id);
@@ -506,6 +508,7 @@ export default function TimeGrid({ event, participantId, participantName, isOrga
           event={event}
           participantId={participantId}
           participantName={participantName || ''}
+          notificationsEnabled={notificationsEnabled}
           savedCount={savedCount}
           mode="times"
           onShowHow={() => setShowHow(true)}
