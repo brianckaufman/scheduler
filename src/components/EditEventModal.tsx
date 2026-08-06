@@ -62,6 +62,7 @@ export default function EditEventModal({ event, organizerToken, onClose, onSave,
   const [modules, setModules] = useState<EventModules>(() => getModules(event));
   const [body, setBody] = useState(event.body || '');
   const [organizerName, setOrganizerName] = useState(event.organizer_name || '');
+  const [organizerEmail, setOrganizerEmail] = useState(event.organizer_email || '');
   const [location, setLocation] = useState(event.location || '');
   const [durationMinutes, setDurationMinutes] = useState(event.duration_minutes);
   const [maxParticipants, setMaxParticipants] = useState<string>(
@@ -144,6 +145,11 @@ export default function EditEventModal({ event, organizerToken, onClose, onSave,
           name: name.trim(),
           body: body.trim() || null,
           organizer_name: organizerName.trim(),
+          // Only send when changed, so edits still work if the organizer-email
+          // migration hasn't been run (avoids referencing a missing column).
+          ...(organizerEmail.trim() !== (event.organizer_email || '')
+            ? { organizer_email: organizerEmail.trim() || null }
+            : {}),
           location: location.trim() || null,
           // Availability events only — a fixed event's duration comes from
           // the reschedule fields above (derived from start/end time), and
@@ -338,6 +344,26 @@ export default function EditEventModal({ event, organizerToken, onClose, onSave,
             <label className="block text-xs font-medium text-secondary mb-1">Your name</label>
             <input type="text" value={organizerName} onChange={(e) => setOrganizerName(e.target.value)}
               className={inputClass} maxLength={50} required />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-secondary mb-1">
+              Your email <span className="text-faint font-normal">(optional)</span>
+            </label>
+            <input
+              type="email"
+              value={organizerEmail}
+              onChange={(e) => setOrganizerEmail(e.target.value)}
+              className={inputClass}
+              maxLength={254}
+              autoComplete="email"
+              inputMode="email"
+              placeholder="you@example.com"
+            />
+            <p className="text-xs text-faint mt-1">
+              {isFixed
+                ? "We'll email you when people RSVP."
+                : "We'll email you once enough people have replied, so you can pick the time."}
+            </p>
           </div>
           <div>
             <label className="block text-xs font-medium text-secondary mb-1">Location</label>

@@ -118,6 +118,24 @@ export async function PATCH(
   if ('location' in updates) {
     safeUpdate.location = updates.location ? sanitizeText(updates.location, 600) : null;
   }
+  // Where organizer notifications go. Without this branch the column could only
+  // ever be set at creation — and the wizard doesn't ask — so it stayed empty
+  // and every organizer email silently went nowhere.
+  if ('organizer_email' in updates) {
+    if (!updates.organizer_email) {
+      safeUpdate.organizer_email = null;
+    } else if (typeof updates.organizer_email === 'string') {
+      const e = updates.organizer_email.trim().toLowerCase();
+      if (e.length <= 254 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)) {
+        safeUpdate.organizer_email = e;
+      } else {
+        return NextResponse.json(
+          { error: 'Please enter a valid email, or leave it blank.' },
+          { status: 400 },
+        );
+      }
+    }
+  }
   if ('duration_minutes' in updates) {
     const d = Number(updates.duration_minutes);
     if (Number.isInteger(d) && d > 0 && d <= MAX_DURATION_MINUTES) {

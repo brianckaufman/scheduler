@@ -29,6 +29,7 @@ export default function CreateWizard({ enableFixedEvents }: CreateWizardProps) {
   const draft = useEventDraft();
   const [direction, setDirection] = useState<'next' | 'prev'>('next');
   const [createdSlug, setCreatedSlug] = useState<string | null>(null);
+  const [createdId, setCreatedId] = useState<string | null>(null);
   const prevStepRef = useRef(0);
 
   // Apply a preset type from the homepage launcher (?type=availability|fixed).
@@ -79,8 +80,9 @@ export default function CreateWizard({ enableFixedEvents }: CreateWizardProps) {
 
   const handleCreate = async () => {
     try {
-      const { slug } = await draft.submit();
+      const { slug, id } = await draft.submit();
       setCreatedSlug(slug);
+      setCreatedId(id);
       // Replace history so Back from the success screen can't re-enter review
       // with a submitted draft.
       router.replace(`/new?step=done`);
@@ -94,6 +96,7 @@ export default function CreateWizard({ enableFixedEvents }: CreateWizardProps) {
         <div className="max-w-md mx-auto px-4 py-10">
           <SuccessStep
             slug={createdSlug}
+            eventId={createdId ?? ''}
             eventName={draft.name}
             eventType={draft.eventType}
             accent={draft.eventType === 'fixed' ? 'teal' : 'social'}

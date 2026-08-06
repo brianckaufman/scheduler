@@ -7,6 +7,8 @@ import { CopyIcon, ShareIcon } from '@/components/ui/icons';
 
 interface SuccessStepProps {
   slug: string;
+  /** Needed to save the organizer's email — the event exists by now. */
+  eventId: string;
   eventName: string;
   eventType: 'availability' | 'fixed';
   accent: 'social' | 'teal';
@@ -18,9 +20,30 @@ interface SuccessStepProps {
  * link" step with giant copy/share buttons and a plain-language explanation of
  * what happens next.
  */
-export default function SuccessStep({ slug, eventName, eventType, accent, onGoToEvent }: SuccessStepProps) {
+export default function SuccessStep({ slug, eventId, eventName, eventType, accent, onGoToEvent }: SuccessStepProps) {
   const [copied, setCopied] = useState(false);
+  const [email, setEmail] = useState('');
+  const [emailState, setEmailState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const url = typeof window !== 'undefined' ? `${window.location.origin}/e/${slug}` : `/e/${slug}`;
+
+  // The organizer is thinking about this event right now — the cheapest moment
+  // to ask where updates should go. Non-blocking; skipping costs them nothing.
+  const saveEmail = async () => {
+    const e = email.trim();
+    if (!e) return;
+    setEmailState('saving');
+    try {
+      const token = localStorage.getItem(`organizer_${slug}`);
+      const res = await fetch(`/api/events/${eventId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ organizer_token: token, organizer_email: e }),
+      });
+      setEmailState(res.ok ? 'saved' : 'error');
+    } catch {
+      setEmailState('error');
+    }
+  };
 
   const handleCopy = async () => {
     try {
@@ -95,6 +118,52 @@ export default function SuccessStep({ slug, eventName, eventType, accent, onGoTo
             </li>
           ))}
         </ol>
+      </div>
+
+      {/* Where should updates go? Optional, and skipping it costs nothing. */}
+      <div className="mt-4 text-left bg-surface rounded-2xl border border-hairline p-5">
+        {emailState === 'saved' ? (
+          <p className="text-sm font-medium text-success-fg flex items-center gap-2">
+            <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+            We&apos;ll email you at {email.trim()}.
+          </p>
+        ) : (
+          <>
+            <p className="text-sm font-semibold text-heading">
+              {eventType === 'fixed'
+                ? 'Want an email when people RSVP?'
+                : 'Want an email when everyone has replied?'}
+            </p>
+            <p className="text-xs text-muted mt-0.5 mb-3">Optional — you can add it later.</p>
+            <div className="flex gap-2">
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@example.com"
+                autoComplete="email"
+                inputMode="email"
+                maxLength={254}
+                className="flex-1 min-w-0 px-4 py-3 rounded-xl border-2 border-hairline bg-surface text-base text-heading placeholder-faint focus:outline-none focus:ring-2 focus:ring-social-400 focus:border-transparent"
+              />
+              <Button
+                variant="primary"
+                accent={accent}
+                onClick={saveEmail}
+                loading={emailState === 'saving'}
+                disabled={!email.trim()}
+                className="shrink-0"
+              >
+                Save
+              </Button>
+            </div>
+            {emailState === 'error' && (
+              <p className="text-xs text-red-500 mt-1.5">That email didn&apos;t look right — try again.</p>
+            )}
+          </>
+        )}
       </div>
 
       <div className="mt-6">

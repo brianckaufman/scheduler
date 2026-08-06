@@ -90,11 +90,14 @@ export default function GuestDoneCard({
             <p className="text-xs text-green-700/80 dark:text-green-300/70 mt-2 leading-relaxed">{changeHint}</p>
           )}
 
-          {/* Email capture — availability only, until saved */}
-          {!isRsvp && emailState !== 'saved' && (
+          {/* Email capture — both flows. RSVP guests need it too, or the
+              day-before reminder has nowhere to go. */}
+          {emailState !== 'saved' && (
             <div className="mt-3">
               <p className="text-xs font-semibold text-green-800 dark:text-green-300 mb-1.5">
-                Want an email when {organizer} picks the {mode === 'times' ? 'time' : 'days'}?
+                {isRsvp
+                  ? 'Want a reminder the day before?'
+                  : `Want an email when ${organizer} picks the ${mode === 'times' ? 'time' : 'days'}?`}
               </p>
               <div className="flex gap-2">
                 <input
@@ -115,7 +118,7 @@ export default function GuestDoneCard({
                   disabled={!email.trim()}
                   className="!bg-green-600 hover:!bg-green-700 !text-white shrink-0"
                 >
-                  Notify me
+                  {isRsvp ? 'Remind me' : 'Notify me'}
                 </Button>
               </div>
               {emailState === 'error' && (
@@ -123,12 +126,12 @@ export default function GuestDoneCard({
               )}
             </div>
           )}
-          {!isRsvp && emailState === 'saved' && (
+          {emailState === 'saved' && (
             <p className="text-sm font-medium text-green-700 dark:text-green-300 mt-3 flex items-center gap-1.5">
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
               </svg>
-              We&apos;ll email you when it&apos;s decided.
+              {isRsvp ? "We'll remind you the day before." : "We'll email you when it's decided."}
             </p>
           )}
 

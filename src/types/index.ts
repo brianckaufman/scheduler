@@ -5,6 +5,8 @@ export interface Event {
   description: string | null;
   body: string | null;
   organizer_name: string | null;
+  /** Where organizer notifications go. Behind a migration, so may be absent. */
+  organizer_email?: string | null;
   location: string | null;
   duration_minutes: number;
   response_deadline: string | null;
