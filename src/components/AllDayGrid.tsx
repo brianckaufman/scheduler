@@ -276,17 +276,32 @@ export default function AllDayGrid({ event, participantId, participantName, isOr
     return { hasFullBlock: full.length > 0, hasAnyBlock: windows.length > 0, blockHighlightKeys: highlight };
   }, [minBlock, dayKeys, sortedDates, overlapMap, totalParticipants]);
 
+  // How many people the organizer said they need before a day can be picked.
+  // Unset means "everyone who has replied so far".
+  const requiredCount = event.min_responses && event.min_responses >= 2
+    ? event.min_responses
+    : totalParticipants;
+  const enoughResponses = totalParticipants >= requiredCount;
+
+  /** A day clears the bar the organizer set — the ones actually worth picking. */
+  const meetsThreshold = useCallback(
+    (count: number) => requiredCount >= 2 && count >= requiredCount,
+    [requiredCount],
+  );
+
   const overlapStatus = useMemo(() => {
     if (totalParticipants < 2) return 'waiting' as const;
+    // 2 of 3 replied is still waiting — don't imply we're ready to pick.
+    if (!enoughResponses) return 'waiting' as const;
     if (minBlock) {
       if (hasFullBlock) return 'found' as const;
       if (hasAnyBlock) return 'partial' as const;
       return 'none' as const;
     }
-    if (maxOverlap >= totalParticipants) return 'found' as const;
+    if (maxOverlap >= requiredCount) return 'found' as const;
     if (maxOverlap >= 2) return 'partial' as const;
     return 'none' as const;
-  }, [totalParticipants, minBlock, hasFullBlock, hasAnyBlock, maxOverlap]);
+  }, [totalParticipants, minBlock, hasFullBlock, hasAnyBlock, maxOverlap, enoughResponses, requiredCount]);
 
   const handleDeleteParticipant = useCallback(async (pid: string) => {
     if (!organizerToken) return;
@@ -406,10 +421,25 @@ export default function AllDayGrid({ event, participantId, participantName, isOr
                 </svg>
               ))}
             </div>
-            Waiting for more people to mark their days...
+            {totalParticipants >= 2 && !enoughResponses
+              ? `Waiting on the group — ${totalParticipants} of ${requiredCount} have replied`
+              : 'Waiting for more people to mark their days...'}
           </div>
           {isOrganizer && (
-            <p className="text-center text-xs text-faint">Share the link above so everyone can mark their available days.</p>
+            <>
+              <p className="text-center text-xs text-faint">Share the link above so everyone can mark their available days.</p>
+              {!enoughResponses && maxOverlap >= 2 && (
+                <div className="flex justify-center pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setShowDayPicker(true)}
+                    className="px-5 py-2 text-sm font-semibold text-secondary bg-fill hover:bg-fill2 border border-hairline rounded-full transition-all duration-200 active:scale-95 cursor-pointer"
+                  >
+                    {minBlock ? 'Find a block anyway' : 'Pick days anyway'}
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </div>
       )}
@@ -455,19 +485,23 @@ export default function AllDayGrid({ event, participantId, participantName, isOr
         </div>
       )}
 
-      {/* What to do here — the single most important instruction on the page */}
-      {!event.finalized_time && (
-        <div className="text-center -mb-2">
-          <h2 className="text-base font-bold text-heading">Tap the days you&apos;re free</h2>
-          <p className="text-xs text-muted mt-0.5">Tap once to mark yourself free — tap again to undo.</p>
+      {/* What to do here — the single most important instruction on the page,
+          with the timezone as a self-sizing pill beneath it. */}
+      <div className="text-center space-y-2">
+        {!event.finalized_time && (
+          <div>
+            <h2 className="text-base font-bold text-heading">Tap the days you&apos;re free</h2>
+            <p className="text-xs text-muted mt-1 px-4 leading-relaxed">
+              Tap once to mark yourself free — tap again to undo.
+            </p>
+          </div>
+        )}
+        <div className="inline-flex items-center gap-1.5 text-xs font-medium text-muted bg-subtle rounded-lg px-3 py-1.5">
+          <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span>Days determined using {timezoneLabel}</span>
         </div>
-      )}
-
-      <div className="flex items-center justify-center gap-1.5 text-xs font-medium text-muted bg-subtle rounded-lg px-3 py-1.5 self-center mx-auto">
-        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-        <span>Days determined using {timezoneLabel}</span>
       </div>
 
       {/* Day list — one row per calendar day */}
@@ -504,6 +538,7 @@ export default function AllDayGrid({ event, participantId, participantName, isOr
                   totalParticipants={totalParticipants}
                   isAllMatch={isAllMatch}
                   isBest={isBest}
+                  meetsThreshold={meetsThreshold(othersCount)}
                   participantColors={slotParticipantColors}
                   onToggle={handleToggle}
                   onDragStart={handleDragStart}

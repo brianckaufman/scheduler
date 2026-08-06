@@ -61,6 +61,8 @@ interface TimeGridSlotProps {
   totalParticipants: number;
   isAllMatch: boolean;
   isBest?: boolean;
+  /** Enough people are free here to actually pick this time. Drives the loud styling. */
+  meetsThreshold?: boolean;
   participantColors: string[];
   onToggle: (slotKey: string) => void;
   onDragStart: (slotKey: string) => void;
@@ -76,6 +78,7 @@ function TimeGridSlotInner({
   totalParticipants,
   isAllMatch,
   isBest,
+  meetsThreshold = false,
   participantColors,
   onToggle,
   onDragStart,
@@ -94,7 +97,15 @@ function TimeGridSlotInner({
   // Empty/others/mine = neutral surfaces, partial = brand emerald heat,
   // full match = brand green, best/selected = accent ring.
   const cellStyle: React.CSSProperties = { backgroundColor: 'var(--t-grid-empty)' };
-  const ring = (color: string) => { cellStyle.boxShadow = `inset 0 0 0 2px ${color}`; };
+  const ring = (color: string, width = 2) => {
+    cellStyle.boxShadow = `inset 0 0 0 ${width}px ${color}`;
+  };
+  // Slots that don't yet clear the bar stay deliberately quiet — otherwise every
+  // cell you tapped shouts as loudly as the ones that actually work for the group.
+  const quietRing = (color: string) =>
+    ring(`color-mix(in oklch, ${color} 38%, transparent)`, 1);
+
+  const isPrime = isAllMatch || meetsThreshold;
 
   if (isAllMatch) {
     cellStyle.backgroundColor = 'var(--t-grid-full)';
@@ -103,31 +114,31 @@ function TimeGridSlotInner({
     const fraction = totalAvailable / totalParticipants;
     const alpha = 0.16 + fraction * 0.5;
     cellStyle.backgroundColor = `rgba(var(--t-heat-rgb), ${alpha})`;
-    if (isMine) ring('var(--t-selected-ring)');
-  } else if (isMine && othersCount > 0) {
-    cellStyle.backgroundColor = 'var(--t-grid-mine)';
-    ring('var(--t-selected-ring)');
+    if (meetsThreshold) ring('var(--t-success-ring)');
+    else if (isMine) quietRing('var(--t-selected-ring)');
+  } else if (meetsThreshold) {
+    cellStyle.backgroundColor = 'var(--t-grid-full)';
+    ring('var(--t-success-ring)');
   } else if (isMine) {
     cellStyle.backgroundColor = 'var(--t-grid-mine)';
-    ring('var(--t-selected-ring)');
+    quietRing('var(--t-selected-ring)');
   } else if (othersCount > 0) {
     cellStyle.backgroundColor = 'var(--t-grid-others)';
   }
 
-  // Best-available slot (most people free, but not everyone): accent ring so the
-  // strongest option pops even without a full overlap.
-  if (isBest && !isAllMatch) {
+  // Best-available slot (most people free, but short of the bar): accent ring so
+  // the strongest option still reads, without competing with the prime slots.
+  if (isBest && !isPrime) {
     ring('var(--t-best-ring)');
   }
 
   // Dark-mode heat glow: brighter halo where more people overlap. Intensity is a
   // 0..1 var consumed by .slot-glow in globals.css (light mode ignores it).
+  // Only slots that clear the bar (or the best near-miss) get one — a glow on
+  // every tapped cell is what flattened the hierarchy.
   let glow = 0;
-  if (isAllMatch) glow = 1;
-  else if (isBest) glow = 0.85;
-  else if (totalAvailable > 0 && useCountMode) {
-    glow = Math.min(0.9, 0.3 + (totalAvailable / totalParticipants) * 0.6);
-  }
+  if (isPrime) glow = 1;
+  else if (isBest) glow = 0.6;
   if (glow > 0) {
     (cellStyle as Record<string, string | number>)['--glow'] = glow;
   }
@@ -159,7 +170,7 @@ function TimeGridSlotInner({
       className={`
         slot-cell w-full min-h-[44px] rounded-lg text-xs font-medium select-none cursor-pointer
         flex items-center justify-center gap-[3px] flex-wrap p-1
-        ${isMine ? 'slot-selected' : ''} ${isAllMatch ? 'slot-match' : ''} ${glow > 0 ? 'slot-glow' : ''}
+        ${isMine ? 'slot-selected' : ''} ${isPrime ? 'slot-match' : ''} ${glow > 0 ? 'slot-glow' : ''}
         active:scale-[0.93] touch-manipulation
       `}
       style={cellStyle}

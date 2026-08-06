@@ -356,17 +356,33 @@ export default function TimeGrid({ event, participantId, participantName, isOrga
     return { maxOverlap: max, bestSlotKeys: best };
   }, [overlapMap]);
 
+  // How many people the organizer said they need before a time can be picked.
+  // Unset means "everyone who has replied so far".
+  const requiredCount = event.min_responses && event.min_responses >= 2
+    ? event.min_responses
+    : totalParticipants;
+  // Enough people have replied at all — distinct from "enough overlap on a slot".
+  const enoughResponses = totalParticipants >= requiredCount;
+
   // Overlap status:
-  //  - waiting: not enough people yet
-  //  - found:   at least one time works for everyone
-  //  - partial: best time works for some (≥2) but not all — still useful overlap
+  //  - waiting: fewer people have replied than the organizer asked for
+  //  - found:   at least one time clears the required bar
+  //  - partial: best time works for some (≥2) but short of the bar
   //  - none:    no two people share any time
   const overlapStatus = useMemo(() => {
     if (totalParticipants < 2) return 'waiting' as const;
-    if (maxOverlap >= totalParticipants) return 'found' as const;
+    // 2 of 3 replied is still waiting — don't imply we're ready to pick.
+    if (!enoughResponses) return 'waiting' as const;
+    if (maxOverlap >= requiredCount) return 'found' as const;
     if (maxOverlap >= 2) return 'partial' as const;
     return 'none' as const;
-  }, [totalParticipants, maxOverlap]);
+  }, [totalParticipants, maxOverlap, enoughResponses, requiredCount]);
+
+  /** A slot clears the bar the organizer set — the ones actually worth picking. */
+  const meetsThreshold = useCallback(
+    (count: number) => requiredCount >= 2 && count >= requiredCount,
+    [requiredCount],
+  );
 
   // Delete participant handler (organizer only)
   const handleDeleteParticipant = useCallback(async (pid: string) => {
@@ -523,12 +539,33 @@ export default function TimeGrid({ event, participantId, participantName, isOrga
               </div>
             ))}
           </div>
-          {copy.grid.waiting}
+          {totalParticipants >= 2 && !enoughResponses
+            ? `Waiting on the group — ${totalParticipants} of ${requiredCount} have replied`
+            : copy.grid.waiting}
         </div>
-        {isOrganizer && (
+        {totalParticipants >= 2 && !enoughResponses && maxOverlap >= 2 && (
           <p className="text-center text-xs text-faint">
-            Share the link above so everyone can mark their availability.
+            {maxOverlap} {maxOverlap === 1 ? 'person has' : 'people have'} overlapping times already
+            {isOrganizer ? " — you can still pick early if you need to." : '.'}
           </p>
+        )}
+        {isOrganizer && (
+          <>
+            <p className="text-center text-xs text-faint">
+              Share the link above so everyone can mark their availability.
+            </p>
+            {!enoughResponses && maxOverlap >= 2 && (
+              <div className="flex justify-center pt-1">
+                <button
+                  type="button"
+                  onClick={() => setShowTimePicker(true)}
+                  className="px-5 py-2 text-sm font-semibold text-secondary bg-fill hover:bg-fill2 border border-hairline rounded-full transition-all duration-200 active:scale-95 cursor-pointer"
+                >
+                  Pick a time anyway
+                </button>
+              </div>
+            )}
+          </>
         )}
         </div>
       )}
@@ -554,7 +591,9 @@ export default function TimeGrid({ event, participantId, participantName, isOrga
       {overlapStatus === 'found' && !event.finalized_time && (
         <div className="animate-fade-in-scale bg-green-50 dark:bg-[#112D25] rounded-xl p-4 text-center">
           <p className="text-sm text-success-fg font-medium">
-            {copy.grid.overlap_found}
+            {maxOverlap >= totalParticipants
+              ? copy.grid.overlap_found
+              : `${maxOverlap} of ${totalParticipants} can make it — enough to pick a time`}
           </p>
           {isOrganizer ? (
             <button
@@ -592,20 +631,23 @@ export default function TimeGrid({ event, participantId, participantName, isOrga
         </div>
       )}
 
-      {/* What to do here — the single most important instruction on the page */}
-      {!event.finalized_time && (
-        <div className="text-center -mb-2">
-          <h2 className="text-base font-bold text-heading">{copy.event.tap_instruction}</h2>
-          <p className="text-xs text-muted mt-0.5">Tap once to mark yourself free — tap again to undo.</p>
+      {/* What to do here — the single most important instruction on the page,
+          with the timezone as a self-sizing pill beneath it. */}
+      <div className="text-center space-y-2">
+        {!event.finalized_time && (
+          <div>
+            <h2 className="text-base font-bold text-heading">{copy.event.tap_instruction}</h2>
+            <p className="text-xs text-muted mt-1 px-4 leading-relaxed">
+              Tap once to mark yourself free — tap again to undo.
+            </p>
+          </div>
+        )}
+        <div className="inline-flex items-center gap-1.5 text-xs font-medium text-muted bg-subtle rounded-lg px-3 py-1.5">
+          <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span>{interpolate(copy.grid.timezone_label, { timezone: timezoneLabel })}</span>
         </div>
-      )}
-
-      {/* Timezone indicator */}
-      <div className="flex items-center justify-center gap-1.5 text-xs font-medium text-muted bg-subtle rounded-lg px-3 py-1.5 self-center mx-auto">
-        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-        <span>{interpolate(copy.grid.timezone_label, { timezone: timezoneLabel })}</span>
       </div>
 
       <div
@@ -707,6 +749,7 @@ export default function TimeGrid({ event, participantId, participantName, isOrga
                     totalParticipants={totalParticipants}
                     isAllMatch={isAllMatch}
                     isBest={isBest}
+                    meetsThreshold={meetsThreshold(othersCount)}
                     participantColors={slotParticipantColors}
                     onToggle={handleToggle}
                     onDragStart={handleDragStart}
