@@ -42,9 +42,31 @@ export default function BestTimes({
       .slice(0, 5);
   }, [overlapMap, totalParticipants, durationMinutes]);
 
+  // Rank by how many people are free, not by list position — several times can
+  // tie for best, and tied times deserve equal prominence.
+  const rankOf = useMemo(() => {
+    const distinct = [...new Set(bestBlocks.map((b) => b.count))].sort((a, b) => b - a);
+    return (count: number) => distinct.indexOf(count);
+  }, [bestBlocks]);
+
   if (bestBlocks.length === 0) return null;
 
   const participantMap = new Map(participants.map((p) => [p.id, formatDisplayName(p.name)]));
+
+  /**
+   * The strongest overlap should be unmistakable and each step down visibly
+   * quieter. Every hover state carries a dark variant — without one, hovering
+   * in dark mode swaps in a light background under light text.
+   */
+  const rowClass = (rank: number) => {
+    if (rank === 0) {
+      return 'bg-green-50 dark:bg-[#112D25] border-2 border-green-400 dark:border-[#1E6B4C] shadow-sm hover:bg-green-100 dark:hover:bg-[#17402F]';
+    }
+    if (rank === 1) {
+      return 'bg-green-50/60 dark:bg-[#0E211C] border border-green-200 dark:border-[#123428] hover:bg-green-50 dark:hover:bg-[#123028]';
+    }
+    return 'bg-subtle border border-hairline-soft hover:bg-fill/80';
+  };
 
   // Response threshold state
   const threshold = minResponses && minResponses >= 2 ? minResponses : null;
@@ -88,32 +110,38 @@ export default function BestTimes({
         const start = new Date(block.start);
         const names = Array.from(block.participantIds).map((id) => participantMap.get(id) || '?');
         const allFree = block.count === totalParticipants;
+        const rank = rankOf(block.count);
 
         return (
           <div
             key={block.start}
-            className={`animate-fade-in flex items-center gap-3 rounded-xl p-3 transition-all duration-200 hover:shadow-sm ${
-              allFree && thresholdMet
-                ? 'bg-green-50 dark:bg-[#112D25] border border-green-100 dark:border-[#123428] hover:bg-green-100/60'
-                : 'bg-subtle hover:bg-fill/80'
-            }`}
+            className={`animate-fade-in flex items-center gap-3 rounded-xl p-3 transition-all duration-200 hover:shadow-sm ${rowClass(rank)}`}
             style={{ animationDelay: `${i * 80}ms` }}
           >
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-heading">
+              <p className={`text-heading ${rank === 0 ? 'text-base font-bold' : 'text-sm font-medium'}`}>
                 {format(start, 'EEE, MMM d')} &middot; {format(start, 'h:mm a')}
               </p>
-              <p className="text-xs text-muted truncate">
-                {block.count} of {totalParticipants} free &middot; {names.join(', ')}
+              <p className={`text-xs truncate ${rank === 0 ? 'text-secondary' : 'text-muted'}`}>
+                <span className={rank === 0 ? 'font-semibold' : ''}>
+                  {block.count} of {totalParticipants} free
+                </span>
+                {' '}&middot; {names.join(', ')}
               </p>
             </div>
 
-            {/* "All free" badge — only shown when all responded and threshold is met */}
-            {allFree && thresholdMet && (
-              <span className="shrink-0 text-xs font-medium text-success-fg bg-green-100 dark:bg-[#112D25] px-2 py-1 rounded-full animate-fade-in-scale">
+            {/* Badge: "All free" when everyone can make it, otherwise mark the
+                strongest overlap. Its own darker fill so it stays visible on
+                the rank-0 row (which now shares the old badge colour). */}
+            {allFree && thresholdMet ? (
+              <span className="shrink-0 text-xs font-semibold text-success-fg bg-green-200 dark:bg-[#1B4D3A] px-2 py-1 rounded-full animate-fade-in-scale">
                 All free
               </span>
-            )}
+            ) : rank === 0 ? (
+              <span className="shrink-0 text-xs font-semibold text-secondary bg-fill2 px-2 py-1 rounded-full animate-fade-in-scale">
+                Most people
+              </span>
+            ) : null}
 
             {/* Pick button — always shown to organizer; amber when threshold not met */}
             {onFinalize && (

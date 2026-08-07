@@ -18,6 +18,7 @@ import GuestDoneCard from './GuestDoneCard';
 import GuestQuestions from './GuestQuestions';
 import OrganizerResponses from './OrganizerResponses';
 import HowItWorksModal from './HowItWorksModal';
+import PickedConfirmation from './PickedConfirmation';
 import { getTimezoneLabel } from '@/lib/timezones';
 import {
   csvJoin, csvFilename, downloadCsv, buildAnswerMap, answerCells, dedupeHeaders, type AnswerRow,
@@ -93,8 +94,18 @@ export default function TimeGrid({ event, participantId, participantName, notifi
     setQPending(pending);
   }, []);
 
-  // Time picker modal (organizer only)
+  // Time picker modal (organizer only). The modal carries the whole picking
+  // arc — choose, save, confirm — so the payoff lands where the organizer is
+  // already looking instead of in a banner at the top of the page.
   const [showTimePicker, setShowTimePicker] = useState(false);
+  const [finalizeState, setFinalizeState] = useState<'idle' | 'saving' | 'done' | 'error'>('idle');
+  const [pickedTime, setPickedTime] = useState<string | null>(null);
+
+  const closeTimePicker = useCallback(() => {
+    setShowTimePicker(false);
+    setFinalizeState('idle');
+    setPickedTime(null);
+  }, []);
 
   // Organizer breakdown: who is free at each slot
   const [showBreakdown, setShowBreakdown] = useState(false);
@@ -403,13 +414,25 @@ export default function TimeGrid({ event, participantId, participantName, notifi
   }, [event.id, organizerToken, removeParticipant, removeSlotsForParticipant]);
 
   // Finalize handler
+  // Picking is slow on purpose — the API waits for the notification sends
+  // before responding. So the modal stays open and narrates: saving → done.
+  // Closing it instantly (the old behaviour) made a multi-second save look
+  // like nothing had happened.
   const handleFinalize = useCallback(async (time: string) => {
-    await fetch(`/api/events/${event.id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ finalized_time: time, organizer_token: organizerToken }),
-    });
-    onFinalize?.(time);
+    setFinalizeState('saving');
+    setPickedTime(time);
+    try {
+      const res = await fetch(`/api/events/${event.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ finalized_time: time, organizer_token: organizerToken }),
+      });
+      if (!res.ok) throw new Error('save failed');
+      setFinalizeState('done');
+      onFinalize?.(time);
+    } catch {
+      setFinalizeState('error');
+    }
   }, [event.id, organizerToken, onFinalize]);
 
   // Visible dates (all on desktop, single on mobile)
@@ -807,37 +830,65 @@ export default function TimeGrid({ event, participantId, participantName, notifi
       {showTimePicker && (
         <div
           className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 animate-fade-in"
-          onClick={(e) => { if (e.target === e.currentTarget) setShowTimePicker(false); }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget && finalizeState !== 'saving') closeTimePicker();
+          }}
         >
           <div className="bg-surface w-full max-w-md rounded-t-2xl sm:rounded-2xl shadow-xl animate-slide-up max-h-[85vh] overflow-y-auto">
-            <div className="sticky top-0 bg-surface border-b border-hairline-soft px-5 py-4 flex items-center justify-between rounded-t-2xl">
-              <h2 className="text-lg font-bold text-heading">{copy.grid.pick_time}</h2>
-              <button
-                type="button"
-                onClick={() => setShowTimePicker(false)}
-                className="p-1.5 text-faint hover:text-secondary rounded-full hover:bg-fill transition-colors cursor-pointer"
-              >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            <div className="p-5 space-y-2">
-              <p className="text-sm text-muted mb-4">
-                Choose the best time for <span className="font-medium text-body">{event.name}</span>
-              </p>
-              <BestTimes
-                overlapMap={overlapMap}
-                totalParticipants={totalParticipants}
-                durationMinutes={event.duration_minutes || 30}
-                participants={participants}
-                minResponses={event.min_responses}
-                onFinalize={isOrganizer ? (time: string) => {
-                  handleFinalize(time);
-                  setShowTimePicker(false);
-                } : undefined}
+            {finalizeState === 'done' && pickedTime ? (
+              <PickedConfirmation
+                event={event}
+                finalizedTime={pickedTime}
+                onClose={closeTimePicker}
               />
-            </div>
+            ) : (
+              <>
+                <div className="sticky top-0 bg-surface border-b border-hairline-soft px-5 py-4 flex items-center justify-between rounded-t-2xl">
+                  <h2 className="text-lg font-bold text-heading">{copy.grid.pick_time}</h2>
+                  <button
+                    type="button"
+                    onClick={closeTimePicker}
+                    disabled={finalizeState === 'saving'}
+                    className="p-1.5 text-faint hover:text-secondary rounded-full hover:bg-fill transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+
+                {finalizeState === 'saving' ? (
+                  /* The save can take a few seconds (the API waits on the
+                     notification sends), so say so rather than going blank. */
+                  <div className="p-10 flex flex-col items-center gap-3 animate-fade-in">
+                    <div className="w-8 h-8 border-[3px] border-teal-500 border-t-transparent rounded-full animate-spin" />
+                    <p className="text-sm font-semibold text-body">Locking in your time…</p>
+                    <p className="text-xs text-muted">Letting everyone know</p>
+                  </div>
+                ) : (
+                  <div className="p-5 space-y-2">
+                    <p className="text-sm text-muted mb-4">
+                      Choose the best time for <span className="font-medium text-body">{event.name}</span>
+                    </p>
+
+                    {finalizeState === 'error' && (
+                      <p className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 rounded-xl p-3 mb-2">
+                        That didn&apos;t save. Check your connection and try again.
+                      </p>
+                    )}
+
+                    <BestTimes
+                      overlapMap={overlapMap}
+                      totalParticipants={totalParticipants}
+                      durationMinutes={event.duration_minutes || 30}
+                      participants={participants}
+                      minResponses={event.min_responses}
+                      onFinalize={isOrganizer ? handleFinalize : undefined}
+                    />
+                  </div>
+                )}
+              </>
+            )}
           </div>
         </div>
       )}

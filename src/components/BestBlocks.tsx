@@ -157,8 +157,8 @@ export default function BestBlocks({
         key={`${w.startIdx}-${w.endIdx}`}
         className={`animate-fade-in flex items-center gap-3 rounded-xl p-3 transition-all duration-200 hover:shadow-sm ${
           full && thresholdMet
-            ? 'bg-green-50 dark:bg-[#112D25] border border-green-100 dark:border-[#123428] hover:bg-green-100/60'
-            : 'bg-subtle hover:bg-fill/80'
+            ? 'bg-green-50 dark:bg-[#112D25] border-2 border-green-400 dark:border-[#1E6B4C] shadow-sm hover:bg-green-100 dark:hover:bg-[#17402F]'
+            : 'bg-subtle border border-hairline-soft hover:bg-fill/80'
         }`}
         style={{ animationDelay: `${i * 80}ms` }}
       >
@@ -174,7 +174,7 @@ export default function BestBlocks({
         </div>
 
         {full && thresholdMet && (
-          <span className="shrink-0 text-xs font-medium text-success-fg bg-green-100 dark:bg-[#112D25] px-2 py-1 rounded-full animate-fade-in-scale">
+          <span className="shrink-0 text-xs font-semibold text-success-fg bg-green-200 dark:bg-[#1B4D3A] px-2 py-1 rounded-full animate-fade-in-scale">
             All free
           </span>
         )}

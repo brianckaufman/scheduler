@@ -17,6 +17,7 @@ import GuestDoneCard from './GuestDoneCard';
 import GuestQuestions from './GuestQuestions';
 import OrganizerResponses from './OrganizerResponses';
 import HowItWorksModal from './HowItWorksModal';
+import PickedConfirmation from './PickedConfirmation';
 import { getTimezoneLabel } from '@/lib/timezones';
 import {
   csvJoin, csvFilename, downloadCsv, buildAnswerMap, answerCells, dedupeHeaders, type AnswerRow,
@@ -88,7 +89,17 @@ export default function AllDayGrid({ event, participantId, participantName, noti
     setQPending(pending);
   }, []);
 
+  // The picker modal carries the whole arc — choose, save, confirm.
   const [showDayPicker, setShowDayPicker] = useState(false);
+  const [finalizeState, setFinalizeState] = useState<'idle' | 'saving' | 'done' | 'error'>('idle');
+  const [picked, setPicked] = useState<{ start: string; endDate: string } | null>(null);
+
+  const closeDayPicker = useCallback(() => {
+    setShowDayPicker(false);
+    setFinalizeState('idle');
+    setPicked(null);
+  }, []);
+
   const [showBreakdown, setShowBreakdown] = useState(false);
   const [showAllParticipants, setShowAllParticipants] = useState(false);
   const [showParticipants, setShowParticipants] = useState(true);
@@ -320,17 +331,26 @@ export default function AllDayGrid({ event, participantId, participantName, noti
   // Finalize a day range: startISO is a dayKeys entry (full ISO instant);
   // endISO is looked up against the parallel sortedDates array so the stored
   // finalized_end_date is a plain 'yyyy-MM-dd', not re-derived from the instant.
+  // The modal stays open through the save and turns into a confirmation —
+  // closing it mid-request made a multi-second save look like a no-op.
   const handleFinalizeRange = useCallback(async (startISO: string, endISO: string) => {
     const startIdx = dayKeys.indexOf(startISO);
     const endIdx = dayKeys.indexOf(endISO);
     const endDate = sortedDates[endIdx] ?? sortedDates[startIdx] ?? sortedDates[0];
-    await fetch(`/api/events/${event.id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ finalized_time: startISO, finalized_end_date: endDate, organizer_token: organizerToken }),
-    });
-    setShowDayPicker(false);
-    onFinalize?.(startISO, endDate);
+    setFinalizeState('saving');
+    try {
+      const res = await fetch(`/api/events/${event.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ finalized_time: startISO, finalized_end_date: endDate, organizer_token: organizerToken }),
+      });
+      if (!res.ok) throw new Error('save failed');
+      setPicked({ start: startISO, endDate });
+      setFinalizeState('done');
+      onFinalize?.(startISO, endDate);
+    } catch {
+      setFinalizeState('error');
+    }
   }, [dayKeys, sortedDates, event.id, organizerToken, onFinalize]);
 
   const timezoneLabel = useMemo(() => getTimezoneLabel(event.timezone), [event.timezone]);
@@ -583,50 +603,80 @@ export default function AllDayGrid({ event, participantId, participantName, noti
       {showDayPicker && (
         <div
           className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 animate-fade-in"
-          onClick={(e) => { if (e.target === e.currentTarget) setShowDayPicker(false); }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget && finalizeState !== 'saving') closeDayPicker();
+          }}
         >
           <div className="bg-surface w-full max-w-md rounded-t-2xl sm:rounded-2xl shadow-xl animate-slide-up max-h-[85vh] overflow-y-auto">
-            <div className="sticky top-0 bg-surface border-b border-hairline-soft px-5 py-4 flex items-center justify-between rounded-t-2xl">
-              <h2 className="text-lg font-bold text-heading">{minBlock ? 'Find a Block' : 'Pick Days'}</h2>
-              <button
-                type="button"
-                onClick={() => setShowDayPicker(false)}
-                className="p-1.5 text-faint hover:text-secondary rounded-full hover:bg-fill transition-colors cursor-pointer"
-              >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            <div className="p-5 space-y-2">
-              <p className="text-sm text-muted mb-4">
-                {minBlock
-                  ? <>Find a {minBlock}-day block for <span className="font-medium text-body">{event.name}</span></>
-                  : <>Choose the best days for <span className="font-medium text-body">{event.name}</span></>}
-              </p>
-              {minBlock ? (
-                <BestBlocks
-                  dayKeys={dayKeys}
-                  sortedDates={sortedDates}
-                  overlapMap={overlapMap}
-                  totalParticipants={totalParticipants}
-                  participants={participants}
-                  minBlockDays={minBlock}
-                  minResponses={event.min_responses}
-                  onFinalize={isOrganizer ? handleFinalizeRange : undefined}
-                />
-              ) : (
-                <BestDays
-                  dayKeys={dayKeys}
-                  sortedDates={sortedDates}
-                  overlapMap={overlapMap}
-                  totalParticipants={totalParticipants}
-                  participants={participants}
-                  minResponses={event.min_responses}
-                  onFinalize={isOrganizer ? handleFinalizeRange : undefined}
-                />
-              )}
-            </div>
+            {finalizeState === 'done' && picked ? (
+              <PickedConfirmation
+                event={event}
+                finalizedTime={picked.start}
+                finalizedEndDate={picked.endDate}
+                onClose={closeDayPicker}
+              />
+            ) : (
+              <>
+                <div className="sticky top-0 bg-surface border-b border-hairline-soft px-5 py-4 flex items-center justify-between rounded-t-2xl">
+                  <h2 className="text-lg font-bold text-heading">{minBlock ? 'Find a Block' : 'Pick Days'}</h2>
+                  <button
+                    type="button"
+                    onClick={closeDayPicker}
+                    disabled={finalizeState === 'saving'}
+                    className="p-1.5 text-faint hover:text-secondary rounded-full hover:bg-fill transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+
+                {finalizeState === 'saving' ? (
+                  <div className="p-10 flex flex-col items-center gap-3 animate-fade-in">
+                    <div className="w-8 h-8 border-[3px] border-teal-500 border-t-transparent rounded-full animate-spin" />
+                    <p className="text-sm font-semibold text-body">Locking in your dates…</p>
+                    <p className="text-xs text-muted">Letting everyone know</p>
+                  </div>
+                ) : (
+                  <div className="p-5 space-y-2">
+                    <p className="text-sm text-muted mb-4">
+                      {minBlock
+                        ? <>Find a {minBlock}-day block for <span className="font-medium text-body">{event.name}</span></>
+                        : <>Choose the best days for <span className="font-medium text-body">{event.name}</span></>}
+                    </p>
+
+                    {finalizeState === 'error' && (
+                      <p className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 rounded-xl p-3 mb-2">
+                        That didn&apos;t save. Check your connection and try again.
+                      </p>
+                    )}
+
+                    {minBlock ? (
+                      <BestBlocks
+                        dayKeys={dayKeys}
+                        sortedDates={sortedDates}
+                        overlapMap={overlapMap}
+                        totalParticipants={totalParticipants}
+                        participants={participants}
+                        minBlockDays={minBlock}
+                        minResponses={event.min_responses}
+                        onFinalize={isOrganizer ? handleFinalizeRange : undefined}
+                      />
+                    ) : (
+                      <BestDays
+                        dayKeys={dayKeys}
+                        sortedDates={sortedDates}
+                        overlapMap={overlapMap}
+                        totalParticipants={totalParticipants}
+                        participants={participants}
+                        minResponses={event.min_responses}
+                        onFinalize={isOrganizer ? handleFinalizeRange : undefined}
+                      />
+                    )}
+                  </div>
+                )}
+              </>
+            )}
           </div>
         </div>
       )}

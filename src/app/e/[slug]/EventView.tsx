@@ -482,10 +482,11 @@ export default function EventView({
               notificationsEnabled={notificationsEnabled}
               isOrganizer={isOrganizer}
               organizerToken={localStorage.getItem(`organizer_${event.slug}`)}
+              /* No confetti here — the picker modal now owns the celebration,
+                 so it fires where the organizer is actually looking. */
               onFinalize={(startISO, endDate) => {
                 setEvent({ ...event, finalized_time: startISO, finalized_end_date: endDate });
                 updateEvent(event.slug, { finalizedTime: startISO });
-                setShowCelebration(true);
               }}
               onMySlotCountChange={handleSlotCountChange}
               onResponseStateChange={handleResponseStateChange}
@@ -501,7 +502,6 @@ export default function EventView({
               onFinalize={(time) => {
                 setEvent({ ...event, finalized_time: time });
                 updateEvent(event.slug, { finalizedTime: time });
-                setShowCelebration(true);
               }}
               onMySlotCountChange={handleSlotCountChange}
               onResponseStateChange={handleResponseStateChange}
