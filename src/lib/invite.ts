@@ -5,6 +5,31 @@ import { formatEventDateRange } from './dateRange';
 import type { Event } from '@/types';
 
 /**
+ * The "it's locked in" message an organizer sends the group once a time is
+ * chosen. Lives here rather than in a component so the picker modal and the
+ * finalized banner can't drift apart — it's the same message either way.
+ * Pass `url` when copying to the clipboard so the pasted text carries the link.
+ */
+export function buildConfirmationText(event: Event, forOrganizer: boolean, url?: string): string {
+  const lines: string[] = forOrganizer
+    ? [`Hey everyone! We've locked in a time for ${event.name}.`, '']
+    : [`${event.name} is confirmed!`, ''];
+
+  lines.push(`📅 ${formatEventDateRange(event.finalized_time!, event.finalized_end_date, !!event.all_day)}`);
+  if (event.location) {
+    lines.push(`📍 ${locationLabel(parseLocation(event.location))}`);
+  }
+  if (forOrganizer) {
+    lines.push('', "Add it to your calendar and I'll see you there!");
+  }
+  if (url) {
+    lines.push('', url);
+  }
+
+  return lines.join('\n');
+}
+
+/**
  * Builds a friendly invite/share text message for an event.
  * Used by ShareLink (Copy Invite button) and the RSVP confirmation modal.
  */

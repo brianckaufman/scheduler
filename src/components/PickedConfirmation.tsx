@@ -7,6 +7,7 @@ import { CopyIcon, CalendarPlusIcon } from '@/components/ui/icons';
 import { formatEventDateRange } from '@/lib/dateRange';
 import { parseLocation, locationLabel } from '@/lib/location';
 import { buildICS, googleCalendarUrl } from '@/lib/calendar';
+import { buildConfirmationText } from '@/lib/invite';
 import type { Event } from '@/types';
 
 interface PickedConfirmationProps {
@@ -45,16 +46,14 @@ export default function PickedConfirmation({
     endDateISO: finalizedEndDate ?? null,
   };
 
-  const shareText = [
-    `Hey everyone! We've locked in a time for ${event.name}.`,
-    '',
-    `📅 ${whenText}`,
-    ...(place ? [`📍 ${place}`] : []),
-    '',
-    typeof window !== 'undefined' ? window.location.href : '',
-  ].join('\n');
-
   const copyMessage = async () => {
+    // Same builder the finalized banner uses, so the organizer's message reads
+    // identically wherever they copy it from.
+    const shareText = buildConfirmationText(
+      { ...event, finalized_time: finalizedTime, finalized_end_date: finalizedEndDate ?? null },
+      true,
+      window.location.href,
+    );
     try {
       await navigator.clipboard.writeText(shareText);
     } catch {

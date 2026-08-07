@@ -6,6 +6,7 @@ import { firstName } from '@/lib/names';
 import { parseLocation, locationLabel } from '@/lib/location';
 import { buildICS } from '@/lib/calendar';
 import { formatEventDateRange } from '@/lib/dateRange';
+import { buildConfirmationText } from '@/lib/invite';
 
 interface FinalizedBannerProps {
   event: Event;
@@ -13,27 +14,6 @@ interface FinalizedBannerProps {
   organizerToken: string | null;
   onUnfinalize: () => void;
   participantName?: string;
-}
-
-function buildConfirmationText(event: Event, forOrganizer: boolean): string {
-  const lines: string[] = [];
-  if (forOrganizer) {
-    lines.push(`Hey everyone! We've locked in a time for ${event.name}.`);
-    lines.push('');
-  } else {
-    lines.push(`${event.name} is confirmed!`);
-    lines.push('');
-  }
-  lines.push(`📅 ${formatEventDateRange(event.finalized_time!, event.finalized_end_date, !!event.all_day)}`);
-  if (event.location) {
-    lines.push(`📍 ${locationLabel(parseLocation(event.location))}`);
-  }
-  if (forOrganizer) {
-    lines.push('');
-    lines.push('Add it to your calendar and I\'ll see you there!');
-  }
-
-  return lines.join('\n');
 }
 
 export default function FinalizedBanner({ event, isOrganizer, organizerToken, onUnfinalize, participantName }: FinalizedBannerProps) {
@@ -59,7 +39,8 @@ export default function FinalizedBanner({ event, isOrganizer, organizerToken, on
   };
 
   const handleCopyDetails = async () => {
-    const text = buildConfirmationText(event, isOrganizer);
+    // Include the link — whoever receives this will want to open the event.
+    const text = buildConfirmationText(event, isOrganizer, window.location.href);
     try {
       await navigator.clipboard.writeText(text);
       setCopied(true);
