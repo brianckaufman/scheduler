@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import GoogleButton from '@/components/auth/GoogleButton';
 import AuthShell, { authInputClass, authButtonClass, authDivider } from '@/components/auth/AuthShell';
+import { friendlyAuthError, isMailerFailure } from '@/lib/authErrors';
 
 export default function SignupPage() {
   const [name, setName] = useState('');
@@ -13,6 +14,9 @@ export default function SignupPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
+  // A mailer failure is worth calling out separately: Google sign-in still
+  // works, and that's the one useful thing we can offer in the moment.
+  const [mailerDown, setMailerDown] = useState(false);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,6 +26,7 @@ export default function SignupPage() {
     }
     setLoading(true);
     setError('');
+    setMailerDown(false);
     const supabase = createClient();
     const { data, error } = await supabase.auth.signUp({
       email: email.trim(),
@@ -32,7 +37,8 @@ export default function SignupPage() {
       },
     });
     if (error) {
-      setError(error.message);
+      setError(friendlyAuthError(error));
+      setMailerDown(isMailerFailure(error));
       setLoading(false);
       return;
     }
@@ -78,7 +84,17 @@ export default function SignupPage() {
           placeholder="you@example.com" autoComplete="email" className={authInputClass} />
         <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)}
           placeholder="Password (8+ characters)" autoComplete="new-password" className={authInputClass} />
-        {error && <p className="text-sm text-red-500">{error}</p>}
+        {error && (
+          <div className="text-sm text-red-500 space-y-1">
+            <p>{error}</p>
+            {mailerDown && (
+              <p className="text-muted">
+                In the meantime, <span className="font-medium">Sign up with Google</span> above works
+                and needs no confirmation email.
+              </p>
+            )}
+          </div>
+        )}
         <button type="submit" disabled={loading} className={authButtonClass}>
           {loading ? 'Creating…' : 'Create account'}
         </button>
