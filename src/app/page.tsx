@@ -55,7 +55,7 @@ export default async function Home() {
                   </svg>
                 </span>
                 <span className="flex-1 min-w-0">
-                  <span className="block text-base font-bold text-heading">Find a time</span>
+                  <span className="block text-base font-bold text-heading">Find a time for everyone</span>
                   <span className="block text-sm text-muted mt-0.5 leading-snug">Not sure when? Everyone marks when they&apos;re free, and you pick the best time.</span>
                 </span>
                 <svg className="w-5 h-5 text-faint2 group-hover:text-social-fg shrink-0 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -73,7 +73,7 @@ export default async function Home() {
                   </svg>
                 </span>
                 <span className="flex-1 min-w-0">
-                  <span className="block text-base font-bold text-heading">Event RSVP</span>
+                  <span className="block text-base font-bold text-heading">Create an event RSVP</span>
                   <span className="block text-sm text-muted mt-0.5 leading-snug">Date already set? Invite people and collect yes, maybe, or no replies.</span>
                 </span>
                 <svg className="w-5 h-5 text-faint2 group-hover:text-accent-fg shrink-0 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

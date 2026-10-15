@@ -39,7 +39,7 @@ export default function TypeStep({ draft, stepNumber, totalSteps, onPicked }: Ty
       <div className="space-y-3">
         <ChoiceCard
           icon={FindTimeIcon}
-          title="Find a time"
+          title="Find a time for everyone"
           description="Not sure when? Everyone marks when they're free, and you pick the best time."
           accent="social"
           selected={draft.eventType === 'availability'}
@@ -47,7 +47,7 @@ export default function TypeStep({ draft, stepNumber, totalSteps, onPicked }: Ty
         />
         <ChoiceCard
           icon={RsvpIcon}
-          title="Event RSVP"
+          title="Create an event RSVP"
           description="Date already set? Invite people and collect yes / maybe / no replies."
           accent="teal"
           selected={draft.eventType === 'fixed'}
